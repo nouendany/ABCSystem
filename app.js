@@ -257,7 +257,16 @@
     seed('abc_stock_logs', []);
     seed('abc_payment_logs', []);
     seed('abc_followups', []);
-    seed('abc_commission_rules', {});
+     const defaultCommissionRules = {
+       monthlyTargetUnits: 300,
+       tiers: [
+         { minUnits: 1, maxUnits: 299, ratePercent: 1.5 },
+         { minUnits: 300, maxUnits: 500, ratePercent: 3.0 },
+         { minUnits: 501, maxUnits: 700, ratePercent: 5.0 },
+         { minUnits: 701, maxUnits: 9999, ratePercent: 7.5 }
+       ]
+     };
+     seed('abc_commission_rules', defaultCommissionRules);
     seed('abc_company_settings', cleanCompanySettings);
     seed('abc_voided_transactions', []);
     seed('abc_closing_logs', []);
@@ -3618,11 +3627,13 @@
       `;
     });
 
-    document.getElementById('perf-target-units').value = state.commissionRules.monthlyTargetUnits || 300;
-    state.commissionRules.tiers.forEach((t, idx) => {
-      const el = document.getElementById('tier-rate-' + idx);
-      if (el) el.value = t.ratePercent;
-    });
+    document.getElementById('perf-target-units').value = (state.commissionRules && state.commissionRules.monthlyTargetUnits) || 300;
+    if (state.commissionRules && state.commissionRules.tiers) {
+      state.commissionRules.tiers.forEach((t, idx) => {
+        const el = document.getElementById('tier-rate-' + idx);
+        if (el) el.value = t.ratePercent;
+      });
+    }
 
     const commBody = document.getElementById('commission-report-rows');
     commBody.innerHTML = '';
