@@ -1,0 +1,10 @@
+# Gemini Agent Local Temp Workspaces
+.gemini/
+.antigravity/
+
+# Local OS files
+Thumbs.db
+Desktop.ini
+
+# Portable Git binaries
+git/

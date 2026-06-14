@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.top = '0';
+      div.style.left = '0';
+      div.style.width = '100%';
+      div.style.background = '#ef4444';
+      div.style.color = '#ffffff';
+      div.style.padding = '15px';
+      div.style.zIndex = '999999';
+      div.style.fontFamily = 'monospace';
+      div.style.fontSize = '12px';
+      div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+      div.innerHTML = `
+        <strong>[CRITICAL SYSTEM ERROR]</strong>: ${message}<br>
+        <span style="opacity: 0.8;">File: ${source} (Line ${lineno}:${colno})</span><br>
+        <button onclick="localStorage.clear(); window.location.reload();" style="margin-top: 10px; padding: 6px 12px; background: white; color: #ef4444; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Reset Database & Reload</button>
+        <button onclick="this.parentElement.remove();" style="margin-top: 10px; margin-left: 10px; padding: 6px 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; cursor: pointer;">Dismiss</button>
+      `;
+      document.body.appendChild(div);
+      return false;
+    };
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABC System - POS & ERP System</title>
+  <!-- Chart.js CDN for rich visual analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css?v=1.1.9">
+</head>
+<body class="dark-theme">
+
+  <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
+  <div class="login-overlay active-login" id="login-screen">
+    <div class="login-card glass-card">
+      <div class="login-logo" style="position: relative;">
+        <!-- Hidden input to upload/change logo directly from login screen -->
+        <input type="file" id="login-logo-upload-input" accept="image/*" style="display: none;">
+        
+        <div id="login-logo-interactive-zone" style="cursor: pointer; display: inline-block; position: relative;" title="Click to upload/change logo">
+          <span id="login-default-logo" style="font-size:48px;">🚀</span>
+          <img id="login-custom-logo" src="" style="display:none; max-height:80px; max-width:180px; object-fit:contain; margin-bottom:10px; border-radius: 8px;">
+          <!-- Small overlay pencil edit icon -->
+          <div id="login-logo-edit-badge" style="position: absolute; bottom: 5px; right: -5px; background: var(--secondary); border: 1px solid var(--border-color); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; opacity: 0.8; color: white;">✏️</div>
+        </div>
+        
+        <h2 id="login-system-title" style="font-weight: 850; margin-top: 10px; letter-spacing: 0.5px;">ABC</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;" data-translate="login">Enterprise Login</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label data-translate="username">Username</label>
+          <input type="text" class="form-control" id="login-username" required placeholder="e.g. admin or sales-pp" style="text-align: center;">
+        </div>
+        <div class="form-group">
+          <label data-translate="password">Password</label>
+          <input type="password" class="form-control" id="login-password" required placeholder="••••••••" style="text-align: center;">
+        </div>
+        <div id="login-error-msg" class="login-error-container" style="display:none;" data-translate="loginError">
+          Invalid credentials or account suspended!
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:14px; padding:12px; font-weight:700;" data-translate="loginBtn">Secure Login</button>
+      </form>
+      <div style="text-align: center; margin-top: 24px; font-size: 11px; color: var(--text-secondary); border-top: 1px dashed var(--border-color); padding-top: 15px; line-height: 1.6;">
+        <span style="opacity: 0.7;" data-translate="developedBy">System Created By</span><br>
+        <span style="font-weight: 700; color: var(--text-primary); font-size: 12px; letter-spacing: 0.3px;">NOUEN Dany</span><br>
+        <span style="font-weight: 500; color: var(--primary); font-size: 11px;">📞 (+855) 10 955 536</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CORE APP LAYOUT ==================== -->
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-container" id="sidebar-logo-container">
+        <div class="logo-icon" id="sidebar-default-logo">🚀</div>
+        <img id="sidebar-custom-logo" src="" style="display:none; width:36px; height:36px; object-fit:contain; border-radius: var(--radius-sm); margin-right:2px;">
+        <div class="logo-text" id="sidebar-logo-text">ABC System</div>
+      </div>
+      
+      <!-- Dedicated Billing POS CTA Button -->
+      <div class="pos-cta-container">
+        <div class="nav-item pos-cta-btn" data-view="view-pos">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><path d="M6 21h12"></path><path d="M12 17v4"></path></svg>
+          <span data-translate="pos">Billing POS</span>
+        </div>
+      </div>
+      
+      <nav class="nav-menu">
+        <li class="nav-item active" data-view="view-dashboard">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          <span data-translate="dashboard">Dashboard Analytics</span>
+        </li>
+        <li class="nav-item" data-view="view-inventory">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <span data-translate="inventory">Products & Inventory</span>
+        </li>
+        <li class="nav-item" data-view="view-branches">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          <span data-translate="branches">Multi-Branch Management</span>
+        </li>
+        <li class="nav-item" data-view="view-customers">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span data-translate="customers">Customer CRM</span>
+        </li>
+        <li class="nav-item" data-view="view-followups">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <span data-translate="followUps">CRM Auto Follow-Ups</span>
+        </li>
+        <li class="nav-item" data-view="view-performance">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+          <span data-translate="performance">Sales Performance</span>
+        </li>
+        <li class="nav-item" data-view="view-finance">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          <span data-translate="finance">Financial Ledger</span>
+        </li>
+        <li class="nav-item" data-view="view-staff">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+          <span data-translate="staff">Staff & Payroll</span>
+        </li>
+        <li class="nav-item" data-view="view-reports">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><rect x="3" y="4" width="18" height="16" rx="2"></rect></svg>
+          <span data-translate="reportsCenter">Reports & Analytics</span>
+        </li>
+        <li class="nav-item" id="nav-item-settings" data-view="view-settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.5 1z"></path></svg>
+          <span data-translate="masterData">Master Settings</span>
+        </li>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <!-- Logged In User Info -->
+        <div class="user-status-card" id="user-status-card">
+          <div class="user-card-body">
+            <div class="user-avatar-wrapper">
+              <div class="user-avatar-circle" id="display-user-initial">A</div>
+              <span class="user-status-dot"></span>
+            </div>
+            <div class="user-details-wrapper">
+              <strong id="display-user-name" class="user-card-name" title="ABC Executive Super Admin">Admin</strong>
+              <div class="user-card-meta">
+                <div>
+                  <span id="display-user-role" class="role-indicator-badge">Admin</span>
+                </div>
+                <span id="display-user-branch" class="user-card-branch">Phnom Penh</span>
+              </div>
+            </div>
+          </div>
+          <button id="btn-logout" class="logout-sm-btn" title="Logout">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </button>
+        </div>
+
+        <!-- Light/Dark Mode Toggle -->
+        <div class="theme-toggle-container">
+          <span style="font-size: 11px; color: var(--text-secondary);" data-translate="themeToggle">Theme Mode</span>
+          <button id="btn-theme-toggle" class="theme-toggle-btn">🌙 Dark Mode</button>
+        </div>
+
+        <!-- Language Switch -->
+        <div class="lang-toggle-container">
+          <button class="lang-btn active" id="btn-lang-en" title="English"><img src="gb.svg" alt="English"></button>
+          <button class="lang-btn" id="btn-lang-km" title="ភាសាខ្មែរ"><img src="kh.svg" alt="Khmer"></button>
+        </div>
+
+        <!-- Developer Credits -->
+        <div style="margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--border-color); text-align: center; font-size: 10px;">
+          <span style="color: var(--text-secondary); opacity: 0.75;" data-translate="developedBy">System Created By</span><br>
+          <span style="font-weight: 700; color: var(--text-primary); font-size: 11.5px; display: inline-block; margin-top: 3px;">NOUEN Dany</span><br>
+          <span style="font-size: 9.5px; color: var(--primary); font-weight: 500; display: inline-block; margin-top: 2px;">📞 (+855) 10 955 536</span>
+        </div>
+        <div style="margin-top: 8px; text-align: center; font-size: 9px; color: var(--primary); font-weight: bold; opacity: 0.85;">
+          Version 1.1.0 (Build 14.06.2026)
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Frame -->
+    <main class="main-content">
+      
+      <!-- Top App Bar Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <h1 id="page-title" data-translate="dashboard">Dashboard Analytics</h1>
+        </div>
+        <div class="header-right">
+          <!-- Active Branch Banner -->
+          <div id="active-branch-banner" class="active-branch-pill">
+            <span style="font-size:12px;">🏢</span>
+            <span id="active-branch-name-txt">HQ - Phnom Penh</span>
+          </div>
+
+          <div class="live-clock">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span id="clock-display">--:--:--</span>
+          </div>
+          
+          <div class="alert-badge" id="btn-alert-trigger">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span class="badge-count" id="alert-badge-count">0</span>
+          </div>
+
+          <!-- CRM Notifications Bell -->
+          <div class="alert-badge" id="btn-crm-notifications" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); position: relative; cursor: pointer;" title="CRM Notifications">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span class="badge-count" id="crm-notification-count" style="background: #10b981;">0</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- VIEW 1: DASHBOARD ANALYTICS PANEL -->
+      <div id="view-dashboard" class="view-panel active-view">
+        <!-- Low Stock Banner Danger Drawer -->
+        <div class="low-stock-panel" id="low-stock-banner" style="display:none;">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="#ef4444" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <div class="low-stock-list">
+            <h4 style="color:#ef4444;" data-translate="lowStockAlert">Low Stock Alert</h4>
+            <div id="low-stock-list-items"></div>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards Widget Row -->
+        <div class="kpi-grid dashboard-kpis">
+          <div class="kpi-card kpi-capital" style="border-left-color:var(--warning);">
+            <div class="kpi-details">
+              <h4 data-translate="startingCapital">Starting Capital</h4>
+              <div class="kpi-value" id="kpi-capital-val">$0.00</div>
+              <div class="kpi-subvalue" id="kpi-capital-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">🏦</div>
+          </div>
+          <div class="kpi-card kpi-revenue" style="border-left-color:var(--primary);">
+            <div class="kpi-details">
+              <h4 data-translate="totalRevenue">Total Revenue</h4>
+              <div class="kpi-value" id="kpi-revenue-val">$0.00</div>
+              <div class="kpi-subvalue" id="kpi-revenue-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">📈</div>
+          </div>
+          <div class="kpi-card kpi-deducted" style="border-left-color:#a855f7;">
+            <div class="kpi-details">
+              <h4 data-translate="actualDeductedCapital">Deducted Capital</h4>
+              <div class="kpi-value" id="kpi-deducted-val">$0.00</div>
+              <div class="kpi-subvalue" id="kpi-deducted-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">📉</div>
+          </div>
+          <div class="kpi-card kpi-expense" style="border-left-color:var(--danger);">
+            <div class="kpi-details">
+              <h4 data-translate="totalExpenses">Total Expenses</h4>
+              <div class="kpi-value" id="kpi-expense-val">$0.00</div>
+              <div class="kpi-subvalue" id="kpi-expense-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">💸</div>
+          </div>
+          <div class="kpi-card kpi-profit" style="border-left-color:#10b981;">
+            <div class="kpi-details">
+              <h4 data-translate="actualNetProfit">Actual Net Profit</h4>
+              <div class="kpi-value" id="kpi-profit-val">$0.00</div>
+              <div class="kpi-subvalue" id="kpi-profit-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">💰</div>
+          </div>
+          <div class="kpi-card kpi-capital-balance" style="border-left-color:#06b6d4;">
+            <div class="kpi-details">
+              <h4 data-translate="currentCapitalBalance">Current Capital Balance</h4>
+              <div class="kpi-value" id="kpi-capital-balance-val">$0.00</div>
+              <div class="kpi-subvalue" id="kpi-capital-balance-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">⚖️</div>
+          </div>
+          <div class="kpi-card kpi-sales" style="border-left-color:var(--secondary);">
+            <div class="kpi-details">
+              <h4 data-translate="totalSales">Total Sales Count</h4>
+              <div class="kpi-value" id="kpi-sales-count">0</div>
+              <div class="kpi-subvalue" id="kpi-followups-badge">0 Pending Followups</div>
+            </div>
+            <div class="kpi-icon-wrapper">🛒</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Analytics Visual Charts Grids -->
+        <div class="dashboard-grid">
+          <div class="glass-card" style="padding:16px; min-height: 320px; display: flex; flex-direction: column;">
+            <h3 data-translate="revenueVsExpenses" style="font-weight:750; margin-bottom: 16px;">Revenue vs Expenses Trend</h3>
+            <div style="position: relative; flex-grow: 1; min-height: 240px; height: 100%;">
+              <canvas id="chart-revenue-expenses"></canvas>
+            </div>
+          </div>
+          <div class="glass-card" style="padding:16px; min-height: 320px; display: flex; flex-direction: column;">
+            <h3 data-translate="branchSalesComparison" style="font-weight:750; margin-bottom: 16px;">Sales Contribution by Branch</h3>
+            <div style="position: relative; flex-grow: 1; min-height: 240px; height: 100%;">
+              <canvas id="chart-branch-sales"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid" style="margin-top:20px;">
+          <div class="glass-card" style="padding:16px; min-height: 320px; display: flex; flex-direction: column;">
+            <h3 style="font-weight:750; margin-bottom: 16px;">Employee Performance Ranking</h3>
+            <div style="position: relative; flex-grow: 1; min-height: 240px; height: 100%;">
+              <canvas id="chart-employee-performance"></canvas>
+            </div>
+          </div>
+          <div class="glass-card" style="padding:16px; min-height: 320px; display: flex; flex-direction: column;">
+            <h3 style="font-weight:750; margin-bottom: 16px;">Social Page Sales Contribution</h3>
+            <div style="position: relative; flex-grow: 1; min-height: 240px; height: 100%;">
+              <canvas id="chart-page-rankings"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid" style="margin-top:20px;">
+          <!-- Recent Transactions -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="recentTransactions">Recent Sales Transactions</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th data-translate="receiptNo">Invoice No</th>
+                    <th data-translate="branch">Branch</th>
+                    <th data-translate="date">Date</th>
+                    <th data-translate="total">Total Due</th>
+                    <th data-translate="paymentMethod">Payment Method</th>
+                  </tr>
+                </thead>
+                <tbody id="db-recent-transactions">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Low Stock Glances -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="stockStatus">Stock Alert Status</h3>
+            </div>
+            <div class="table-responsive" style="max-height: 260px; overflow-y:auto;">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th style="text-align: center;" data-translate="stockQty">Stock</th>
+                    <th style="text-align: center;">Min</th>
+                  </tr>
+                </thead>
+                <tbody id="db-low-stock-rows">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: BILLING POS INTERFACE -->
+      <div id="view-pos" class="view-panel">
+        <div class="pos-workspace">
+          
+          <!-- Catalog Panel Left -->
+          <div class="pos-catalog">
+            <div class="pos-search-bar">
+              <input type="text" id="pos-search-input" class="form-control" placeholder="Search products..." data-translate="searchPlaceholder">
+              <button class="btn btn-primary" id="btn-scan-barcode-modal" style="padding: 10px 14px;" data-translate="scanBarcode">Scan</button>
+            </div>
+            
+            <!-- Category Tabs Slider -->
+            <div class="pos-categories-slider" id="pos-category-tabs">
+              <!-- Loaded via JS -->
+            </div>
+            
+            <!-- Products Grid Cards -->
+            <div class="pos-products-grid" id="pos-products-grid">
+              <!-- Loaded via JS -->
+            </div>
+          </div>
+          
+          <!-- Checkout Sidebar Right -->
+          <div class="pos-billing-sidebar">
+            <div class="glass-card cart-card" style="display:flex; flex-direction:column; height: 100%;">
+              <div class="cart-header">
+                <h3 data-translate="cart" style="font-weight:750;">Shopping Cart</h3>
+                <span id="cart-item-count" class="cart-badge">0</span>
+              </div>
+              
+              <!-- Cart select controls -->
+              <div class="cart-controls-group" style="padding: 12px; display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--border-color);">
+                <div class="form-group" style="margin:0;">
+                  <label data-translate="selectBranch" style="font-size:10px; margin-bottom:2px;">Select Checkout Branch</label>
+                  <select class="form-control" id="cart-branch-select" style="font-size:12px; padding:6px;"></select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label data-translate="selectStaff" style="font-size:10px; margin-bottom:2px;">Select Sales Rep</label>
+                  <select class="form-control" id="cart-staff-select" style="font-size:12px; padding:6px;"></select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label data-translate="customer" style="font-size:10px; margin-bottom:2px;">Select Customer</label>
+                  <div style="display:flex; flex-direction:column; gap:4px;">
+                    <input type="text" id="cart-customer-search" class="form-control" placeholder="Search customer name/phone..." style="font-size:11px; padding:5px 8px; height:auto;" data-translate="searchCustomerPlaceholder">
+                    <div style="display:flex; gap:6px;">
+                      <select class="form-control" id="cart-customer-select" style="font-size:12px; padding:6px; flex-grow:1;"></select>
+                      <button class="qty-btn" id="btn-quick-add-customer" title="Add Customer">+</button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              
+              <!-- Scrollable cart items list -->
+              <div class="cart-items" id="cart-items-container">
+                <!-- Injected via JS -->
+              </div>
+              
+              <!-- Cart summary details panel -->
+              <div class="cart-summary">
+                <div class="checkout-summary-card">
+                  <!-- Subtotal Row -->
+                  <div class="summary-item-row">
+                    <div class="item-label">
+                      <span class="item-icon">💵</span>
+                      <span data-translate="subtotal">Subtotal</span>
+                    </div>
+                    <div class="item-value" id="cart-subtotal">$0.00</div>
+                  </div>
+
+                  <!-- Shipping Row -->
+                  <div class="summary-item-row">
+                    <div class="item-label">
+                      <span class="item-icon">🚚</span>
+                      <span data-translate="shippingFee">Shipping Fee</span>
+                    </div>
+                    <div class="item-input-wrapper">
+                      <input type="number" id="cart-shipping-fee" value="0" min="0" step="0.5">
+                      <span class="input-currency">$</span>
+                    </div>
+                  </div>
+
+                  <!-- Tax Row -->
+                  <div class="summary-item-row">
+                    <div class="item-label">
+                      <span class="item-icon">🏛️</span>
+                      <span data-translate="tax">Tax (10%)</span>
+                    </div>
+                    <div class="item-value" id="cart-tax">$0.00</div>
+                  </div>
+                </div>
+
+                <!-- Premium Redesigned Discount Panel -->
+                <div class="cart-discount-box">
+                  <div class="discount-header">
+                    <div class="discount-title">
+                      <span>🏷️</span>
+                      <span data-translate="discount">Discount</span>
+                    </div>
+                    <span id="cart-discount-val" class="discount-val-badge">$0.00</span>
+                  </div>
+                  <div class="discount-inputs-grid">
+                    <div class="discount-input-wrapper">
+                      <input type="number" id="cart-discount-percent" value="0" min="0" max="100" placeholder="0" title="Discount Percent %">
+                      <span class="discount-unit-addon">%</span>
+                    </div>
+                    <div class="discount-input-wrapper">
+                      <input type="number" id="cart-discount-fixed" value="0" min="0" step="0.1" placeholder="0.00" title="Discount USD $">
+                      <span class="discount-unit-addon">$</span>
+                    </div>
+                  </div>
+                  <div class="discount-presets-container">
+                    <div class="discount-presets-list">
+                      <button type="button" class="discount-preset-btn" data-value="5">5%</button>
+                      <button type="button" class="discount-preset-btn" data-value="10">10%</button>
+                      <button type="button" class="discount-preset-btn" data-value="15">15%</button>
+                      <button type="button" class="discount-preset-btn" data-value="20">20%</button>
+                    </div>
+                    <button type="button" class="discount-clear-btn" id="btn-clear-discount">
+                      <span>🔄</span> <span data-translate="clearDiscount">Clear</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="cart-total-box">
+                  <span data-translate="total" class="total-label">Total Due</span>
+                  <div class="total-values">
+                    <span id="cart-total-usd" class="total-usd">$0.00</span>
+                    <span id="cart-total-riel" class="total-riel">0 ៛</span>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary" id="btn-cart-checkout" style="width:100%; justify-content:center; padding:12px; font-weight:700; margin-top:10px;" data-translate="checkout">Checkout</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VIEW 3: PRODUCTS & INVENTORY -->
+      <div id="view-inventory" class="view-panel">
+        <div class="table-actions-row">
+          <button class="btn btn-primary" id="btn-add-product-modal" data-translate="addProduct">Add New Product</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary btn-sm" id="btn-stock-adj-modal" data-translate="stockAdjustment">Stock Adjustment</button>
+            <button class="btn btn-outline btn-sm" id="btn-wh-transfer-modal" data-translate="transferStock">Transfer Stock</button>
+          </div>
+        </div>
+        
+        <div class="glass-card">
+          <div class="table-header">
+            <h3 data-translate="inventory">Products Database</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table" id="inventory-table">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Image</th>
+                  <th data-translate="prodNameEn">Name (En)</th>
+                  <th>Name (Kh)</th>
+                  <th data-translate="category">Category</th>
+                  <th data-translate="sellingPrice">Price</th>
+                  <th style="text-align:center;" data-translate="stockQty">Total Stock</th>
+                  <th>Status</th>
+                  <th data-translate="action">Action</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <!-- JS Injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: MULTI-BRANCH MANAGEMENT -->
+      <div id="view-branches" class="view-panel">
+        <div class="settings-split-grid">
+          <!-- Left side: Branch Table list -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="branchList">Branches Database</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th data-translate="branchCode">Code</th>
+                    <th data-translate="branchName">Branch Name</th>
+                    <th data-translate="branchPhone">Phone</th>
+                    <th data-translate="branchManager">Manager</th>
+                    <th data-translate="status">Status</th>
+                    <th data-translate="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="branches-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right side: Add Branch profile form -->
+          <div class="glass-card" id="branch-form-card">
+            <div class="table-header">
+              <h3 id="branch-card-title" data-translate="addBranch">Register New Branch</h3>
+            </div>
+            <form id="branch-profile-form">
+              <input type="hidden" id="branch-edit-id">
+              <div class="form-group">
+                <label data-translate="branchCode">Branch Code</label>
+                <input type="text" class="form-control" id="br-form-code" required placeholder="e.g. B-BTB">
+              </div>
+              <div class="form-group">
+                <label data-translate="branchName">Branch Name (English)</label>
+                <input type="text" class="form-control" id="br-form-name" required placeholder="e.g. Battambang Branch">
+              </div>
+              <div class="form-group">
+                <label>Branch Name (Khmer)</label>
+                <input type="text" class="form-control" id="br-form-name-kh" required placeholder="ឧ. សាខាខេត្តបាត់ដំបង">
+              </div>
+              <div class="form-group">
+                <label data-translate="branchAddress">Branch Address</label>
+                <input type="text" class="form-control" id="br-form-address" required placeholder="e.g. St 3, Battambang">
+              </div>
+              <div class="checkout-method-grid" style="margin-bottom:0;">
+                <div class="form-group">
+                  <label data-translate="branchPhone">Branch Phone</label>
+                  <input type="text" class="form-control" id="br-form-phone" required placeholder="e.g. 053-999-111">
+                </div>
+                <div class="form-group">
+                  <label data-translate="branchManager">Manager Name</label>
+                  <input type="text" class="form-control" id="br-form-manager" required placeholder="Manager Fullname">
+                </div>
+              </div>
+              <div class="form-group">
+                <label data-translate="status">Status</label>
+                <select class="form-control" id="br-form-status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:10px; font-weight:700;">Save Branch</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Branch inventory stocks matrix -->
+        <div class="glass-card" style="margin-top:20px;">
+          <div class="table-header">
+            <h3 data-translate="stockByBranch">Branch Inventory</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table" id="branch-inventory-matrix-table">
+              <!-- Dynamically rendered via JS -->
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-customers" class="view-panel">
+        <div class="table-actions-row" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btn-add-customer-modal" data-translate="addCustomer">Add Customer</button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="margin:0; font-size:12px; font-weight:600; white-space:nowrap;" data-translate="filterByStaff">Filter by Staff</label>
+            <select class="form-control" id="filter-customer-staff" style="width:180px; padding:6px; font-size:12px; height:auto; margin:0;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        
+        <div class="glass-card">
+          <div class="table-header">
+            <h3 data-translate="customers">Customer Profiles (CRM)</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table" id="customers-crm-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th data-translate="customerName">Customer Name</th>
+                  <th data-translate="customerPhone">Phone Number</th>
+                  <th data-translate="customerSource">Lead Source</th>
+                  <th data-translate="assignedStaff">Assigned Staff</th>
+                  <th data-translate="rank">CRM Tier</th>
+                  <th style="text-align:center;" data-translate="ordersCount">Orders</th>
+                  <th style="text-align:right;" data-translate="outstandingDebt">Outstanding Debt</th>
+                  <th>Notes</th>
+                  <th data-translate="action">Action</th>
+                </tr>
+              </thead>
+              <tbody id="customers-crm-table-body">
+                <!-- JS Injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 6: CRM AUTO FOLLOW-UPS -->
+      <div id="view-followups" class="view-panel">
+        <!-- Kanban Headers Summary metrics -->
+        <div class="followup-metrics-row">
+          <div class="f-metric-card" id="f-card-today">
+            <span style="font-size:24px;">📅</span>
+            <div>
+              <h4 data-translate="todayFollowUps">Today's Follow-Ups</h4>
+              <div class="val" id="f-val-today">0</div>
+            </div>
+          </div>
+          <div class="f-metric-card" id="f-card-pending">
+            <span style="font-size:24px;">⏳</span>
+            <div>
+              <h4 data-translate="pendingFollowUps">Pending Follow-Ups</h4>
+              <div class="val" id="f-val-pending">0</div>
+            </div>
+          </div>
+          <div class="f-metric-card" id="f-card-completed">
+            <span style="font-size:24px;">✅</span>
+            <div>
+              <h4 data-translate="completedFollowUps">Completed Follow-Ups</h4>
+              <div class="val" id="f-val-completed">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Journey Roadmap & Alert Formula Visualizer -->
+        <div class="glass-card followup-roadmap-card" style="padding: 20px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 20px; background: rgba(99, 102, 241, 0.1); padding: 6px; border-radius: 8px; color: var(--primary);">🔄</span>
+              <h3 style="margin: 0; font-size: 13.5px; font-weight: 750; color: var(--text-primary);" data-translate="retentionRoadmapTitle">Customer Auto Follow-up & Retention System</h3>
+            </div>
+            <button id="btn-toggle-roadmap" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px 12px; height: auto; display: flex; align-items: center; gap: 6px;">
+              👁️ <span id="toggle-roadmap-text" data-translate="hideRoadmapBtn">Hide Journey Roadmap</span>
+            </button>
+          </div>
+          
+          <div id="followup-roadmap-content" style="transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden;">
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+              🎯 <span data-translate="timelineTrigger">Trigger: First Purchase (Day 0)</span>
+            </div>
+            
+            <!-- Horizontal Timeline Node Grid -->
+            <div class="roadmap-timeline-grid">
+              <!-- Node 1 -->
+              <div class="timeline-node" style="border-left-color: var(--primary);">
+                <div class="node-day">Day 0</div>
+                <div class="node-level">Level 1: Welcome & Care</div>
+                <div class="node-action-list">
+                  <div>• Record customer info</div>
+                  <div>• Send thank you message</div>
+                </div>
+                <span class="node-badge badge-new">New Customer</span>
+              </div>
+              
+              <!-- Node 2 -->
+              <div class="timeline-node" style="border-left-color: #8b5cf6;">
+                <div class="node-day">Day 3</div>
+                <div class="node-level">Level 2: Experience Check</div>
+                <div class="node-action-list">
+                  <div>• Check usage experience</div>
+                  <div>• Resolve initial issues</div>
+                </div>
+                <span class="node-badge badge-active">Active Follow-up #1</span>
+              </div>
+              
+              <!-- Node 3 -->
+              <div class="timeline-node" style="border-left-color: #ec4899;">
+                <div class="node-day">Day 8</div>
+                <div class="node-level">Level 3: Trust Building</div>
+                <div class="node-action-list">
+                  <div>• Ask for feedback</div>
+                  <div>• Provide extra guidance</div>
+                </div>
+                <span class="node-badge badge-active">Active Follow-up #2</span>
+              </div>
+              
+              <!-- Node 4 -->
+              <div class="timeline-node" style="border-left-color: #06b6d4;">
+                <div class="node-day">Day 15</div>
+                <div class="node-level">Level 4: Education & Tips</div>
+                <div class="node-action-list">
+                  <div>• Send usage tips</div>
+                  <div>• Share educational info</div>
+                </div>
+                <span class="node-badge badge-active">Active Follow-up #3</span>
+              </div>
+              
+              <!-- Node 5 -->
+              <div class="timeline-node" style="border-left-color: #f59e0b;">
+                <div class="node-day">Day 30</div>
+                <div class="node-level">Level 5: Reorder Reminder</div>
+                <div class="node-action-list">
+                  <div>• Remind stock running low</div>
+                  <div>• Suggest reordering</div>
+                </div>
+                <span class="node-badge badge-repeat">Repeat Opportunity</span>
+              </div>
+              
+              <!-- Node 6 -->
+              <div class="timeline-node" style="border-left-color: #10b981;">
+                <div class="node-day">Day 60</div>
+                <div class="node-level">Level 6: Loyalty Building</div>
+                <div class="node-action-list">
+                  <div>• Offer special discount</div>
+                  <div>• VIP membership offer</div>
+                </div>
+                <span class="node-badge badge-loyal">Loyal Customer</span>
+              </div>
+              
+              <!-- Node 7 -->
+              <div class="timeline-node" style="border-left-color: #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.01) 100%);">
+                <div class="node-day">Every 30d</div>
+                <div class="node-level">Level 7: Infinite Loop</div>
+                <div class="node-action-list">
+                  <div>• Monthly greetings</div>
+                  <div>• Special promotions</div>
+                </div>
+                <span class="node-badge badge-lifetime">Lifetime Customer</span>
+              </div>
+            </div>
+            
+            <!-- Alert Formula and Customer Journey Flowcharts -->
+            <div class="roadmap-footer-flowcharts">
+              <!-- Alert Formula Flow -->
+              <div class="flow-section">
+                <h4 style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;" data-translate="alertFormula">Auto Alert Formula</h4>
+                <div class="alert-flow-path">
+                  <div class="flow-step">Day 0 <span>(Purchase)</span></div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="flow-step">+3 Days <span>(Alert 1)</span></div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="flow-step">+5 Days <span>(Alert 2)</span></div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="flow-step">+7 Days <span>(Alert 3)</span></div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="flow-step">+15 Days <span>(Alert 4)</span></div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="flow-step">+30 Days <span>(Alert 5)</span></div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="flow-step">Every 30 Days <span>(Loop)</span></div>
+                </div>
+              </div>
+              
+              <!-- Customer Status Journey -->
+              <div class="flow-section">
+                <h4 style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;" data-translate="customerJourney">Customer Status Journey</h4>
+                <div class="journey-flow-path">
+                  <span class="journey-status status-new">New</span>
+                  <span class="journey-arrow">➔</span>
+                  <span class="journey-status status-active">Active</span>
+                  <span class="journey-arrow">➔</span>
+                  <span class="journey-status status-engaged">Engaged</span>
+                  <span class="journey-arrow">➔</span>
+                  <span class="journey-status status-repeat">Repeat Buyer</span>
+                  <span class="journey-arrow">➔</span>
+                  <span class="journey-status status-loyal">Loyal</span>
+                  <span class="journey-arrow">➔</span>
+                  <span class="journey-status status-lifetime">Lifetime</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search & Filter Controls Row -->
+        <div class="glass-card followup-controls-row" style="padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+          <div class="form-group" style="margin: 0; flex-grow: 1; min-width: 200px;">
+            <label style="font-size: 11px; margin-bottom: 4px; display: block;" data-translate="searchCustomer">Search Customer Name</label>
+            <input type="text" id="f-search-input" class="form-control" placeholder="Type customer name..." style="padding: 8px 12px; font-size: 13px; height: auto;">
+          </div>
+          <div class="form-group" style="margin: 0; min-width: 180px;">
+            <label style="font-size: 11px; margin-bottom: 4px; display: block;" data-translate="filterByStaff">Filter by Staff</label>
+            <select id="f-filter-staff" class="form-control" style="padding: 8px 12px; font-size: 13px; height: auto; margin: 0;">
+              <!-- Dynamically populated via JS -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Kanban Columns Board -->
+        <div class="followup-kanban-board">
+          
+          <!-- Column 1: Today Actions -->
+          <div class="kanban-col">
+            <div class="col-title" style="border-left-color: var(--danger);">
+              <h4 data-translate="todayFollowUps">Today's Follow-Ups</h4>
+              <span id="col-count-today" class="col-count-badge">0</span>
+            </div>
+            <div class="kanban-cards-area" id="k-cards-today">
+              <!-- JS Injected -->
+            </div>
+          </div>
+
+          <!-- Column 2: Upcoming / Pending -->
+          <div class="kanban-col">
+            <div class="col-title" style="border-left-color: var(--warning);">
+              <h4 data-translate="pendingFollowUps">Pending Follow-Ups</h4>
+              <span id="col-count-pending" class="col-count-badge">0</span>
+            </div>
+            <div class="kanban-cards-area" id="k-cards-pending">
+              <!-- JS Injected -->
+            </div>
+          </div>
+
+          <!-- Column 3: Completed Log -->
+          <div class="kanban-col">
+            <div class="col-title" style="border-left-color: var(--success);">
+              <h4 data-translate="completedFollowUps">Completed Follow-Ups</h4>
+              <span id="col-count-completed" class="col-count-badge">0</span>
+            </div>
+            <div class="kanban-cards-area" id="k-cards-completed">
+              <!-- JS Injected -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VIEW 7: EMPLOYEE TARGETS & LEADERBOARD -->
+      <div id="view-performance" class="view-panel">
+        
+        <!-- Employee Filters Row -->
+        <div class="glass-card" style="padding:16px; margin-bottom:20px;">
+          <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+            <div class="form-group" style="margin:0; min-width:180px;">
+              <label style="margin-bottom:4px; font-size:11px;">Select Employee</label>
+              <select id="perf-filter-employee" class="form-control" style="padding:6px 12px; font-size:13px;">
+                <!-- JS Injected -->
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:150px;">
+              <label style="margin-bottom:4px; font-size:11px;">Time Range</label>
+              <select id="perf-filter-range" class="form-control" style="padding:6px 12px; font-size:13px;">
+                <option value="all">All Time</option>
+                <option value="daily">Daily (Today)</option>
+                <option value="monthly">Monthly (This Month)</option>
+                <option value="yearly">Yearly (This Year)</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+            </div>
+            <div class="form-group" id="perf-custom-start-group" style="margin:0; min-width:130px; display:none;">
+              <label style="margin-bottom:4px; font-size:11px;">Start Date</label>
+              <input type="date" id="perf-filter-start" class="form-control" style="padding:6px 12px; font-size:13px;">
+            </div>
+            <div class="form-group" id="perf-custom-end-group" style="margin:0; min-width:130px; display:none;">
+              <label style="margin-bottom:4px; font-size:11px;">End Date</label>
+              <input type="date" id="perf-filter-end" class="form-control" style="padding:6px 12px; font-size:13px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Podium & Standings -->
+        <div class="settings-split-grid">
+          
+          <!-- Leaderboard stand -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="salesLeaderboard">Employee Leaderboard</h3>
+            </div>
+            <div style="padding:16px;">
+              <div class="podium-wrapper" id="leaderboard-podium">
+                <!-- Podiums generated dynamically -->
+              </div>
+              
+              <!-- Ledger leaderboard -->
+              <div class="table-responsive" style="margin-top:20px;">
+                <table class="pos-table">
+                  <thead>
+                    <tr>
+                      <th style="width:50px;">Rank</th>
+                      <th>Employee Name</th>
+                      <th>Page Name</th>
+                      <th style="text-align:center;">Orders</th>
+                      <th style="text-align:right;">Revenue</th>
+                      <th style="text-align:right;">Discount</th>
+                      <th style="text-align:right;">Profit</th>
+                      <th style="text-align:center;">Customers</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboard-standings-body">
+                    <!-- JS Injected -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Target Rules Setting (Admin Only) -->
+          <div class="glass-card" id="performance-rules-card">
+            <div class="table-header">
+              <h3 data-translate="targetSettings">Monthly Sales Target Tiers</h3>
+            </div>
+            <form id="target-rules-form" style="padding: 16px;">
+              <div class="form-group">
+                <label data-translate="unitTarget">Base Target (Units / Month)</label>
+                <input type="number" class="form-control" id="perf-target-units" required value="300">
+              </div>
+              
+              <div class="form-group" style="margin-bottom:10px;">
+                <label data-translate="tierRates">Tier Commission Rates (%)</label>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:12px; width:120px;">1 - 299 Units:</span>
+                    <input type="number" class="form-control" id="tier-rate-0" min="0" max="100" step="0.1" value="1.5" style="width:80px;">
+                    <span>%</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:12px; width:120px;">300 - 500 Units:</span>
+                    <input type="number" class="form-control" id="tier-rate-1" min="0" max="100" step="0.1" value="3.0" style="width:80px;">
+                    <span>%</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:12px; width:120px;">501 - 700 Units:</span>
+                    <input type="number" class="form-control" id="tier-rate-2" min="0" max="100" step="0.1" value="5.0" style="width:80px;">
+                    <span>%</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:12px; width:120px;">701+ Units:</span>
+                    <input type="number" class="form-control" id="tier-rate-3" min="0" max="100" step="0.1" value="7.5" style="width:80px;">
+                    <span>%</span>
+                  </div>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-secondary" style="width:100%; justify-content:center; padding:10px; font-weight:700; margin-top:14px;" data-translate="saveRules">Save Target Rules</button>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Monthly payroll ledger containing employee commissions details -->
+        <div class="glass-card" style="margin-top:20px;">
+          <div class="table-header">
+            <h3 data-translate="monthlyReport">Monthly Commission Report</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table">
+              <thead>
+                <tr>
+                  <th>Employee Name</th>
+                  <th style="text-align:center;" data-translate="unitsSold">Units Sold</th>
+                  <th style="text-align:right;" data-translate="totalSalesVal">Sales Volume</th>
+                  <th style="text-align:center;">Commission Rate</th>
+                  <th style="text-align:right;" data-translate="commissionEarned">Commission Amount</th>
+                </tr>
+              </thead>
+              <tbody id="commission-report-rows">
+                <!-- JS Injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VIEW 8: FINANCIAL LEDGER -->
+      <div id="view-finance" class="view-panel">
+        <div class="pos-categories-slider" id="finance-tabs" style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+          <span class="category-tab active" data-finance-tab="ledger">Financial Ledger</span>
+          <span class="category-tab" data-finance-tab="closing" data-translate="salesClosing">Sales Closing</span>
+        </div>
+
+        <div id="finance-tab-ledger" class="finance-tab-content">
+          <div class="table-actions-row">
+            <button class="btn btn-danger" id="btn-add-expense-modal" data-translate="addExpense">Log Operational Expense</button>
+          </div>
+
+        <div class="kpi-grid finance-kpis" style="margin-bottom:20px;">
+          <div class="kpi-card kpi-capital" style="border-left-color:var(--warning);">
+            <div class="kpi-details">
+              <h4 data-translate="startingCapital">Starting Capital</h4>
+              <div class="kpi-value" id="fin-capital-val">$0.00</div>
+              <div class="kpi-subvalue" id="fin-capital-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">🏦</div>
+          </div>
+          <div class="kpi-card kpi-revenue" style="border-left-color:var(--primary);">
+            <div class="kpi-details">
+              <h4 data-translate="salesIncome">Sales Revenue Income</h4>
+              <div class="kpi-value" id="fin-income-val">$0.00</div>
+              <div class="kpi-subvalue" id="fin-income-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">💰</div>
+          </div>
+          <div class="kpi-card kpi-deducted" style="border-left-color:#a855f7;">
+            <div class="kpi-details">
+              <h4 data-translate="actualDeductedCapital">Deducted Capital</h4>
+              <div class="kpi-value" id="fin-deducted-val">$0.00</div>
+              <div class="kpi-subvalue" id="fin-deducted-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">📉</div>
+          </div>
+          <div class="kpi-card kpi-expense" style="border-left-color:var(--danger);">
+            <div class="kpi-details">
+              <h4 data-translate="operationalExpenses">Operational Expenses (OpEx)</h4>
+              <div class="kpi-value" id="fin-expense-val">$0.00</div>
+              <div class="kpi-subvalue" id="fin-expense-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">💸</div>
+          </div>
+          <div class="kpi-card kpi-profit" style="border-left-color:#10b981;">
+            <div class="kpi-details">
+              <h4 data-translate="actualNetProfit">Actual Net Profit</h4>
+              <div class="kpi-value" id="fin-actual-profit-val">$0.00</div>
+              <div class="kpi-subvalue" id="fin-actual-profit-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">📈</div>
+          </div>
+          <div class="kpi-card kpi-capital-balance" style="border-left-color:#06b6d4;">
+            <div class="kpi-details">
+              <h4 data-translate="currentCapitalBalance">Current Capital Balance</h4>
+              <div class="kpi-value" id="fin-capital-balance-val">$0.00</div>
+              <div class="kpi-subvalue" id="fin-capital-balance-riel">0 ៛</div>
+            </div>
+            <div class="kpi-icon-wrapper">⚖️</div>
+          </div>
+        </div>
+
+        <div class="settings-split-grid">
+          <!-- Income Sales Log -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="salesIncome">Sales Revenue Income</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Date</th>
+                    <th>Staff</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody id="fin-sales-ledger">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Expenses Log -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="operationalExpenses">Operational Expenses (OpEx)</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="fin-expense-ledger">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+        
+        <!-- TAB 2: Sales Closing (Advanced Update Requirement 1) -->
+        <div id="finance-tab-closing" class="finance-tab-content" style="display:none;">
+          <div class="settings-split-grid">
+            <!-- Active Day Closing controls -->
+            <div class="glass-card">
+              <div class="table-header">
+                <h3 data-translate="closeDay">Close Daily Sales</h3>
+              </div>
+              <div style="padding:16px;">
+                <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+                  Close the active sales ledger for today. This aggregates all transaction records for your branch and generates a permanent daily closing report.
+                </p>
+                <div class="closing-report-card">
+                  <h4 style="font-weight:700;" data-translate="closingSummary">Sales Closing Summary</h4>
+                  <div class="closing-metric-grid">
+                    <div class="closing-metric">
+                      <h5 data-translate="totalSales">Total Revenue</h5>
+                      <div id="closing-active-revenue">$0.00</div>
+                    </div>
+                    <div class="closing-metric">
+                      <h5>Discount</h5>
+                      <div id="closing-active-discount">$0.00</div>
+                    </div>
+                    <div class="closing-metric">
+                      <h5 data-translate="totalVat">Total VAT</h5>
+                      <div id="closing-active-vat">$0.00</div>
+                    </div>
+                    <div class="closing-metric">
+                      <h5 data-translate="netProfit">Net Profit</h5>
+                      <div id="closing-active-profit">$0.00</div>
+                    </div>
+                    <div class="closing-metric">
+                      <h5 data-translate="numOrders">Orders</h5>
+                      <div id="closing-active-orders">0</div>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-primary" id="btn-submit-daily-closing" style="width:100%; justify-content:center; padding:12px; font-weight:700;" data-translate="closeSalesBtn">Process Daily Closing</button>
+              </div>
+            </div>
+
+            <!-- Closing Logs History -->
+            <div class="glass-card">
+              <div class="table-header">
+                <h3 data-translate="closingRecords">Closing Log Book</h3>
+              </div>
+              <div class="table-responsive" style="max-height: 400px; overflow-y:auto;">
+                <table class="pos-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Branch</th>
+                      <th>Orders</th>
+                      <th>Revenue</th>
+                      <th>Profit</th>
+                      <th>Closed By</th>
+                    </tr>
+                  </thead>
+                  <tbody id="closing-logs-table-body">
+                    <!-- JS Injected -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Monthly & Yearly closing report widgets -->
+          <div class="glass-card" style="margin-top:20px;">
+            <div class="table-header">
+              <h3 data-translate="monthlyClosing">Monthly & Yearly Closing Reports</h3>
+            </div>
+            <div style="padding:16px; display:flex; flex-wrap:wrap; gap:16px; align-items:center; border-bottom:1px solid var(--border-color);">
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:11px;">Select Month</label>
+                <input type="month" id="closing-month-input" class="form-control" style="padding:6px; font-size:12px; width:180px;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:11px;">Select Year</label>
+                <input type="number" id="closing-year-input" class="form-control" value="2026" min="2020" max="2030" style="padding:6px; font-size:12px; width:100px;">
+              </div>
+              <button class="btn btn-secondary" id="btn-generate-monthly-report" style="margin-top:14px; padding:6px 12px; font-size:12px;">Generate Monthly Close</button>
+              <button class="btn btn-outline" id="btn-generate-yearly-report" style="margin-top:14px; padding:6px 12px; font-size:12px;">Generate Yearly Close</button>
+            </div>
+            <div style="padding:16px;" id="closing-aggregate-result-panel">
+              <!-- Dynamically generated aggregate report -->
+              <span style="font-size:12px; color:var(--text-muted);">Configure parameters above to query monthly/yearly aggregated metrics.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 9: STAFF & PAYROLL MANAGER -->
+      <div id="view-staff" class="view-panel">
+        <div class="table-actions-row">
+          <button class="btn btn-primary" id="btn-add-staff-modal" data-translate="addStaff">Add Staff Member</button>
+        </div>
+        
+        <div class="glass-card">
+          <div class="table-header">
+            <h3 data-translate="staff">Staff Database</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th data-translate="staffName">Name</th>
+                  <th data-translate="role">Position</th>
+                  <th data-translate="baseSalary">Base Salary</th>
+                  <th data-translate="commissionRate">Comm. Rate (%)</th>
+                  <th data-translate="salesAttributed">Sales Volume</th>
+                  <th data-translate="commissionEarned">Comm. Earned</th>
+                  <th data-translate="action">Action</th>
+                </tr>
+              </thead>
+              <tbody id="staff-table-body">
+                <!-- JS Injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 10: REPORTS CENTER -->
+      <div id="view-reports" class="view-panel">
+        <!-- Date range selectors -->
+        <div class="glass-card" style="padding:16px; margin-bottom:20px;">
+          <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+            <div class="form-group" style="margin:0; min-width:150px;">
+              <label style="margin-bottom:4px; font-size:11px;" data-translate="startDate">Start Date</label>
+              <input type="date" id="report-start-date" class="form-control" style="padding:6px 12px; font-size:13px;">
+            </div>
+            <div class="form-group" style="margin:0; min-width:150px;">
+              <label style="margin-bottom:4px; font-size:11px;" data-translate="endDate">End Date</label>
+              <input type="date" id="report-end-date" class="form-control" style="padding:6px 12px; font-size:13px;">
+            </div>
+            <button class="btn btn-primary" id="btn-filter-reports" style="padding:8px 18px; align-self:flex-end;" data-translate="filterBtn">Query Reports</button>
+          </div>
+        </div>
+
+        <!-- Scrollable tab slider -->
+        <div class="pos-categories-slider" id="reports-tabs" style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+          <span class="category-tab active" data-report="prodReport" data-translate="prodReport">Product Valuation</span>
+          <span class="category-tab" data-report="stockLogReport" data-translate="stockLogReport">Stock Movement Log</span>
+          <span class="category-tab" data-report="dailySalesReport" data-translate="dailySalesReport">Daily Sales Chart</span>
+          <span class="category-tab" data-report="prodSalesReport" data-translate="prodSalesReport">Sales by Product</span>
+          <span class="category-tab" data-report="salesDetailsReport" data-translate="salesDetailsReport">Sales Details Ledger</span>
+          <span class="category-tab" data-report="custPayReport" data-translate="custPayReport">Customer Payments Log</span>
+          <span class="category-tab" data-report="commReport" data-translate="commReport">Staff Commission Log</span>
+          <span class="category-tab" data-report="debtReport" data-translate="debtReport">Customer Outstanding Debt</span>
+          <span class="category-tab" data-report="expenseReport" data-translate="expenseReport">Operational Expense Log</span>
+          <span class="category-tab" data-report="profitLossReport" data-translate="profitLossReport">Income Statement (P&L)</span>
+          <span class="category-tab" data-report="regReport" data-translate="regReport">Registration Log</span>
+          <span class="category-tab" data-report="voidReport" data-translate="voidReport">Voided Orders Log</span>
+        </div>
+
+        <div class="glass-card">
+          <div style="padding:12px; border-bottom:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn btn-outline btn-sm" id="btn-print-active-report">🖨️ Print</button>
+            <button class="btn btn-secondary btn-sm" id="btn-export-active-report" data-translate="exportBtn">Export CSV</button>
+          </div>
+          <div class="table-responsive" id="report-content-area">
+            <!-- Dynamic tables injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 11: SETTINGS & DEVELOPER SCHEMAS -->
+      <div id="view-settings" class="view-panel">
+        <div class="pos-categories-slider" id="settings-tabs" style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+          <span class="category-tab active" data-setting="company" data-translate="company">Company Info</span>
+          <span class="category-tab" data-setting="users" data-translate="usersList">Users List</span>
+          <span class="category-tab" data-setting="product-config" data-translate="productConfig">Categories, Brands & Units</span>
+          <span class="category-tab" data-setting="features" data-translate="featureSettings">Feature Management</span>
+          <span class="category-tab" data-setting="audit" data-translate="auditLogs">Security Audit Logs</span>
+          <span class="category-tab" data-setting="backup" data-translate="backupRestore">Backup & Restore DB</span>
+          <span class="category-tab" data-setting="firebase" data-translate="cloudSync">Cloud Database Sync</span>
+          <span class="category-tab" data-setting="docs" data-translate="devDocs">Developer Documentation</span>
+        </div>
+
+        <div id="settings-tab-content">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==================== MODALS INJECTION ==================== -->
+
+  <!-- MODAL 1: POS CHECKOUT DIALOG -->
+  <div class="modal-overlay" id="modal-checkout">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 data-translate="checkout">Process Checkout</h3>
+        <button class="qty-btn" id="btn-close-checkout">×</button>
+      </div>
+      <div class="modal-body">
+        
+        <div style="text-align: center; margin-bottom: 16px; padding: 14px; background:#0b0f19; border-radius: var(--radius-md);">
+          <span style="font-size:11px; color: var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;" data-translate="total">Total Due</span>
+          <h2 id="checkout-total-usd" style="color:var(--primary); font-size:30px; font-weight:850; margin-top:4px;">$0.00</h2>
+          <h4 id="checkout-total-riel" style="color:var(--text-secondary); font-weight:600; margin-top:2px;">0 ៛</h4>
+        </div>
+        
+        <!-- Payment Methods grid selector -->
+        <div class="form-group">
+          <label data-translate="paymentMethod">Payment Method</label>
+          <div class="checkout-method-grid">
+            <div class="checkout-method-card active" id="pay-card-cash">
+              <span style="font-size:20px;">💵</span>
+              <h5 data-translate="cash">Cash</h5>
+            </div>
+            <div class="checkout-method-card" id="pay-card-khqr">
+              <span style="font-size:20px;">📲</span>
+              <h5 data-translate="khqr">ABA Pay / KHQR</h5>
+            </div>
+            <div class="checkout-method-card" id="pay-card-bank">
+              <span style="font-size:20px;">🏦</span>
+              <h5 data-translate="bank">Bank Transfer</h5>
+            </div>
+            <div class="checkout-method-card" id="pay-card-card">
+              <span style="font-size:20px;">💳</span>
+              <h5 data-translate="card">Credit Card</h5>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cash payments received drawer -->
+        <div class="cash-container" id="checkout-cash-drawer">
+          <div class="form-group">
+            <label data-translate="cashReceived">Cash Received ($)</label>
+            <input type="number" class="form-control" id="checkout-cash-input" value="0" min="0" step="0.01" style="font-size: 16px; font-weight: 700; color: var(--primary);">
+            
+            <div style="display:flex; gap:6px; margin-top:8px;" id="cash-assist-tags">
+              <!-- Loaded via JS -->
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 0;">
+            <label data-translate="changeDue">Change Due</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px; background:#090d16; border-radius:var(--radius-sm); border: 1px solid var(--border-color);">
+              <span id="checkout-change-usd" style="font-size:15px; font-weight:800; color:var(--warning);">$0.00</span>
+              <span id="checkout-change-riel" style="font-size:12px; font-weight:600; color:var(--text-secondary);">0 ៛</span>
+            </div>
+          </div>
+
+          <div class="form-group" id="checkout-debt-warning" style="display:none; margin-top:10px; margin-bottom: 0;">
+            <label style="color:var(--warning); font-weight:700;"><span data-translate="onAccount">On Account (Debt)</span></label>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px; background:rgba(245, 158, 11, 0.05); border-radius:var(--radius-sm); border: 1px solid var(--warning);">
+              <span id="checkout-debt-usd" style="font-size:15px; font-weight:800; color:var(--warning);">$0.00</span>
+              <span id="checkout-debt-riel" style="font-size:12px; font-weight:600; color:var(--text-secondary);">0 ៛</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- KHQR Canvas Drawer -->
+        <div class="khqr-container" id="checkout-khqr-drawer" style="display:none;">
+          <canvas id="khqr-canvas" width="220" height="320" style="border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5);"></canvas>
+          <img id="checkout-custom-khqr" style="display:none; width:220px; height:auto; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5);" />
+          <div id="khqr-drawer-caption" style="font-size: 10px; color: var(--text-secondary); margin-top:10px; text-align:center;">
+            Scan code to complete transaction (Simulated ABA Pay QR)
+          </div>
+        </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btn-cancel-checkout" data-translate="cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-complete-checkout" data-translate="confirmPayment">Complete Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: INVOICE PRINT PREVIEW MODAL -->
+  <div class="modal-overlay" id="modal-receipt">
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 data-translate="printReceipt">Print Invoice</h3>
+        <button class="qty-btn" id="btn-close-receipt">×</button>
+      </div>
+      <div class="modal-body" style="padding: 16px; background:#1f2937;">
+        
+        <div class="receipt-paper" id="receipt-print-area">
+          <!-- JS Injected -->
+        </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btn-close-receipt-foot" data-translate="backToPOS">Back to POS</button>
+        <button class="btn btn-outline" id="btn-edit-invoice-settings" data-translate="customizeReceipt" style="border-color: var(--primary); color: var(--primary);">⚙️ Receipt Info</button>
+        <button class="btn btn-primary" id="btn-print-receipt-trigger">
+          <span>🖨️</span> <span data-translate="printReceipt">Print Invoice</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ADD/EDIT PRODUCT MODAL -->
+  <div class="modal-overlay" id="modal-product">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="product-modal-title" data-translate="addProduct">Add New Product</h3>
+        <button class="qty-btn" id="btn-close-product">×</button>
+      </div>
+      <form id="product-form">
+        <div class="modal-body">
+          <input type="hidden" id="product-edit-index">
+          
+          <div class="form-group">
+            <label data-translate="productImage">Product Image</label>
+            <div class="image-upload-wrapper">
+              <input type="file" id="prod-image-input" accept="image/*" style="display: none;">
+              <div class="image-upload-zone" id="prod-image-zone">
+                <div class="upload-placeholder" id="prod-image-placeholder">
+                  <span class="upload-icon">📸</span>
+                  <span data-translate="clickToUpload">Upload product image thumbnail</span>
+                </div>
+                <img id="prod-image-preview" src="" alt="Product Preview" style="display: none;">
+                <button type="button" class="remove-image-btn" id="btn-remove-prod-image" style="display: none;">×</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="sku">SKU / Code</label>
+              <input type="text" class="form-control" id="prod-sku" required placeholder="e.g. BEV-004">
+            </div>
+            <div class="form-group">
+              <label data-translate="barcode">Barcode</label>
+              <input type="text" class="form-control" id="prod-barcode" required placeholder="e.g. 8841001004">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label data-translate="prodNameKh">Product Name (Khmer)</label>
+            <input type="text" class="form-control" id="prod-name-kh" required placeholder="ឈ្មោះទំនិញភាសាខ្មែរ">
+          </div>
+          
+          <div class="form-group">
+            <label data-translate="prodNameEn">Product Name (English)</label>
+            <input type="text" class="form-control" id="prod-name-en" required placeholder="Product English Name">
+          </div>
+          
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="category">Category</label>
+              <div style="display:flex; gap:6px;">
+                <select class="form-control" id="prod-category" required style="flex-grow:1;"></select>
+                <button type="button" class="qty-btn" id="btn-quick-add-category" title="Quick Add Category" style="width:34px; height:34px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--input-bg); font-weight:bold; color:var(--text-primary); cursor:pointer;">+</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label data-translate="brand">Brand</label>
+              <div style="display:flex; gap:6px;">
+                <select class="form-control" id="prod-brand" required style="flex-grow:1;"></select>
+                <button type="button" class="qty-btn" id="btn-quick-add-brand" title="Quick Add Brand" style="width:34px; height:34px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--input-bg); font-weight:bold; color:var(--text-primary); cursor:pointer;">+</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label data-translate="unit">Unit</label>
+              <div style="display:flex; gap:6px;">
+                <select class="form-control" id="prod-unit" required style="flex-grow:1;"></select>
+                <button type="button" class="qty-btn" id="btn-quick-add-unit" title="Quick Add Unit" style="width:34px; height:34px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--input-bg); font-weight:bold; color:var(--text-primary); cursor:pointer;">+</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="costPrice">Cost Price ($)</label>
+              <input type="number" class="form-control" id="prod-cost" min="0" step="0.01" required value="0.00">
+            </div>
+            <div class="form-group">
+              <label data-translate="sellingPrice">Selling Price ($)</label>
+              <input type="number" class="form-control" id="prod-price" min="0" step="0.01" required value="0.00">
+            </div>
+            <div class="form-group">
+              <label data-translate="minStock">Alert Qty Level</label>
+              <input type="number" class="form-control" id="prod-min-stock" min="1" required value="10">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Product Description</label>
+            <textarea class="form-control" id="prod-desc" rows="2" placeholder="Describe this product details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-product" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: ADD/EDIT CRM CUSTOMER MODAL -->
+  <div class="modal-overlay" id="modal-customer">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="customer-modal-title" data-translate="addCustomer">Add Customer</h3>
+        <button class="qty-btn" id="btn-close-customer">×</button>
+      </div>
+      <form id="customer-form">
+        <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
+          <input type="hidden" id="customer-edit-index">
+          <div class="form-group">
+            <label>Customer ID (Auto-Generated)</label>
+            <input type="text" class="form-control" id="cust-id" readonly placeholder="CST-XXX" style="background: rgba(0,0,0,0.05); font-family: monospace; font-weight: bold; color: var(--text-secondary);">
+          </div>
+          <div class="form-group">
+            <label data-translate="customerName">Customer Name</label>
+            <input type="text" class="form-control" id="cust-name" required placeholder="e.g. Sopheap Meas">
+          </div>
+          <div class="form-group">
+            <label data-translate="customerPhone">Phone Number</label>
+            <input type="text" class="form-control" id="cust-phone" required placeholder="e.g. 099-333-333">
+          </div>
+          <div class="form-group">
+            <label>Facebook Link / Profile Name</label>
+            <input type="text" class="form-control" id="cust-facebook" placeholder="e.g. https://facebook.com/username or Sopheap Meas FB">
+          </div>
+          <div class="form-group">
+            <label data-translate="customerAddress">Address</label>
+            <input type="text" class="form-control" id="cust-address" required placeholder="e.g. Tuol Kork, Phnom Penh">
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="customerSource">Lead Source</label>
+              <select class="form-control" id="cust-source">
+                <option value="Walk-In">Walk-In Client</option>
+                <option value="Facebook Page">Facebook Page</option>
+                <option value="Telegram Channel">Telegram Channel</option>
+                <option value="Website">Website Link</option>
+                <option value="Referral">Agent Referral</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label data-translate="status">Status</label>
+              <select class="form-control" id="cust-status">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="assignedStaff">Assigned Staff</label>
+              <select class="form-control" id="cust-staff">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Customer Birthday</label>
+              <input type="date" class="form-control" id="cust-birthday">
+            </div>
+          </div>
+          <div class="form-group">
+            <label data-translate="notes">Customer Notes</label>
+            <input type="text" class="form-control" id="cust-notes" placeholder="Enter special delivery instructions or feedback">
+          </div>
+
+          <!-- Initial Purchase Info (To trigger follow-up schedule) -->
+          <div id="cust-purchase-section" style="border-top: 1px dashed var(--border-color); margin-top: 14px; padding-top: 12px;">
+            <h4 style="font-size: 11.5px; font-weight: bold; color: var(--primary); margin-bottom: 8px;">🛒 Initial Purchase Info (To seed Auto Follow-Up)</h4>
+            <div class="form-group">
+              <label>Product Purchased</label>
+              <select class="form-control" id="cust-product-purchased">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <div class="checkout-method-grid" style="margin-bottom:0;">
+              <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" class="form-control" id="cust-qty" min="1" value="1">
+              </div>
+              <div class="form-group">
+                <label>Purchase Date</label>
+                <input type="date" class="form-control" id="cust-purchase-date">
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-customer" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: EXPENSE RECORD MODAL -->
+  <div class="modal-overlay" id="modal-expense">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 data-translate="addExpense">Log Operational Expense</h3>
+        <button class="qty-btn" id="btn-close-expense">×</button>
+      </div>
+      <form id="expense-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label data-translate="branch">Branch</label>
+            <select class="form-control" id="exp-branch-id" required></select>
+          </div>
+          <div class="form-group">
+            <label data-translate="expenseCategory">Expense Category</label>
+            <select class="form-control" id="exp-category" required>
+              <option value="rent" data-translate="rent">Shop Rental</option>
+              <option value="electricity" data-translate="electricity">Electricity Utility</option>
+              <option value="water" data-translate="water">Water Utility</option>
+              <option value="marketing" data-translate="marketing">Advertising & Marketing</option>
+              <option value="rawMaterials" data-translate="rawMaterials">Product Procurement</option>
+              <option value="salaries" data-translate="salaries">Staff Payroll Salaries</option>
+              <option value="transportation" data-translate="transportation">Transportation & Fuel</option>
+              <option value="otherExpenses" data-translate="otherExpenses">Miscellaneous Expenses</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-translate="amount">Amount ($)</label>
+            <input type="number" class="form-control" id="exp-amount" min="0.01" step="0.01" required value="0.00">
+          </div>
+          <div class="form-group">
+            <label data-translate="description">Expense Description</label>
+            <input type="text" class="form-control" id="exp-desc" required placeholder="e.g. EDC Bill for Branch A">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-expense" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-danger" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: STAFF MEMBERS MODAL -->
+  <div class="modal-overlay" id="modal-staff">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="staff-modal-title" data-translate="addStaff">Add Staff Member</h3>
+        <button class="qty-btn" id="btn-close-staff">×</button>
+      </div>
+      <form id="staff-form">
+        <div class="modal-body">
+          <input type="hidden" id="staff-edit-id">
+          <div class="form-group">
+            <label data-translate="branch">Assign to Branch</label>
+            <select class="form-control" id="staff-form-branch" required></select>
+          </div>
+          <div class="form-group">
+            <label data-translate="staffName">Full Name</label>
+            <input type="text" class="form-control" id="staff-name" required placeholder="e.g. Sopheak Dara">
+          </div>
+          <div class="form-group">
+            <label data-translate="role">Position</label>
+            <input type="text" class="form-control" id="staff-role" required placeholder="e.g. Senior Cashier">
+          </div>
+          <div class="form-group">
+            <label data-translate="facebookPage">Facebook Page</label>
+            <input type="text" class="form-control" id="staff-fb-page" placeholder="e.g. Sopheak Dara Store">
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="baseSalary">Base Salary ($)</label>
+              <input type="number" class="form-control" id="staff-salary" min="0" step="1" required value="200">
+            </div>
+            <div class="form-group">
+              <label data-translate="commissionRate">Comm. Rate (%)</label>
+              <input type="number" class="form-control" id="staff-commission" min="0" max="100" step="0.1" required value="2.5">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-staff" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-secondary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: PAY DEBT DIALOG -->
+  <div class="modal-overlay" id="modal-pay-debt">
+    <div class="modal-card" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 data-translate="payDebt">Record Debt Payment</h3>
+        <button class="qty-btn" id="btn-close-pay-debt">×</button>
+      </div>
+      <form id="pay-debt-form">
+        <div class="modal-body">
+          <input type="hidden" id="pay-debt-customer-id">
+          <div style="margin-bottom:14px; padding:12px; background:rgba(99,102,241,0.05); border-radius:var(--radius-sm); text-align:center; border:1px solid var(--border-color);">
+            <span style="font-size:10px; color:var(--text-secondary);" data-translate="customer">Customer</span>
+            <h4 id="pay-debt-customer-name" style="font-weight:750; color:var(--text-primary); margin-top:2px;">Kiri Sok</h4>
+            <div style="font-size:12px; color:var(--warning); margin-top:6px;">
+              <span data-translate="outstandingDebt">Outstanding Debt</span>: <strong id="pay-debt-current-val">$0.00</strong>
+            </div>
+          </div>
+          <div class="form-group">
+            <label data-translate="paymentAmount">Payoff Amount ($)</label>
+            <input type="number" class="form-control" id="pay-debt-amount" min="0.01" step="0.01" required value="0.00" style="font-size:16px; font-weight:700; text-align:center; color:var(--primary);">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label data-translate="paymentMethod">Payment Method</label>
+            <select class="form-control" id="pay-debt-method">
+              <option value="cash" data-translate="cash">Cash</option>
+              <option value="khqr" data-translate="khqr">ABA Pay / KHQR</option>
+              <option value="bank" data-translate="bank">Bank Transfer</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-pay-debt" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 8: BARCODE SCAN SIMULATION MODAL -->
+  <div class="modal-overlay" id="modal-barcode">
+    <div class="modal-card" style="max-width: 360px;">
+      <div class="modal-header">
+        <h3 data-translate="scanBarcode">Simulate Barcode Scan</h3>
+        <button class="qty-btn" id="btn-close-barcode">×</button>
+      </div>
+      <form id="barcode-form">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:0;">
+            <label data-translate="barcodePlaceholder">Enter Barcode / SKU</label>
+            <input type="text" class="form-control" id="barcode-input" required placeholder="e.g. 8841001001" style="font-size:15px; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:1px;">
+            <div id="barcode-error-msg" style="color:var(--danger); font-size:11px; font-weight:600; margin-top:8px; display:none;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-barcode" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="scanBarcode">Scan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 9: STOCK ADJUSTMENT MODAL -->
+  <div class="modal-overlay" id="modal-stock-adj">
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 data-translate="stockAdjustment">Stock Adjustment</h3>
+        <button class="qty-btn" id="btn-close-stock-adj">×</button>
+      </div>
+      <form id="stock-adj-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label data-translate="branch">Select Branch</label>
+            <select class="form-control" id="adj-branch-id" required></select>
+          </div>
+          <div class="form-group">
+            <label>Select Product</label>
+            <select class="form-control" id="adj-product-sku" required></select>
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="adjType">Adjustment Type</label>
+              <select class="form-control" id="adj-type" required>
+                <option value="increase" data-translate="increase">Increase (+)</option>
+                <option value="decrease" data-translate="decrease">Decrease (-)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label data-translate="stockQty">Quantity</label>
+              <input type="number" class="form-control" id="adj-qty" min="1" required value="5">
+            </div>
+          </div>
+          <div class="form-group">
+            <label data-translate="description">Reason for Adjustment</label>
+            <input type="text" class="form-control" id="adj-reason" required placeholder="e.g. Damaged items or count correction">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-stock-adj" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-secondary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 10: BRANCH STOCK TRANSFER MODAL -->
+  <div class="modal-overlay" id="modal-wh-transfer">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 data-translate="branchTransfer">Branch Stock Transfer</h3>
+        <button class="qty-btn" id="btn-close-wh-transfer">×</button>
+      </div>
+      <form id="wh-transfer-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Product</label>
+            <select class="form-control" id="tf-product-sku" required></select>
+          </div>
+          <div class="form-group">
+            <label data-translate="transferQty">Transfer Qty</label>
+            <input type="number" class="form-control" id="tf-qty-input" min="1" required value="10">
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label data-translate="sourceWh">Source Branch (From)</label>
+              <select class="form-control" id="tf-source-branch" required></select>
+            </div>
+            <div class="form-group">
+              <label data-translate="targetWh">Target Branch (To)</label>
+              <select class="form-control" id="tf-target-branch" required></select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-wh-transfer" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="branchTransfer">Transfer Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 11: CRM FOLLOWUP DETAIL MODAL -->
+  <div class="modal-overlay" id="modal-followup">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 data-translate="followUpSchedule">Follow-Up Schedule Details</h3>
+        <button class="qty-btn" id="btn-close-followup">×</button>
+      </div>
+      <form id="followup-details-form">
+        <input type="hidden" id="f-form-id">
+        <input type="hidden" id="f-form-day">
+        <div class="modal-body">
+          <div style="margin-bottom:14px; padding:12px; background:rgba(99,102,241,0.05); border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px; color:var(--text-secondary);">
+              <span>Customer Name</span>
+              <span id="f-disp-invoice">INV-000</span>
+            </div>
+            <h4 id="f-disp-customer" style="font-weight:750; color:var(--text-primary); font-size:15px;">Kiri Sok</h4>
+            <div style="margin-top:8px; font-size:12px; color:var(--warning);" id="f-disp-task-type">Task: Satisfaction Check</div>
+          </div>
+          
+          <div class="form-group">
+            <label data-translate="assignedStaff">Assigned Sales Staff</label>
+            <select class="form-control" id="f-form-staff" required></select>
+          </div>
+          
+          <div class="form-group">
+            <label data-translate="status">Status</label>
+            <select class="form-control" id="f-form-status">
+              <option value="pending">Pending (មិនទាន់សង)</option>
+              <option value="completed">Completed (ជោគជ័យ)</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label data-translate="contactNotes">Contact Notes</label>
+            <textarea class="form-control" id="f-form-notes" rows="3" required placeholder="Enter customer response details..."></textarea>
+          </div>
+          
+          <div class="form-group" style="margin-top: 12px;">
+            <label data-translate="quickNotes" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; display: block;">Quick Note Templates</label>
+            <div id="f-quick-note-chips" class="quick-chips-grid">
+              <!-- Injected via JS based on selected language -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-followup" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL 12: CUSTOMER PURCHASE HISTORY DETAIL MODAL -->
+  <div class="modal-overlay" id="modal-customer-history">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="cust-hist-title">Customer Profile & History</h3>
+        <button class="qty-btn" id="btn-close-customer-history">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
+        
+        <!-- Tabs selector -->
+        <div class="modal-tabs">
+          <div class="modal-tab active" id="tab-cust-purchases">🛒 Purchase History</div>
+          <div class="modal-tab" id="tab-cust-timeline">🔄 CRM Retention Timeline</div>
+        </div>
+
+        <!-- Tab 1 content: Purchase History -->
+        <div id="content-cust-purchases" class="modal-tab-content active">
+          <!-- Summary Cards Row -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+            <div class="kpi-card" style="border-left-color: var(--primary); padding: 10px 14px;">
+              <div class="kpi-details">
+                <h4 style="font-size:10px; margin-bottom:2px;">Total Orders (ចំនួនដងទិញ)</h4>
+                <div class="kpi-value" id="cust-hist-total-orders" style="font-size: 18px;">0 Orders</div>
+              </div>
+              <div class="kpi-icon-wrapper" style="font-size: 14px; width: 30px; height: 30px;">🛒</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: var(--success); padding: 10px 14px;">
+              <div class="kpi-details">
+                <h4 style="font-size:10px; margin-bottom:2px;">Total Spent (ទឹកប្រាក់សរុប)</h4>
+                <div class="kpi-value" id="cust-hist-total-spent" style="font-size: 18px; color: #10b981;">$0.00</div>
+              </div>
+              <div class="kpi-icon-wrapper" style="font-size: 14px; width: 30px; height: 30px;">💰</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="pos-table" style="font-size: 11px;">
+              <thead>
+                <tr>
+                  <th>Date (ថ្ងៃខែឆ្នាំ)</th>
+                  <th>Invoice No. (លេខវិក្កយបត្រ)</th>
+                  <th style="text-align:right;">Amount (ទឹកប្រាក់)</th>
+                  <th>Payment Method</th>
+                  <th>Items Purchased (មុខទំនិញ)</th>
+                </tr>
+              </thead>
+              <tbody id="cust-hist-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 2 content: CRM Timeline -->
+        <div id="content-cust-timeline" class="modal-tab-content">
+          <div class="crm-timeline" id="cust-crm-timeline-body">
+            <!-- Dynamically populated vertical timeline nodes -->
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-close-customer-history-footer" style="width: 100%; justify-content: center;">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- CRM Notifications Dropdown Drawer -->
+  <div class="crm-notifications-dropdown" id="crm-notifications-dropdown">
+    <div class="noti-header" style="color: var(--text-primary);">
+      <span>🔔 CRM Notifications</span>
+      <span id="crm-notification-header-count" class="badge badge-success" style="background:#10b981; color:#fff;">0 New</span>
+    </div>
+    <div class="noti-body" id="crm-notifications-list">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+
+  <!-- Load Translation dictionary, Database seed variables, Formatting helper files -->
+  <script src="translations.js?v=1.1.9"></script>
+  <script src="dummyData.js?v=1.1.9"></script>
+  <script src="helpers.js?v=1.1.9"></script>
+  
+  <!-- Firebase Compat SDK from CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <!-- Core logic engine application file -->
+  <script src="app.js?v=1.1.9"></script>
+</body>
+</html>
