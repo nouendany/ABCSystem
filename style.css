@@ -3654,8 +3654,9 @@ body.light-theme .noti-item:hover {
 
 .ios-input-field-container input {
   border: none;
-  background: transparent;
-  color: var(--text-primary);
+  background: transparent !important;
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
   font-size: 15px;
   font-weight: 500;
   outline: none;
@@ -3663,6 +3664,19 @@ body.light-theme .noti-item:hover {
   margin: 0;
   width: 100%;
   caret-color: var(--primary);
+}
+
+/* Override browser autofill default white/yellow background and color */
+.ios-input-field-container input:-webkit-autofill,
+.ios-input-field-container input:-webkit-autofill:hover, 
+.ios-input-field-container input:-webkit-autofill:focus, 
+.ios-input-field-container input:-webkit-autofill:active {
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  box-shadow: inset 0 0 20px 20px transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 .ios-input-field-container input::placeholder {

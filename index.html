@@ -31,7 +31,7 @@
   <!-- Chart.js CDN for rich visual analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.2.8">
+  <link rel="stylesheet" href="style.css?v=1.2.9">
 </head>
 <body class="dark-theme">
 
@@ -80,10 +80,17 @@
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:5px; padding:13px; font-weight:700; border-radius: 12px; font-size: 14px; letter-spacing: 0.3px;" data-translate="loginBtn">Secure Login</button>
       </form>
-      <div style="text-align: center; margin-top: 24px; font-size: 11px; color: var(--text-secondary); border-top: 1px dashed var(--border-color); padding-top: 15px; line-height: 1.6;">
-        <span style="opacity: 0.7;" data-translate="developedBy">System Created By</span><br>
-        <span style="font-weight: 700; color: var(--text-primary); font-size: 12px; letter-spacing: 0.3px;">NOUEN Dany</span><br>
-        <span style="font-weight: 500; color: var(--primary); font-size: 11px;">📞 (+855) 10 955 536</span>
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; gap: 12px;">
+        <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 11px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);">
+          ND
+        </div>
+        <div style="text-align: left;">
+          <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); opacity: 0.6; font-weight: 600;" data-translate="developedBy">System Created By</div>
+          <div style="font-size: 13px; font-weight: 750; color: var(--text-primary); letter-spacing: 0.3px;">NOUEN Dany</div>
+          <a href="tel:+85510955536" style="font-size: 10.5px; color: var(--primary); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px; margin-top: 1px; transition: color 0.2s;" onmouseover="this.style.color='var(--secondary)'" onmouseout="this.style.color='var(--primary)'">
+            <span style="font-size: 10px;">📞</span> (+855) 10 955 536
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -192,7 +199,7 @@
           <span style="font-size: 9.5px; color: var(--primary); font-weight: 500; display: inline-block; margin-top: 2px;">📞 (+855) 10 955 536</span>
         </div>
         <div style="margin-top: 8px; text-align: center; font-size: 9px; color: var(--primary); font-weight: bold; opacity: 0.85;">
-          Version 1.2.8 (Build 15.06.2026)
+          Version 1.2.9 (Build 15.06.2026)
         </div>
       </div>
     </aside>
@@ -2003,15 +2010,15 @@
   </div>
 
   <!-- Load Translation dictionary, Database seed variables, Formatting helper files -->
-  <script src="translations.js?v=1.2.8"></script>
-  <script src="dummyData.js?v=1.2.8"></script>
-  <script src="helpers.js?v=1.2.8"></script>
+  <script src="translations.js?v=1.2.9"></script>
+  <script src="dummyData.js?v=1.2.9"></script>
+  <script src="helpers.js?v=1.2.9"></script>
   
   <!-- Firebase Compat SDK from CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
   <!-- Core logic engine application file -->
-  <script src="app.js?v=1.2.8"></script>
+  <script src="app.js?v=1.2.9"></script>
 </body>
 </html>
