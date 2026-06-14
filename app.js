@@ -4793,16 +4793,47 @@
 
   // 11. SETTINGS & DEVELOPER DOCUMENTATION SCHEMAS
   function initFirebaseSync() {
-    const enabled = state.companySettings.firebaseEnabled;
-    const configStr = state.companySettings.firebaseConfig;
+    // Hardcoded production Firebase configuration for automatic sync
+    const defaultFirebaseConfig = {
+      apiKey: "AIzaSyCGVfZo-Hpc-wdQv21he4Js0K3RuyZ3VQ",
+      authDomain: "abc-system-2c0e4.firebaseapp.com",
+      projectId: "abc-system-2c0e4",
+      storageBucket: "abc-system-2c0e4.firebasestorage.app",
+      messagingSenderId: "1078178677076",
+      appId: "1:1078178677076:web:b2953a455bd930460848c1",
+      measurementId: "G-QXTYZTKC6T"
+    };
 
-    if (!enabled || !configStr) {
+    // Auto-enable in production since config is hardcoded
+    const enabled = state.companySettings.firebaseEnabled !== undefined 
+      ? state.companySettings.firebaseEnabled 
+      : true; 
+
+    let configStr = state.companySettings.firebaseConfig;
+    let config;
+
+    if (configStr) {
+      try { 
+        config = JSON.parse(configStr); 
+      } catch(e) {}
+    }
+
+    if (!config) {
+      config = defaultFirebaseConfig;
+      configStr = JSON.stringify(defaultFirebaseConfig);
+      
+      // Auto-save configuration to company settings to populate Settings UI
+      state.companySettings.firebaseEnabled = true;
+      state.companySettings.firebaseConfig = configStr;
+      localStorage.setItem('abc_company_settings', JSON.stringify(state.companySettings));
+    }
+
+    if (!enabled || !config) {
       console.log("Firebase Cloud Sync is disabled.");
       return;
     }
 
     try {
-      const config = JSON.parse(configStr);
       // Initialize Firebase Compat
       if (!firebase.apps.length) {
         firebase.initializeApp(config);
