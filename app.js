@@ -4781,16 +4781,70 @@
       firebaseActive = true;
       console.log("Firebase Cloud Sync successfully initialized!");
 
+      const startListeners = (dbInstance) => {
+        const setupListener = (colName, stateKey, idKey, renderFns) => {
+          dbInstance.collection(colName).onSnapshot(snapshot => {
+            // Check if metadata has pending writes to prevent local updates overriding Firestore
+            if (snapshot.metadata.hasPendingWrites) return;
+
+            const list = [];
+            snapshot.forEach(doc => {
+              list.push(doc.data());
+            });
+
+            // Sync always, including empty arrays to support clean resets across browsers
+            state[stateKey] = list;
+            lastSyncedState[stateKey] = JSON.parse(JSON.stringify(list));
+            
+            // Save local cache
+            localStorage.setItem('abc_' + (colName === 'stock_logs' ? 'stock_logs' : colName === 'payment_logs' ? 'payment_logs' : colName), JSON.stringify(list));
+
+            // Re-render UI views
+            if (renderFns) {
+              renderFns.forEach(fn => {
+                try { fn(); } catch(e) {}
+              });
+            }
+          }, err => {
+            console.error(`Firestore listener error on ${colName}:`, err);
+          });
+        };
+
+        setupListener('users', 'users', 'id', []);
+        setupListener('branches', 'branches', 'id', [populatePOSSelects]);
+        setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects]);
+        setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
+        setupListener('staff', 'staff', 'id', [populatePOSSelects]);
+        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects]);
+        setupListener('expenses', 'expenses', 'id', [renderFinance]);
+        setupListener('stock_logs', 'stockLogs', 'id', []);
+        setupListener('payment_logs', 'paymentLogs', 'id', []);
+        setupListener('followups', 'followups', 'id', [renderFollowups]);
+
+        // Company settings listener
+        dbInstance.collection('company_settings').doc('global').onSnapshot(doc => {
+          if (doc.exists && !doc.metadata.hasPendingWrites) {
+            const settings = doc.data();
+            state.companySettings = settings;
+            localStorage.setItem('abc_company_settings', JSON.stringify(settings));
+            updateUserCardHeader();
+            updateCompanyLogoUI();
+          }
+        });
+      };
+
       // 1. One-time Migration check
       db.collection('users').limit(1).get().then(snap => {
         if (snap.empty) {
           console.log("Firestore database is empty. Running initial migration...");
           
+          const promises = [];
           const migrateCollection = (colName, items, idKey) => {
             items.forEach(item => {
               const id = item[idKey];
               if (id) {
-                db.collection(colName).doc(id).set(item).catch(e => console.error(e));
+                const p = db.collection(colName).doc(id).set(item).catch(e => console.error(e));
+                promises.push(p);
               }
             });
           };
@@ -4805,63 +4859,24 @@
           migrateCollection('stock_logs', state.stockLogs, 'id');
           migrateCollection('payment_logs', state.paymentLogs, 'id');
           migrateCollection('followups', state.followups, 'id');
-          db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
+          
+          const pSettings = db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
+          promises.push(pSettings);
+
+          Promise.all(promises).then(() => {
+            console.log("Initial migration complete. Starting listeners...");
+            startListeners(db);
+          }).catch(err => {
+            console.error("Migration promise all error:", err);
+            startListeners(db);
+          });
+        } else {
+          console.log("Firestore database already initialized. Starting listeners...");
+          startListeners(db);
         }
       }).catch(err => {
         console.error("Firestore migration check error:", err);
-      });
-
-      // 2. Setup Real-time Listeners
-      const setupListener = (colName, stateKey, idKey, renderFns) => {
-        db.collection(colName).onSnapshot(snapshot => {
-          // Check if metadata has pending writes to prevent local updates overriding Firestore
-          if (snapshot.metadata.hasPendingWrites) return;
-
-          const list = [];
-          snapshot.forEach(doc => {
-            list.push(doc.data());
-          });
-
-          if (list.length > 0) {
-            state[stateKey] = list;
-            // Update local memory sync copy to avoid infinite loops on save
-            lastSyncedState[stateKey] = JSON.parse(JSON.stringify(list));
-            
-            // Save local cache
-            localStorage.setItem('abc_' + (colName === 'stock_logs' ? 'stock_logs' : colName === 'payment_logs' ? 'payment_logs' : colName), JSON.stringify(list));
-
-            // Re-render UI views
-            if (renderFns) {
-              renderFns.forEach(fn => {
-                try { fn(); } catch(e) {}
-              });
-            }
-          }
-        }, err => {
-          console.error(`Firestore listener error on ${colName}:`, err);
-        });
-      };
-
-      setupListener('users', 'users', 'id', []);
-      setupListener('branches', 'branches', 'id', [populatePOSSelects]);
-      setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects]);
-      setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
-      setupListener('staff', 'staff', 'id', [populatePOSSelects]);
-      setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects]);
-      setupListener('expenses', 'expenses', 'id', [renderFinance]);
-      setupListener('stock_logs', 'stockLogs', 'id', []);
-      setupListener('payment_logs', 'paymentLogs', 'id', []);
-      setupListener('followups', 'followups', 'id', [renderFollowups]);
-
-      // Company settings listener
-      db.collection('company_settings').doc('global').onSnapshot(doc => {
-        if (doc.exists && !doc.metadata.hasPendingWrites) {
-          const settings = doc.data();
-          state.companySettings = settings;
-          localStorage.setItem('abc_company_settings', JSON.stringify(settings));
-          updateUserCardHeader();
-          updateCompanyLogoUI();
-        }
+        startListeners(db);
       });
 
     } catch (e) {
