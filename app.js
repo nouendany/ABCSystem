@@ -7816,6 +7816,11 @@ CREATE TABLE sale_items (
 
   // Bind main DOM event
   document.addEventListener('DOMContentLoaded', () => {
+    console.log("=== STARTUP DATABASE DIAGNOSTICS ===");
+    console.log("abc_transactions in localStorage:", localStorage.getItem('abc_transactions'));
+    console.log("abc_products in localStorage:", localStorage.getItem('abc_products'));
+    console.log("Firebase enabled:", state.companySettings ? state.companySettings.firebaseEnabled : "no settings");
+    console.log("=====================================");
     initLocalStorageData();
     initFirebaseSync();
     setupRouting();
