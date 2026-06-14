@@ -5949,7 +5949,12 @@
             // Force update settings to global config on Firebase
             const settingsPromise = db.collection('company_settings').doc('global').set(state.companySettings);
             
-            await Promise.all([...deletePromises, settingsPromise]);
+            // Force write the kept records to Firestore to guarantee they exist and avoid empty collections triggering migration on other browsers
+            const keepUsersPromise = db.collection('users').doc('USR-001').set(state.users[0]);
+            const keepBranchesPromise = db.collection('branches').doc('BR-001').set(state.branches[0]);
+            const keepCustomersPromise = db.collection('customers').doc('CST-001').set(state.customers[0]);
+            
+            await Promise.all([...deletePromises, settingsPromise, keepUsersPromise, keepBranchesPromise, keepCustomersPromise]);
           }
 
           alert(window.POS_TRANSLATIONS[state.lang].cleanSystemSuccess);
