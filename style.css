@@ -3587,7 +3587,112 @@ body.light-theme .noti-item:hover {
   background: rgba(239, 68, 68, 0.06);
 }
 
+/* iOS Grouped Input Fields Style */
+.ios-input-group {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  text-align: left;
+}
 
+.ios-input-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
 
+.ios-input-row:first-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
 
+.ios-input-row:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ios-input-icon-wrapper {
+  margin-right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  opacity: 0.85;
+}
+
+.ios-input-icon-wrapper svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.ios-input-field-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.ios-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.7px;
+  margin-bottom: 3px;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.ios-input-row:focus-within .ios-label {
+  color: var(--primary);
+}
+
+.ios-input-field-container input {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  caret-color: var(--primary);
+}
+
+.ios-input-field-container input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 400;
+}
+
+/* Password Toggle Style */
+.ios-toggle-password {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  outline: none;
+}
+
+.ios-toggle-password:hover {
+  opacity: 0.9;
+  color: var(--text-primary);
+}
+
+.ios-toggle-password svg {
+  width: 18px;
+  height: 18px;
+}
 

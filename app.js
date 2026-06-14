@@ -6327,8 +6327,24 @@ CREATE TABLE sale_items (
         updateRoadmapVisibility();
       });
     }
-
-
+    // Toggle Password Visibility
+    const btnTogglePassword = document.getElementById('btn-toggle-login-password');
+    const loginPasswordInput = document.getElementById('login-password');
+    if (btnTogglePassword && loginPasswordInput) {
+      btnTogglePassword.addEventListener('click', () => {
+        const type = loginPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        loginPasswordInput.setAttribute('type', type);
+        
+        // Toggle opacity and color of toggle button for active/inactive state feedback
+        if (type === 'text') {
+          btnTogglePassword.style.opacity = '1';
+          btnTogglePassword.style.color = 'var(--primary)';
+        } else {
+          btnTogglePassword.style.opacity = '0.6';
+          btnTogglePassword.style.color = 'var(--text-secondary)';
+        }
+      });
+    }
 
     // Modal openers
     document.getElementById('btn-add-product-modal').addEventListener('click', () => {
