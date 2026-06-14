@@ -6328,29 +6328,7 @@ CREATE TABLE sale_items (
       });
     }
 
-    // Interactive Login Logo Upload
-    const loginLogoZone = document.getElementById('login-logo-interactive-zone');
-    const loginLogoInput = document.getElementById('login-logo-upload-input');
-    
-    if (loginLogoZone && loginLogoInput) {
-      loginLogoZone.addEventListener('click', () => {
-        loginLogoInput.click();
-      });
-      
-      loginLogoInput.addEventListener('change', () => {
-        const file = loginLogoInput.files[0];
-        if (file) {
-          compressProductImage(file, (base64) => {
-            state.companySettings.logoBase64 = base64;
-            saveStateToLocalStorage();
-            updateCompanyLogoUI();
-            
-            // Log security audit log for changes to system logo
-            logAuditEvent('changeSystemLogo', `System logo updated directly from login screen`);
-          });
-        }
-      });
-    }
+
 
     // Modal openers
     document.getElementById('btn-add-product-modal').addEventListener('click', () => {
