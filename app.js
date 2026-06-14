@@ -264,12 +264,12 @@
     });
     if (usersUpdated) {
       localStorage.setItem('abc_users', JSON.stringify(state.users));
-      const savedUser = localStorage.getItem('abc_current_user');
+      const savedUser = sessionStorage.getItem('abc_current_user');
       if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
         const matched = state.users.find(u => u.id === parsedUser.id);
         if (matched) {
-          localStorage.setItem('abc_current_user', JSON.stringify(matched));
+          sessionStorage.setItem('abc_current_user', JSON.stringify(matched));
         }
       }
     }
@@ -340,7 +340,7 @@
     document.getElementById('btn-theme-toggle').innerText = state.theme === 'light' ? '☀ Light Mode' : '🌙 Dark Mode';
 
     // Active session
-    const savedUser = localStorage.getItem('abc_current_user');
+    const savedUser = sessionStorage.getItem('abc_current_user');
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       const actualUserObj = state.users.find(u => u.id === parsedUser.id);
@@ -350,7 +350,7 @@
         updateUserCardHeader();
       } else {
         state.currentUser = null;
-        localStorage.removeItem('abc_current_user');
+        sessionStorage.removeItem('abc_current_user');
         document.getElementById('login-screen').classList.add('active-login');
       }
     } else {
@@ -820,7 +820,7 @@
           return;
         }
         state.currentUser = matched;
-        localStorage.setItem('abc_current_user', JSON.stringify(matched));
+        sessionStorage.setItem('abc_current_user', JSON.stringify(matched));
         document.getElementById('login-screen').classList.remove('active-login');
         errorMsg.style.display = 'none';
         
@@ -845,7 +845,7 @@
     logoutBtn.addEventListener('click', () => {
       if (confirm(state.lang === 'km' ? 'តើអ្នកចង់ចាកចេញពីប្រព័ន្ធ?' : 'Log out from system?')) {
         state.currentUser = null;
-        localStorage.removeItem('abc_current_user');
+        sessionStorage.removeItem('abc_current_user');
         document.getElementById('login-screen').classList.add('active-login');
         state.activeView = 'view-dashboard';
       }
@@ -893,7 +893,7 @@
         // No views are accessible (e.g. view permission disabled)! Force logout.
         alert(window.POS_TRANSLATIONS[state.lang].permissionError);
         state.currentUser = null;
-        localStorage.removeItem('abc_current_user');
+        sessionStorage.removeItem('abc_current_user');
         document.getElementById('login-screen').classList.add('active-login');
         return;
       }
