@@ -214,7 +214,6 @@
   }
 
   // Database LocalStorage Seeding
-  // Database LocalStorage Seeding
   function initLocalStorageData() {
     const seed = (key, fallback) => {
       const val = localStorage.getItem(key);
@@ -223,24 +222,46 @@
       }
     };
 
-    seed('abc_users', window.POS_DUMMY_DATA.users);
-    seed('abc_branches', window.POS_DUMMY_DATA.branches);
-    seed('abc_customers', window.POS_DUMMY_DATA.customers);
+    const cleanUsers = [
+      { id: "USR-001", username: "admin", password: "admin", role: "super_admin", name: "ABC Executive Super Admin", branchId: "BR-001", position: "Chief Executive Officer", status: "active", permissions: { view: true, add: true, edit: true, delete: true, export: true, approve: true } }
+    ];
+
+    const cleanBranches = [
+      { id: "BR-001", code: "B-PP", name: "Phnom Penh HQ", nameKh: "ទីស្នាក់ការកណ្តាល ភ្នំពេញ", address: "Veng Sreng Blvd, Phnom Penh", phone: "023-888-111", manager: "Super Admin", status: "active", startingCapital: 10000 }
+    ];
+
+    const cleanCustomers = [
+      { id: "CST-001", name: "General Customer", phone: "-", address: "-", source: "Walk-In", outstandingDebt: 0.00, status: "active", notes: "Default walking client", rank: "Bronze" }
+    ];
+
+    const cleanCompanySettings = {
+      companyName: "ABC System",
+      currency: "USD",
+      defaultVatRate: 0,
+      invoicePrefix: "INV-2026-",
+      startingCapital: 10000,
+      firebaseEnabled: false,
+      firebaseConfig: ""
+    };
+
+    seed('abc_users', cleanUsers);
+    seed('abc_branches', cleanBranches);
+    seed('abc_customers', cleanCustomers);
     seed('abc_brands', window.POS_DUMMY_DATA.brands);
     seed('abc_units', window.POS_DUMMY_DATA.units);
     seed('abc_categories', window.POS_DUMMY_DATA.categories);
-    seed('abc_products', window.POS_DUMMY_DATA.products);
-    seed('abc_staff', window.POS_DUMMY_DATA.staff);
-    seed('abc_transactions', window.POS_DUMMY_DATA.transactions);
-    seed('abc_expenses', window.POS_DUMMY_DATA.expenses);
-    seed('abc_stock_logs', window.POS_DUMMY_DATA.stockLogs);
-    seed('abc_payment_logs', window.POS_DUMMY_DATA.paymentLogs);
-    seed('abc_followups', window.POS_DUMMY_DATA.followups);
-    seed('abc_commission_rules', window.POS_DUMMY_DATA.commissionRules);
-    seed('abc_company_settings', window.POS_DUMMY_DATA.companySettings);
-    seed('abc_voided_transactions', window.POS_DUMMY_DATA.voidedTransactions);
-    seed('abc_closing_logs', window.POS_DUMMY_DATA.closingLogs);
-    seed('abc_audit_logs', window.POS_DUMMY_DATA.auditLogs);
+    seed('abc_products', []);
+    seed('abc_staff', []);
+    seed('abc_transactions', []);
+    seed('abc_expenses', []);
+    seed('abc_stock_logs', []);
+    seed('abc_payment_logs', []);
+    seed('abc_followups', []);
+    seed('abc_commission_rules', {});
+    seed('abc_company_settings', cleanCompanySettings);
+    seed('abc_voided_transactions', []);
+    seed('abc_closing_logs', []);
+    seed('abc_audit_logs', []);
 
     const safeParse = (key, fallback) => {
       try {
