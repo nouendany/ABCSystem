@@ -31,7 +31,7 @@
   <!-- Chart.js CDN for rich visual analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.3.0">
+  <link rel="stylesheet" href="style.css?v=1.3.1">
 </head>
 <body class="dark-theme">
 
@@ -80,17 +80,13 @@
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:5px; padding:13px; font-weight:700; border-radius: 12px; font-size: 14px; letter-spacing: 0.3px;" data-translate="loginBtn">Secure Login</button>
       </form>
-      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 11px; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25); border: 1px solid rgba(255, 255, 255, 0.08);">
-          ND
-        </div>
-        <div style="text-align: left;">
-          <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); opacity: 0.6; font-weight: 600;" data-translate="developedBy">Developed By</div>
-          <div style="font-size: 12.5px; font-weight: 750; color: var(--text-primary); letter-spacing: 0.3px;">NOUEN Dany</div>
-          <a href="tel:010955536" style="font-size: 10px; color: var(--primary); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 3px; margin-top: 1px; transition: color 0.2s;" onmouseover="this.style.color='var(--secondary)'" onmouseout="this.style.color='var(--primary)'">
-            <span>Tel:</span> 010 955 536
-          </a>
-        </div>
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center; font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; letter-spacing: 0.2px;">
+        <span style="opacity: 0.65; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.5px;" data-translate="developedBy">Developed By</span>
+        <strong style="color: var(--text-primary); margin-left: 4px; font-weight: 700;">NOUEN Dany</strong>
+        <span style="margin: 0 6px; opacity: 0.3;">•</span>
+        <a href="tel:010955536" style="color: var(--primary); font-weight: 600; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--secondary)'" onmouseout="this.style.color='var(--primary)'">
+          Tel: 010 955 536
+        </a>
       </div>
     </div>
   </div>
@@ -199,7 +195,7 @@
           <a href="tel:010955536" style="font-size: 9.5px; color: var(--primary); font-weight: 600; display: inline-block; margin-top: 2px; text-decoration: none;">Tel: 010 955 536</a>
         </div>
         <div style="margin-top: 6px; text-align: center; font-size: 9px; color: var(--primary); font-weight: bold; opacity: 0.85;">
-          Version 1.3.0 (Build 15.06.2026)
+          Version 1.3.1 (Build 15.06.2026)
         </div>
       </div>
     </aside>
@@ -2010,15 +2006,15 @@
   </div>
 
   <!-- Load Translation dictionary, Database seed variables, Formatting helper files -->
-  <script src="translations.js?v=1.3.0"></script>
-  <script src="dummyData.js?v=1.3.0"></script>
-  <script src="helpers.js?v=1.3.0"></script>
+  <script src="translations.js?v=1.3.1"></script>
+  <script src="dummyData.js?v=1.3.1"></script>
+  <script src="helpers.js?v=1.3.1"></script>
   
   <!-- Firebase Compat SDK from CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
   <!-- Core logic engine application file -->
-  <script src="app.js?v=1.3.0"></script>
+  <script src="app.js?v=1.3.1"></script>
 </body>
 </html>
