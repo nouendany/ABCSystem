@@ -4805,7 +4805,7 @@
     };
 
     // Auto-enable in production since config is hardcoded
-    const enabled = state.companySettings.firebaseEnabled !== undefined 
+    let enabled = state.companySettings.firebaseEnabled !== undefined 
       ? state.companySettings.firebaseEnabled 
       : true; 
 
@@ -4821,6 +4821,7 @@
     if (!config) {
       config = defaultFirebaseConfig;
       configStr = JSON.stringify(defaultFirebaseConfig);
+      enabled = true; // Force enable now
       
       // Auto-save configuration to company settings to populate Settings UI
       state.companySettings.firebaseEnabled = true;
