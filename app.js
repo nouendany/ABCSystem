@@ -5865,51 +5865,101 @@
         }
       });
 
-      document.getElementById('btn-reset-prod').addEventListener('click', () => {
+      document.getElementById('btn-reset-prod').addEventListener('click', async () => {
         if (!guardAction('delete')) return;
         
         const confirmMsg = window.POS_TRANSLATIONS[state.lang].cleanSystemConfirm;
         if (!confirm(confirmMsg)) return;
 
-        // Preserve current settings
-        const savedSettings = JSON.parse(JSON.stringify(state.companySettings));
+        const btn = document.getElementById('btn-reset-prod');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = state.lang === 'km' ? 'កំពុងសម្អាតប្រព័ន្ធ... សូមរង់ចាំ' : 'Cleaning system... Please wait';
 
-        // Reset system state data
-        state.transactions = [];
-        state.expenses = [];
-        state.stockLogs = [];
-        state.paymentLogs = [];
-        state.followups = [];
-        state.staff = [];
-        state.products = [];
-        state.brands = [];
-        state.voidedTransactions = [];
-        state.closingLogs = [];
-        state.auditLogs = [];
+        try {
+          // Preserve current settings
+          const savedSettings = JSON.parse(JSON.stringify(state.companySettings));
 
-        // Retain only General Customer (CST-001)
-        state.customers = [
-          { id: "CST-001", name: "General Customer", phone: "-", address: "-", source: "Walk-In", outstandingDebt: 0.00, status: "active", notes: "Default walking client", rank: "Bronze" }
-        ];
+          // Reset system state data
+          state.transactions = [];
+          state.expenses = [];
+          state.stockLogs = [];
+          state.paymentLogs = [];
+          state.followups = [];
+          state.staff = [];
+          state.products = [];
+          state.brands = [];
+          state.voidedTransactions = [];
+          state.closingLogs = [];
+          state.auditLogs = [];
 
-        // Retain only Super Admin user
-        state.users = [
-          { id: "USR-001", username: "admin", password: "admin", role: "super_admin", name: "ABC Executive Super Admin", branchId: "BR-001", position: "Chief Executive Officer", status: "active", permissions: { view: true, add: true, edit: true, delete: true, export: true, approve: true } }
-        ];
+          // Retain only General Customer (CST-001)
+          state.customers = [
+            { id: "CST-001", name: "General Customer", phone: "-", address: "-", source: "Walk-In", outstandingDebt: 0.00, status: "active", notes: "Default walking client", rank: "Bronze" }
+          ];
 
-        // Retain only PP HQ branch
-        state.branches = [
-          { id: "BR-001", code: "B-PP", name: "Phnom Penh HQ", nameKh: "ទីស្នាក់ការកណ្តាល ភ្នំពេញ", address: "Veng Sreng Blvd, Phnom Penh", phone: "023-888-111", manager: "Super Admin", status: "active", startingCapital: savedSettings.startingCapital || 10000 }
-        ];
+          // Retain only Super Admin user
+          state.users = [
+            { id: "USR-001", username: "admin", password: "admin", role: "super_admin", name: "ABC Executive Super Admin", branchId: "BR-001", position: "Chief Executive Officer", status: "active", permissions: { view: true, add: true, edit: true, delete: true, export: true, approve: true } }
+          ];
 
-        // Restore saved settings
-        state.companySettings = savedSettings;
+          // Retain only PP HQ branch
+          state.branches = [
+            { id: "BR-001", code: "B-PP", name: "Phnom Penh HQ", nameKh: "ទីស្នាក់ការកណ្តាល ភ្នំពេញ", address: "Veng Sreng Blvd, Phnom Penh", phone: "023-888-111", manager: "Super Admin", status: "active", startingCapital: savedSettings.startingCapital || 10000 }
+          ];
 
-        // Save fresh state
-        saveStateToLocalStorage();
+          // Restore saved settings
+          state.companySettings = savedSettings;
 
-        alert(window.POS_TRANSLATIONS[state.lang].cleanSystemSuccess);
-        window.location.reload();
+          // Save fresh state locally
+          saveStateToLocalStorage();
+
+          // Delete from Firebase if active and wait for completion before reload
+          if (state.firebaseDb) {
+            const db = state.firebaseDb;
+            const collectionsToClean = [
+              { name: 'users', keepId: 'USR-001' },
+              { name: 'branches', keepId: 'BR-001' },
+              { name: 'customers', keepId: 'CST-001' },
+              { name: 'products' },
+              { name: 'staff' },
+              { name: 'transactions' },
+              { name: 'expenses' },
+              { name: 'stock_logs' },
+              { name: 'payment_logs' },
+              { name: 'followups' }
+            ];
+
+            const deletePromises = collectionsToClean.map(async col => {
+              const snap = await db.collection(col.name).get();
+              const batch = db.batch();
+              let count = 0;
+              snap.forEach(doc => {
+                if (col.keepId && doc.id === col.keepId) {
+                  return;
+                }
+                batch.delete(doc.ref);
+                count++;
+              });
+              if (count > 0) {
+                await batch.commit();
+              }
+            });
+
+            // Force update settings to global config on Firebase
+            const settingsPromise = db.collection('company_settings').doc('global').set(state.companySettings);
+            
+            await Promise.all([...deletePromises, settingsPromise]);
+          }
+
+          alert(window.POS_TRANSLATIONS[state.lang].cleanSystemSuccess);
+          window.location.reload();
+        } catch (error) {
+          console.error("Error cleaning production database:", error);
+          alert("Error cleaning database: " + error.message);
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
       });
 
     } else if (tab === 'firebase') {
