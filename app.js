@@ -489,9 +489,9 @@
         c.timeline = entries;
       }
     });
-    
     localStorage.setItem('abc_followups', JSON.stringify(state.followups));
     localStorage.setItem('abc_customers', JSON.stringify(state.customers));
+    try { cleanupOldSelfies(); } catch(e) {}
   }
 
   function saveStateToLocalStorage() {
@@ -4907,7 +4907,7 @@
         setupListener('payment_logs', 'paymentLogs', 'id', []);
         setupListener('followups', 'followups', 'id', [renderFollowups]);
         setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
-        setupListener('attendance', 'attendance', 'id', [renderAttendanceLogs, renderHRDashboard]);
+        setupListener('attendance', 'attendance', 'id', [cleanupOldSelfies, renderAttendanceLogs, renderHRDashboard]);
         setupListener('leave_requests', 'leaveRequests', 'id', [renderLeaveRequests, renderHRDashboard]);
 
         // Company settings listener
@@ -8060,6 +8060,13 @@ CREATE TABLE sale_items (
         renderAttendanceLogs();
       });
     }
+
+    const btnSendReport = document.getElementById('btn-send-daily-report');
+    if (btnSendReport) {
+      btnSendReport.addEventListener('click', () => {
+        sendDailySummaryReport();
+      });
+    }
   }
 
   function openEmployeeModal(empId) {
@@ -8442,11 +8449,15 @@ CREATE TABLE sale_items (
     }
   }
 
+
+
   function populateHRSettingsForm() {
     const settings = state.companySettings || {};
     
     document.getElementById('hr-settings-token').value = settings.hrTelegramBotToken || '';
     document.getElementById('hr-settings-username').value = settings.hrTelegramBotUsername || '';
+    const grpIdEl = document.getElementById('hr-settings-group-id');
+    if (grpIdEl) grpIdEl.value = settings.hrTelegramGroupId || '';
     document.getElementById('hr-settings-lat').value = settings.hrOfficeLatitude || '';
     document.getElementById('hr-settings-lng').value = settings.hrOfficeLongitude || '';
     document.getElementById('hr-settings-radius').value = settings.hrOfficeRadius || '100';
@@ -8463,6 +8474,8 @@ CREATE TABLE sale_items (
     if (!guardAction('edit')) return;
     const token = document.getElementById('hr-settings-token').value.trim();
     const username = document.getElementById('hr-settings-username').value.trim();
+    const grpIdEl = document.getElementById('hr-settings-group-id');
+    const groupId = grpIdEl ? grpIdEl.value.trim() : '';
     const lat = parseFloat(document.getElementById('hr-settings-lat').value) || 0;
     const lng = parseFloat(document.getElementById('hr-settings-lng').value) || 0;
     const radius = parseInt(document.getElementById('hr-settings-radius').value) || 100;
@@ -8471,6 +8484,7 @@ CREATE TABLE sale_items (
 
     state.companySettings.hrTelegramBotToken = token;
     state.companySettings.hrTelegramBotUsername = username;
+    state.companySettings.hrTelegramGroupId = groupId;
     state.companySettings.hrOfficeLatitude = lat;
     state.companySettings.hrOfficeLongitude = lng;
     state.companySettings.hrOfficeRadius = radius;
@@ -8479,6 +8493,139 @@ CREATE TABLE sale_items (
 
     saveStateToLocalStorage();
     alert("HR and Bot configurations saved successfully!");
+  }
+
+  function cleanupOldSelfies() {
+    if (!state.attendance || state.attendance.length === 0) return;
+
+    // Calculate cutoff date: current local date minus 45 days (1 month 15 days)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 45);
+    
+    // Get date string in YYYY-MM-DD format based on local time
+    const year = cutoffDate.getFullYear();
+    const month = String(cutoffDate.getMonth() + 1).padStart(2, '0');
+    const day = String(cutoffDate.getDate()).padStart(2, '0');
+    const cutoffDateStr = `${year}-${month}-${day}`;
+
+    let changed = false;
+    state.attendance.forEach(log => {
+      if (log.date && log.date < cutoffDateStr) {
+        if (log.checkIn && log.checkIn.selfieUrl) {
+          log.checkIn.selfieUrl = "";
+          changed = true;
+        }
+        if (log.checkOut && log.checkOut.selfieUrl) {
+          log.checkOut.selfieUrl = "";
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      console.log(`Auto-cleared old selfies (older than 45 days, cutoff: ${cutoffDateStr}). Saving updates to database...`);
+      saveStateToLocalStorage();
+    }
+  }
+
+  function sendDailySummaryReport() {
+    const token = state.companySettings.hrTelegramBotToken;
+    const groupId = state.companySettings.hrTelegramGroupId;
+
+    if (!token) {
+      alert(state.lang === 'en' ? "Please configure Telegram Bot Token in Settings first!" : "សូមកំណត់លេខកូដសម្ងាត់ Telegram Bot (Token) ក្នុង Settings ជាមុនសិន!");
+      return;
+    }
+    if (!groupId) {
+      alert(state.lang === 'en' ? "Please configure Telegram Group ID in Settings first!" : "សូមកំណត់ ID គ្រុប Telegram ក្នុង Settings ជាមុនសិន!");
+      return;
+    }
+
+    // Get selected filter date, fallback to today
+    let dateStr = document.getElementById('hr-attendance-date-filter').value;
+    if (!dateStr) {
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth() + 1).padStart(2, '0');
+      const d = String(today.getDate()).padStart(2, '0');
+      dateStr = `${y}-${m}-${d}`;
+    }
+
+    // Find logs for this date
+    const dayLogs = state.attendance.filter(log => log.date === dateStr);
+    const totalEmployees = state.employees.filter(e => e.status !== 'Resigned' && e.status !== 'Suspended').length;
+    
+    let presentCount = 0;
+    let lateCount = 0;
+    let checkInList = [];
+    let leaveList = [];
+
+    dayLogs.forEach(log => {
+      const emp = state.employees.find(e => e.id === log.employeeId) || {};
+      const empName = emp.fullName || log.employeeName || 'Unknown';
+      if (log.checkIn) {
+        presentCount++;
+        const statusStr = log.checkIn.status === 'Late' ? '🔴 (Late)' : '🟢 (On Time)';
+        if (log.checkIn.status === 'Late') lateCount++;
+        checkInList.push(`- ${empName} (${log.employeeId}): ចូលម៉ោង ${log.checkIn.time} ${statusStr}`);
+      }
+    });
+
+    // Find approved leaves for this date
+    state.leaveRequests.forEach(req => {
+      if (req.status === 'Approved' && dateStr >= req.startDate && dateStr <= req.endDate) {
+        const emp = state.employees.find(e => e.id === req.employeeId) || {};
+        const empName = emp.fullName || req.employeeName || 'Unknown';
+        leaveList.push(`- ${empName} (${req.employeeId}): ច្បាប់ ${req.leaveType}`);
+      }
+    });
+
+    const absentCount = Math.max(0, totalEmployees - presentCount - leaveList.length);
+
+    // Build Khmer/English message text
+    let messageText = `📊 **របាយការណ៍វត្តមានប្រចាំថ្ងៃ (Daily Attendance Report)**\n`;
+    messageText += `📅 កាលបរិច្ឆេទ៖ ${dateStr}\n`;
+    messageText += `━━━━━━━━━━━━━━━━━━━\n`;
+    messageText += `👥 បុគ្គលិកសរុប៖ ${totalEmployees} នាក់\n`;
+    messageText += `✅ វត្តមាន (Present)៖ ${presentCount} នាក់ (🔴 យឺត ${lateCount})\n`;
+    messageText += `📝 ច្បាប់ (On Leave)៖ ${leaveList.length} នាក់\n`;
+    messageText += `❌ អវត្តមាន (Absent)៖ ${absentCount} នាក់\n\n`;
+
+    if (checkInList.length > 0) {
+      messageText += `📥 **បញ្ជីឈ្មោះវត្តមាន (Present List):**\n`;
+      messageText += checkInList.join('\n') + `\n\n`;
+    }
+
+    if (leaveList.length > 0) {
+      messageText += `📝 **បញ្ជីឈ្មោះសុំច្បាប់ (Leave List):**\n`;
+      messageText += leaveList.join('\n') + `\n\n`;
+    }
+
+    messageText += `📢 *របាយការណ៍ផ្ញើចេញដោយស្វ័យប្រវត្តពីប្រព័ន្ធ ABC System*`;
+
+    // Send via fetch
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: groupId,
+        text: messageText,
+        parse_mode: 'Markdown'
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        alert(state.lang === 'en' ? "Daily summary report sent successfully to Telegram Group!" : "បានផ្ញើរបាយការណ៍សង្ខេបប្រចាំថ្ងៃទៅកាន់គ្រុប Telegram រួចរាល់!");
+      } else {
+        console.error("Telegram send summary error:", data);
+        alert((state.lang === 'en' ? "Failed to send summary report to Telegram: " : "ការផ្ញើរបាយការណ៍សង្ខេបទៅ Telegram បានបរាជ័យ៖ ") + data.description);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert(state.lang === 'en' ? "Failed to send summary report to Telegram. Please check settings." : "ការផ្ញើរបាយការណ៍សង្ខេបទៅ Telegram បានបរាជ័យ។ សូមពិនិត្យមើលការកំណត់ឡើងវិញ។");
+    });
   }
 
   function notifyEmployeeTelegram(telegramId, text) {

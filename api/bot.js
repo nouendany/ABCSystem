@@ -393,6 +393,14 @@ export default async function handler(req, res) {
             text: `✅ **ចូលការងារបានជោគជ័យ!**\n\n👤 ឈ្មោះ៖ ${employee.fullName}\n📅 កាលបរិច្ឆេទ៖ ${dateStr}\n⏰ ម៉ោងចូល៖ ${timeStr}\n📍 ស្ថានភាព៖ ${checkInStatus === "Late" ? "🔴 យឺតការងារ (Late)" : "🟢 ទាន់ម៉ោង (On Time)"}`,
             reply_markup: menuMarkup
           });
+
+          if (settings.hrTelegramGroupId) {
+            const checkInText = `📢 **ការជូនដំណឹងវត្តមាន (Check-In)**\n\n👤 ឈ្មោះ៖ ${employee.fullName} (${employee.id})\n📅 កាលបរិច្ឆេទ៖ ${dateStr}\n⏰ ម៉ោងចូល៖ ${timeStr}\n📍 ស្ថានភាព៖ ${checkInStatus === "Late" ? "🔴 យឺតការងារ (Late)" : "🟢 ទាន់ម៉ោង (On Time)"}`;
+            await sendTelegram(token, "sendMessage", {
+              chat_id: settings.hrTelegramGroupId,
+              text: checkInText
+            });
+          }
         } else {
           // Check-out
           const attSnap = await getDoc(docRef);
@@ -441,6 +449,14 @@ export default async function handler(req, res) {
             text: `✅ **ចេញការងារបានជោគជ័យ!**\n\n📥 ម៉ោងចូល៖ ${checkInTime}\n📤 ម៉ោងចេញ៖ ${timeStr}\n⏱️ ម៉ោងធ្វើការ៖ ${workingHours} ម៉ោង\n⏱️ ម៉ោង OT៖ ${overtime} ម៉ោង`,
             reply_markup: menuMarkup
           });
+
+          if (settings.hrTelegramGroupId) {
+            const checkOutText = `📢 **ការជូនដំណឹងវត្តមាន (Check-Out)**\n\n👤 ឈ្មោះ៖ ${employee.fullName} (${employee.id})\n📅 កាលបរិច្ឆេទ៖ ${dateStr}\n📥 ម៉ោងចូល៖ ${checkInTime}\n📤 ម៉ោងចេញ៖ ${timeStr}\n⏱️ ម៉ោងធ្វើការ៖ ${workingHours} ម៉ោង\n⏱️ ម៉ោង OT៖ ${overtime} ម៉ោង`;
+            await sendTelegram(token, "sendMessage", {
+              chat_id: settings.hrTelegramGroupId,
+              text: checkOutText
+            });
+          }
         }
 
         await setDoc(sessionDocRef, { action: null });
@@ -538,6 +554,14 @@ export default async function handler(req, res) {
           text: `✅ **ការស្នើសុំច្បាប់ត្រូវបានបញ្ជូនជោគជ័យ!**\n\n👤 ឈ្មោះ៖ ${employee.fullName}\n📝 ប្រភេទ៖ ${session.leaveType}\n📅 ចាប់ផ្តើម៖ ${session.startDate}\n📅 បញ្ចប់៖ ${session.endDate}\n✍️ មូលហេតុ៖ ${text}\n\n*រង់ចាំការអនុម័តពី Admin/Manager*`,
           reply_markup: menuMarkup
         });
+
+        if (settings.hrTelegramGroupId) {
+          const leaveNotifyText = `📢 **ការស្នើសុំច្បាប់ថ្មី (New Leave Request)**\n\n👤 ឈ្មោះ៖ ${employee.fullName} (${employee.id})\n📝 ប្រភេទ៖ ${session.leaveType}\n📅 ចាប់ផ្តើម៖ ${session.startDate}\n📅 បញ្ចប់៖ ${session.endDate}\n✍️ មូលហេតុ៖ ${text}`;
+          await sendTelegram(token, "sendMessage", {
+            chat_id: settings.hrTelegramGroupId,
+            text: leaveNotifyText
+          });
+        }
 
         await setDoc(sessionDocRef, { action: null });
         return res.status(200).send("OK");

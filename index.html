@@ -1396,6 +1396,9 @@
               <input type="date" id="hr-attendance-date-filter" class="form-control" style="min-height:36px; padding:6px 12px; font-size:13px;">
             </div>
             <button class="btn btn-secondary btn-sm" id="btn-clear-attendance-filter" data-translate="all">All Dates</button>
+            <button class="btn btn-primary btn-sm" id="btn-send-daily-report" data-translate="sendDailyReport" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+              ✈️ Send Daily Summary to Telegram
+            </button>
           </div>
 
           <div class="glass-card">
@@ -1468,6 +1471,11 @@
               <div class="form-group">
                 <label data-translate="botUsername">Telegram Bot Username</label>
                 <input type="text" class="form-control" id="hr-settings-username" placeholder="e.g. @MyCompanyAttendanceBot">
+              </div>
+              <div class="form-group">
+                <label data-translate="telegramGroupId">Telegram Group/Channel ID (for Admin Reports)</label>
+                <input type="text" class="form-control" id="hr-settings-group-id" placeholder="e.g. -100123456789">
+                <small style="color: var(--text-muted); font-size: 11px;" data-translate="groupIdHelp">Add Bot as Admin to the group, get Chat ID starting with minus (-), e.g. -100123456789</small>
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">

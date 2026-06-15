@@ -372,7 +372,12 @@ window.POS_TRANSLATIONS = {
     gender: "Gender",
     phone: "Phone",
     employeeName: "Employee Name",
-    addEmployee: "Add Employee"
+    addEmployee: "Add Employee",
+    telegramGroupId: "Telegram Group/Channel ID (for Admin Reports)",
+    groupIdHelp: "Add the Bot as an Admin to the group, get the Chat ID starting with a minus (-), e.g., -100123456789.",
+    sendDailyReport: "Send Daily Summary to Telegram",
+    reportSentSuccess: "Daily summary report sent successfully to Telegram Group!",
+    reportSentFail: "Failed to send summary report to Telegram. Please check settings."
   },
   km: {
     // Navigation & General
@@ -744,6 +749,11 @@ window.POS_TRANSLATIONS = {
     gender: "ភេទ",
     phone: "លេខទូរស័ព្ទ",
     employeeName: "ឈ្មោះបុគ្គលិក",
-    addEmployee: "បន្ថែមបុគ្គលិក"
+    addEmployee: "បន្ថែមបុគ្គលិក",
+    telegramGroupId: "ID គ្រុប/ឆានែល Telegram (សម្រាប់របាយការណ៍)",
+    groupIdHelp: "សូមបន្ថែម Bot ចូលក្នុងគ្រុបជា Admin រួចដាក់ ID គ្រុបដែលចាប់ផ្តើមដោយសញ្ញាដក (-), ឧទាហរណ៍ -100123456789",
+    sendDailyReport: "ផ្ញើរបាយការណ៍សង្ខេបទៅ Telegram",
+    reportSentSuccess: "បានផ្ញើរបាយការណ៍សង្ខេបប្រចាំថ្ងៃទៅកាន់គ្រុប Telegram រួចរាល់!",
+    reportSentFail: "ការផ្ញើរបាយការណ៍សង្ខេបទៅ Telegram បានបរាជ័យ។ សូមពិនិត្យមើលការកំណត់ឡើងវិញ។"
   }
 };
