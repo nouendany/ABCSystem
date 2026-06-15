@@ -316,6 +316,7 @@ export default async function handler(req, res) {
             reply_markup: menuMarkup
           });
           await setDoc(sessionDocRef, { action: null });
+        } else {
           // Inside Radius -> Send Web App Camera Button
           const nextAction = session.action === "waiting_location_checkin" ? "waiting_selfie_checkin" : "waiting_selfie_checkout";
           await setDoc(sessionDocRef, {
