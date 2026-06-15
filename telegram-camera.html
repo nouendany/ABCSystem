@@ -11,81 +11,64 @@
   
   <style>
     :root {
-      --bg-color: #f4f6f9;
-      --card-bg: #ffffff;
-      --text-color: #1e293b;
-      --text-secondary: #64748b;
-      --primary: #10b981; /* Default emerald green */
-      --primary-hover: #059669;
-      --btn-blue: #3b82f6;
-      --btn-blue-hover: #2563eb;
-      --border-color: #e2e8f0;
+      --bg-color: #0b0f19; /* Default dark page background */
+      --card-bg: #131926; /* Dark card background */
+      --text-color: #f8fafc;
+      --text-secondary: #94a3b8;
+      --primary-blue: #2563eb;
+      --primary-blue-hover: #1d4ed8;
+      --border-color: #1e293b;
       --radius: 16px;
     }
 
-    /* Support Telegram themes dynamically */
-    body.telegram {
-      background-color: var(--tg-theme-bg-color, #f4f6f9);
-      color: var(--tg-theme-text-color, #1e293b);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    /* Light Theme Settings matching the user's white app mockup */
     body {
       font-family: 'Outfit', 'Koh Santepheap', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      background-color: #eaecef; /* Light grey background */
+      color: #1e293b;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 16px;
-      overflow-x: hidden;
+      overflow: hidden;
+      margin: 0;
     }
 
     .app-container {
       width: 100%;
-      max-width: 420px;
-      background-color: var(--card-bg);
+      max-width: 380px;
+      background-color: #f8fafc; /* Clean light slate white card */
       border-radius: var(--radius);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-      border: 1px solid var(--border-color);
-      padding: 20px;
+      border: 1px solid #e2e8f0;
+      padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
 
     .header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 12px;
+      margin-bottom: 4px;
     }
 
     .title-label {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
-      color: var(--text-color);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      color: #0f172a;
     }
 
     .toggle-camera-btn {
-      background: none;
+      background: #ffffff;
       border: 1px solid #3b82f6;
       color: #3b82f6;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       font-family: inherit;
@@ -96,17 +79,28 @@
       background-color: rgba(59, 130, 246, 0.05);
     }
 
+    /* Camera display frame matches user mockup */
+    .camera-frame {
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
     .camera-viewport {
       position: relative;
       width: 100%;
       aspect-ratio: 4/3;
       background-color: #000000;
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border-color);
     }
 
     video {
@@ -129,13 +123,14 @@
       object-fit: cover;
       display: none;
       z-index: 2;
-      border-radius: 12px;
+      border-radius: 8px;
     }
 
+    /* Blue buttons matching user mockup */
     .btn {
       width: 100%;
-      padding: 12px;
-      border-radius: 10px;
+      padding: 14px;
+      border-radius: 8px;
       font-size: 15px;
       font-weight: 700;
       border: none;
@@ -149,38 +144,28 @@
     }
 
     .btn-blue {
-      background-color: var(--btn-blue);
+      background-color: #2563eb;
       color: #ffffff;
     }
 
     .btn-blue:hover {
-      background-color: var(--btn-blue-hover);
+      background-color: #1d4ed8;
     }
 
     .btn-submit {
       background-color: #cbd5e1;
-      color: #64748b;
+      color: #94a3b8;
       cursor: not-allowed;
     }
 
     .btn-submit.active {
-      background-color: var(--btn-blue);
+      background-color: #2563eb;
       color: #ffffff;
       cursor: pointer;
     }
 
     .btn-submit.active:hover {
-      background-color: var(--btn-blue-hover);
-    }
-
-    .btn-submit.checkout-active {
-      background-color: #ef4444;
-      color: #ffffff;
-      cursor: pointer;
-    }
-
-    .btn-submit.checkout-active:hover {
-      background-color: #dc2626;
+      background-color: #1d4ed8;
     }
 
     /* Loading and Overlay States */
@@ -190,7 +175,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(255, 255, 255, 0.95);
       z-index: 99;
       display: none;
       flex-direction: column;
@@ -200,10 +185,10 @@
     }
 
     .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid var(--border-color);
-      border-top: 4px solid var(--btn-blue);
+      width: 44px;
+      height: 44px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #2563eb;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -214,23 +199,23 @@
     }
 
     .status-msg {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
-      color: var(--text-color);
+      color: #1e293b;
       text-align: center;
       padding: 0 24px;
     }
 
     .success-checkmark {
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background-color: rgba(16, 185, 129, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--primary);
-      font-size: 40px;
+      color: #10b981;
+      font-size: 36px;
       animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
@@ -245,24 +230,26 @@
   <div class="app-container">
     <div class="header-row">
       <div class="title-label" id="title-text">
-        📸 រូបភាពវត្តមាន
+        រូបភាព Check In
       </div>
       <button class="toggle-camera-btn" id="btn-toggle-camera">Use Back Camera</button>
     </div>
 
-    <div class="camera-viewport">
-      <video id="video" autoplay playsinline></video>
-      <img id="photo-preview" alt="Selfie Preview">
+    <div class="camera-frame">
+      <div class="camera-viewport">
+        <video id="video" autoplay playsinline></video>
+        <img id="photo-preview" alt="Selfie Preview">
+      </div>
     </div>
 
     <!-- Take Photo Action -->
     <button class="btn btn-blue" id="btn-capture">
-      📷 ថតរូប (Take Photo)
+      Take Photo
     </button>
 
     <!-- Save & Confirm Attendance -->
     <button class="btn btn-submit" id="btn-submit" disabled>
-      ផ្ញើវត្តមានការងារ (Send Attendance)
+      Check In Now
     </button>
   </div>
 
@@ -270,7 +257,7 @@
   <div class="overlay" id="overlay">
     <div class="spinner" id="overlay-spinner"></div>
     <div class="success-checkmark" id="overlay-success" style="display: none;">✓</div>
-    <div class="status-msg" id="overlay-msg">កំពុងរៀបចំកាមេរ៉ា...</div>
+    <div class="status-msg" id="overlay-msg">Starting camera...</div>
   </div>
 
   <script>
@@ -279,7 +266,6 @@
     if (tg) {
       tg.ready();
       tg.expand();
-      document.body.classList.add('telegram');
     }
 
     // Parse URL queries
@@ -307,11 +293,11 @@
 
     // Set title and button text based on action
     if (action === 'checkout') {
-      titleText.innerHTML = "📸 រូបភាព Check Out";
-      submitBtn.innerHTML = "ចាកចេញពីការងារ (Check Out Now)";
+      titleText.innerHTML = "រូបភាព Check Out";
+      submitBtn.innerHTML = "Check Out Now";
     } else {
-      titleText.innerHTML = "📸 រូបភាព Check In";
-      submitBtn.innerHTML = "ចូលបម្រើការងារ (Check In Now)";
+      titleText.innerHTML = "រូបភាព Check In";
+      submitBtn.innerHTML = "Check In Now";
     }
 
     // Start video stream
@@ -320,7 +306,7 @@
         currentStream.getTracks().forEach(track => track.stop());
       }
 
-      showLoading("កំពុងបើកកាមេរ៉ា...");
+      showLoading("Starting camera...");
 
       const constraints = {
         video: {
@@ -345,7 +331,7 @@
         hideLoading();
       } catch (err) {
         console.error("Camera access error:", err);
-        showError("មិនអាចបើកកាមេរ៉ាបានទេ! សូមពិនិត្យមើលសិទ្ធិអនុញ្ញាតកាមេរ៉ាក្នុងកម្មវិធី Telegram របស់លោកអ្នក។");
+        showError("Unable to access camera! Please make sure Telegram has camera permissions enabled in your phone settings.");
       }
     }
 
@@ -359,8 +345,8 @@
       video.style.display = 'block';
       capturedBase64 = null;
       submitBtn.disabled = true;
-      submitBtn.classList.remove('active', 'checkout-active');
-      captureBtn.innerHTML = "📷 ថតរូប (Take Photo)";
+      submitBtn.classList.remove('active');
+      captureBtn.innerHTML = "Take Photo";
 
       startCamera();
     });
@@ -373,8 +359,8 @@
         video.style.display = 'block';
         capturedBase64 = null;
         submitBtn.disabled = true;
-        submitBtn.classList.remove('active', 'checkout-active');
-        captureBtn.innerHTML = "📷 ថតរូប (Take Photo)";
+        submitBtn.classList.remove('active');
+        captureBtn.innerHTML = "Take Photo";
       } else {
         // Capture photo
         const canvas = document.createElement('canvas');
@@ -396,13 +382,9 @@
         photoPreview.style.display = 'block';
         video.style.display = 'none';
         
-        captureBtn.innerHTML = "🔄 ថតឡើងវិញ (Retake)";
+        captureBtn.innerHTML = "Retake";
         submitBtn.disabled = false;
-        if (action === 'checkout') {
-          submitBtn.classList.add('checkout-active');
-        } else {
-          submitBtn.classList.add('active');
-        }
+        submitBtn.classList.add('active');
       }
     });
 
@@ -410,7 +392,7 @@
     submitBtn.addEventListener('click', async () => {
       if (!capturedBase64 || !employeeId || !chatId) return;
 
-      showLoading("កំពុងបញ្ជូនទិន្នន័យវត្តមាន...");
+      showLoading("Submitting attendance...");
 
       const payload = {
         webAppPhoto: true,
@@ -428,20 +410,20 @@
         });
 
         if (response.ok) {
-          showSuccess("វត្តមានការងារត្រូវបានបញ្ជូនជោគជ័យ!");
+          showSuccess("Success!");
           setTimeout(() => {
             if (tg) {
               tg.close();
             } else {
               window.close();
             }
-          }, 1500);
+          }, 1200);
         } else {
-          showError("ការបញ្ជូនបរាជ័យ! សូមព្យាយាមម្តងទៀត។");
+          showError("Submission failed. Please try again.");
         }
       } catch (err) {
         console.error("Submit error:", err);
-        showError("មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធបានទេ! សូមពិនិត្យមើលអ៊ីនធឺណិតរបស់អ្នក។");
+        showError("Connection failed. Please check your internet connection.");
       }
     });
 
@@ -468,7 +450,7 @@
       overlay.style.display = 'flex';
       overlaySpinner.style.display = 'none';
       overlaySuccess.style.display = 'none';
-      overlayMsg.innerHTML = `<span style="color:#ef4444; font-size:32px;">⚠️</span><br><br>${msg}<br><br><button class="btn btn-blue" style="width:auto; margin:0 auto; padding:8px 16px;" onclick="hideLoading()">យល់ព្រម (OK)</button>`;
+      overlayMsg.innerHTML = `<span style="color:#ef4444; font-size:32px;">⚠️</span><br><br>${msg}<br><br><button class="btn btn-blue" style="width:auto; margin:0 auto; padding:8px 16px;" onclick="hideLoading()">OK</button>`;
     }
 
     // Start camera on page load
