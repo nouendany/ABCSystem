@@ -5199,6 +5199,110 @@
         });
       }
 
+    } else if (tab === 'hr-bot') {
+      container.innerHTML = `
+        <div class="glass-card" style="padding: 24px; max-width: 600px; margin: 0 auto;">
+          <div class="table-header" style="margin-bottom: 20px;">
+            <h3 data-translate="hrSettings">HR & Telegram Bot Settings</h3>
+          </div>
+          <form id="hr-settings-form-master">
+            <div class="form-group">
+              <label data-translate="telegramToken">Telegram Bot Token</label>
+              <input type="text" class="form-control" id="hr-settings-token-master" placeholder="Enter Bot Token from BotFather" value="${state.companySettings.hrTelegramBotToken || ''}">
+              <small style="color: var(--text-muted); font-size: 11px;" data-translate="botTokenHelp">Used to receive location & selfie uploads and notify employees.</small>
+            </div>
+            <div class="form-group">
+              <label data-translate="botUsername">Telegram Bot Username</label>
+              <input type="text" class="form-control" id="hr-settings-username-master" placeholder="e.g. @MyCompanyAttendanceBot" value="${state.companySettings.hrTelegramBotUsername || ''}">
+            </div>
+            <div class="form-group">
+              <label data-translate="telegramGroupId">Telegram Group/Channel ID (for Admin Reports)</label>
+              <input type="text" class="form-control" id="hr-settings-group-id-master" placeholder="e.g. -100123456789" value="${state.companySettings.hrTelegramGroupId || ''}">
+              <small style="color: var(--text-muted); font-size: 11px;" data-translate="groupIdHelp">Add Bot as Admin to the group, get Chat ID starting with minus (-), e.g. -100123456789</small>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div class="form-group">
+                <label data-translate="latitude">Office Latitude</label>
+                <input type="number" step="any" class="form-control" id="hr-settings-lat-master" placeholder="e.g. 11.5564" value="${state.companySettings.hrOfficeLatitude || ''}">
+              </div>
+              <div class="form-group">
+                <label data-translate="longitude">Office Longitude</label>
+                <input type="number" step="any" class="form-control" id="hr-settings-lng-master" placeholder="e.g. 104.9282" value="${state.companySettings.hrOfficeLongitude || ''}">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div class="form-group">
+                <label data-translate="allowedRadius">Allowed Radius (meters)</label>
+                <input type="number" class="form-control" id="hr-settings-radius-master" value="${state.companySettings.hrOfficeRadius || '100'}">
+              </div>
+              <div class="form-group">
+                <label data-translate="workHours">Work Shift Hours</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="time" class="form-control" id="hr-settings-start-master" value="${state.companySettings.hrWorkStart || '08:00'}" style="padding: 6px;">
+                  <span style="color:var(--text-muted); font-weight:bold;">-</span>
+                  <input type="time" class="form-control" id="hr-settings-end-master" value="${state.companySettings.hrWorkEnd || '17:00'}" style="padding: 6px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Telegram Webhook Registration Help -->
+            <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 10px;">
+              <label style="margin-bottom:4px; font-weight:700;" data-translate="botUrl">Webhook URL</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-control" id="hr-settings-webhook-url-master" readonly style="background: rgba(0,0,0,0.2);" value="${window.location.origin + '/api/bot'}">
+                <button type="button" class="btn btn-outline" id="btn-copy-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;">Copy</button>
+              </div>
+              <small style="color: var(--text-muted); font-size: 11px; display:block; margin-top:6px;">
+                Copy this Webhook URL and register it to your Telegram Bot by visiting:<br>
+                <code style="color: var(--primary); font-family: monospace; font-size:10px; word-break: break-all;">https://api.telegram.org/bot&lt;Token&gt;/setWebhook?url=&lt;URL&gt;</code>
+              </small>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary" data-translate="save">Save Settings</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.getElementById('hr-settings-form-master').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!guardAction('edit')) return;
+        const token = document.getElementById('hr-settings-token-master').value.trim();
+        const username = document.getElementById('hr-settings-username-master').value.trim();
+        const groupId = document.getElementById('hr-settings-group-id-master').value.trim();
+        const lat = parseFloat(document.getElementById('hr-settings-lat-master').value) || 0;
+        const lng = parseFloat(document.getElementById('hr-settings-lng-master').value) || 0;
+        const radius = parseInt(document.getElementById('hr-settings-radius-master').value) || 100;
+        const start = document.getElementById('hr-settings-start-master').value;
+        const end = document.getElementById('hr-settings-end-master').value;
+
+        state.companySettings.hrTelegramBotToken = token;
+        state.companySettings.hrTelegramBotUsername = username;
+        state.companySettings.hrTelegramGroupId = groupId;
+        state.companySettings.hrOfficeLatitude = lat;
+        state.companySettings.hrOfficeLongitude = lng;
+        state.companySettings.hrOfficeRadius = radius;
+        state.companySettings.hrWorkStart = start;
+        state.companySettings.hrWorkEnd = end;
+
+        saveStateToLocalStorage();
+        alert("HR and Bot configurations saved successfully!");
+      });
+
+      document.getElementById('btn-copy-webhook-master').addEventListener('click', () => {
+        const urlInput = document.getElementById('hr-settings-webhook-url-master');
+        if (urlInput) {
+          urlInput.select();
+          document.execCommand('copy');
+          alert('Webhook URL copied to clipboard!');
+        }
+      });
+
+      translateApp();
+
     } else if (tab === 'users') {
       // 2. Users CRUD List
       let userRows = '';
