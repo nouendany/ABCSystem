@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ABC System - Bot Camera</title>
+  <!-- Google Fonts: Outfit & Koh Santepheap for Khmer -->
+  <link href="https://fonts.googleapis.com/css2?family=Koh+Santepheap:wght@400;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <style>
+    :root {
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --text-secondary: #64748b;
+      --primary: #10b981; /* Default emerald green */
+      --primary-hover: #059669;
+      --btn-blue: #3b82f6;
+      --btn-blue-hover: #2563eb;
+      --border-color: #e2e8f0;
+      --radius: 16px;
+    }
+
+    /* Support Telegram themes dynamically */
+    body.telegram {
+      background-color: var(--tg-theme-bg-color, #f4f6f9);
+      color: var(--tg-theme-text-color, #1e293b);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', 'Koh Santepheap', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .title-label {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle-camera-btn {
+      background: none;
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .toggle-camera-btn:hover {
+      background-color: rgba(59, 130, 246, 0.05);
+    }
+
+    .camera-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background-color: #000000;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror view for front camera */
+    }
+
+    video.back-camera {
+      transform: scaleX(1); /* Normal view for back camera */
+    }
+
+    #photo-preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      z-index: 2;
+      border-radius: 12px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .btn-blue {
+      background-color: var(--btn-blue);
+      color: #ffffff;
+    }
+
+    .btn-blue:hover {
+      background-color: var(--btn-blue-hover);
+    }
+
+    .btn-submit {
+      background-color: #cbd5e1;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .btn-submit.active {
+      background-color: var(--btn-blue);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .btn-submit.active:hover {
+      background-color: var(--btn-blue-hover);
+    }
+
+    .btn-submit.checkout-active {
+      background-color: #ef4444;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .btn-submit.checkout-active:hover {
+      background-color: #dc2626;
+    }
+
+    /* Loading and Overlay States */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.9);
+      z-index: 99;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-color);
+      border-top: 4px solid var(--btn-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status-msg {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-color);
+      text-align: center;
+      padding: 0 24px;
+    }
+
+    .success-checkmark {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: rgba(16, 185, 129, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 40px;
+      animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes scaleUp {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="header-row">
+      <div class="title-label" id="title-text">
+        📸 រូបភាពវត្តមាន
+      </div>
+      <button class="toggle-camera-btn" id="btn-toggle-camera">Use Back Camera</button>
+    </div>
+
+    <div class="camera-viewport">
+      <video id="video" autoplay playsinline></video>
+      <img id="photo-preview" alt="Selfie Preview">
+    </div>
+
+    <!-- Take Photo Action -->
+    <button class="btn btn-blue" id="btn-capture">
+      📷 ថតរូប (Take Photo)
+    </button>
+
+    <!-- Save & Confirm Attendance -->
+    <button class="btn btn-submit" id="btn-submit" disabled>
+      ផ្ញើវត្តមានការងារ (Send Attendance)
+    </button>
+  </div>
+
+  <!-- Fullscreen Loading/Success Overlay -->
+  <div class="overlay" id="overlay">
+    <div class="spinner" id="overlay-spinner"></div>
+    <div class="success-checkmark" id="overlay-success" style="display: none;">✓</div>
+    <div class="status-msg" id="overlay-msg">កំពុងរៀបចំកាមេរ៉ា...</div>
+  </div>
+
+  <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      document.body.classList.add('telegram');
+    }
+
+    // Parse URL queries
+    const urlParams = new URLSearchParams(window.location.search);
+    const employeeId = urlParams.get('employeeId') || '';
+    const chatId = urlParams.get('chatId') || '';
+    const action = urlParams.get('action') || 'checkin'; // checkin or checkout
+
+    // UI Elements
+    const titleText = document.getElementById('title-text');
+    const toggleCameraBtn = document.getElementById('btn-toggle-camera');
+    const video = document.getElementById('video');
+    const photoPreview = document.getElementById('photo-preview');
+    const captureBtn = document.getElementById('btn-capture');
+    const submitBtn = document.getElementById('btn-submit');
+    const overlay = document.getElementById('overlay');
+    const overlaySpinner = document.getElementById('overlay-spinner');
+    const overlaySuccess = document.getElementById('overlay-success');
+    const overlayMsg = document.getElementById('overlay-msg');
+
+    // Camera State
+    let currentStream = null;
+    let useFacingMode = "user"; // "user" = front, "environment" = back
+    let capturedBase64 = null;
+
+    // Set title and button text based on action
+    if (action === 'checkout') {
+      titleText.innerHTML = "📸 រូបភាព Check Out";
+      submitBtn.innerHTML = "ចាកចេញពីការងារ (Check Out Now)";
+    } else {
+      titleText.innerHTML = "📸 រូបភាព Check In";
+      submitBtn.innerHTML = "ចូលបម្រើការងារ (Check In Now)";
+    }
+
+    // Start video stream
+    async function startCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+
+      showLoading("កំពុងបើកកាមេរ៉ា...");
+
+      const constraints = {
+        video: {
+          facingMode: useFacingMode,
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      };
+
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = currentStream;
+        
+        // Mirror class toggle
+        if (useFacingMode === "user") {
+          video.classList.remove('back-camera');
+        } else {
+          video.classList.add('back-camera');
+        }
+
+        hideLoading();
+      } catch (err) {
+        console.error("Camera access error:", err);
+        showError("មិនអាចបើកកាមេរ៉ាបានទេ! សូមពិនិត្យមើលសិទ្ធិអនុញ្ញាតកាមេរ៉ាក្នុងកម្មវិធី Telegram របស់លោកអ្នក។");
+      }
+    }
+
+    // Toggle camera front/back
+    toggleCameraBtn.addEventListener('click', () => {
+      useFacingMode = useFacingMode === "user" ? "environment" : "user";
+      toggleCameraBtn.innerText = useFacingMode === "user" ? "Use Back Camera" : "Use Front Camera";
+      
+      // Reset capture state
+      photoPreview.style.display = 'none';
+      video.style.display = 'block';
+      capturedBase64 = null;
+      submitBtn.disabled = true;
+      submitBtn.classList.remove('active', 'checkout-active');
+      captureBtn.innerHTML = "📷 ថតរូប (Take Photo)";
+
+      startCamera();
+    });
+
+    // Capture photo from video stream
+    captureBtn.addEventListener('click', () => {
+      if (capturedBase64) {
+        // Reset to live camera view
+        photoPreview.style.display = 'none';
+        video.style.display = 'block';
+        capturedBase64 = null;
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('active', 'checkout-active');
+        captureBtn.innerHTML = "📷 ថតរូប (Take Photo)";
+      } else {
+        // Capture photo
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        
+        if (useFacingMode === "user") {
+          // Mirror rendering for front camera
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        capturedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+        // Show photo preview
+        photoPreview.src = capturedBase64;
+        photoPreview.style.display = 'block';
+        video.style.display = 'none';
+        
+        captureBtn.innerHTML = "🔄 ថតឡើងវិញ (Retake)";
+        submitBtn.disabled = false;
+        if (action === 'checkout') {
+          submitBtn.classList.add('checkout-active');
+        } else {
+          submitBtn.classList.add('active');
+        }
+      }
+    });
+
+    // Submit attendance data
+    submitBtn.addEventListener('click', async () => {
+      if (!capturedBase64 || !employeeId || !chatId) return;
+
+      showLoading("កំពុងបញ្ជូនទិន្នន័យវត្តមាន...");
+
+      const payload = {
+        webAppPhoto: true,
+        employeeId: employeeId,
+        chatId: chatId,
+        action: action,
+        base64Image: capturedBase64
+      };
+
+      try {
+        const response = await fetch('/api/bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          showSuccess("វត្តមានការងារត្រូវបានបញ្ជូនជោគជ័យ!");
+          setTimeout(() => {
+            if (tg) {
+              tg.close();
+            } else {
+              window.close();
+            }
+          }, 1500);
+        } else {
+          showError("ការបញ្ជូនបរាជ័យ! សូមព្យាយាមម្តងទៀត។");
+        }
+      } catch (err) {
+        console.error("Submit error:", err);
+        showError("មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធបានទេ! សូមពិនិត្យមើលអ៊ីនធឺណិតរបស់អ្នក។");
+      }
+    });
+
+    // Helpers for Loading Overlay
+    function showLoading(msg) {
+      overlay.style.display = 'flex';
+      overlaySpinner.style.display = 'block';
+      overlaySuccess.style.display = 'none';
+      overlayMsg.innerText = msg;
+    }
+
+    function hideLoading() {
+      overlay.style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      overlay.style.display = 'flex';
+      overlaySpinner.style.display = 'none';
+      overlaySuccess.style.display = 'flex';
+      overlayMsg.innerText = msg;
+    }
+
+    function showError(msg) {
+      overlay.style.display = 'flex';
+      overlaySpinner.style.display = 'none';
+      overlaySuccess.style.display = 'none';
+      overlayMsg.innerHTML = `<span style="color:#ef4444; font-size:32px;">⚠️</span><br><br>${msg}<br><br><button class="btn btn-blue" style="width:auto; margin:0 auto; padding:8px 16px;" onclick="hideLoading()">យល់ព្រម (OK)</button>`;
+    }
+
+    // Start camera on page load
+    window.addEventListener('load', startCamera);
+  </script>
+</body>
+</html>

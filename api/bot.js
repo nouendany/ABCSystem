@@ -67,7 +67,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, callback_query } = req.body;
+    const body = req.body;
+    
+    // Route Web App photo posts
+    if (body && body.webAppPhoto) {
+      return await handleWebAppPhoto(req, res, body);
+    }
+
+    const { message, callback_query } = body || {};
     const incomingData = message || (callback_query ? callback_query.message : null);
     if (!incomingData) {
       return res.status(200).send("No message body received");
@@ -309,8 +316,7 @@ export default async function handler(req, res) {
             reply_markup: menuMarkup
           });
           await setDoc(sessionDocRef, { action: null });
-        } else {
-          // Inside Radius -> Request Selfie
+          // Inside Radius -> Send Web App Camera Button
           const nextAction = session.action === "waiting_location_checkin" ? "waiting_selfie_checkin" : "waiting_selfie_checkout";
           await setDoc(sessionDocRef, {
             action: nextAction,
@@ -318,12 +324,23 @@ export default async function handler(req, res) {
             longitude: location.longitude
           });
 
+          const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
+          const protocol = req.headers["x-forwarded-proto"] || "https";
+          const actionType = session.action === "waiting_location_checkin" ? "checkin" : "checkout";
+          const webAppUrl = `${protocol}://${host}/telegram-camera.html?employeeId=${employee.id}&chatId=${chatId}&action=${actionType}`;
+
           await sendTelegram(token, "sendMessage", {
             chat_id: chatId,
-            text: `📍 **ទីតាំងត្រឹមត្រូវ! (ចម្ងាយ៖ ${Math.round(distance)} ម៉ែត្រ)**\n\n📸 សូមថតរូប **Selfie** ផ្ទាល់ខ្លួនរបស់អ្នក រួចផ្ញើមកកាន់ Bot ដើម្បីបញ្ចប់វត្តមាន៖`,
+            text: `📍 **ទីតាំងត្រឹមត្រូវ! (ចម្ងាយ៖ ${Math.round(distance)} ម៉ែត្រ)**\n\n📸 សូមចុចប៊ូតុងខាងក្រោមដើម្បីថតរូប **Selfie** ផ្ទាល់ខ្លួនរបស់អ្នក ចូលទៅក្នុងប្រព័ន្ធ៖`,
             reply_markup: {
-              keyboard: [[{ text: "❌ បោះបង់" }]],
-              resize_keyboard: true
+              inline_keyboard: [
+                [
+                  {
+                    text: "📸 ថតរូប Selfie",
+                    web_app: { url: webAppUrl }
+                  }
+                ]
+              ]
             }
           });
         }
@@ -579,5 +596,161 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Webhook processing error:", error);
     return res.status(200).send(`Error processing webhook: ${error.message}`);
+  }
+}
+
+async function handleWebAppPhoto(req, res, body) {
+  const { employeeId, chatId, action, base64Image } = body;
+
+  try {
+    const settingsSnap = await getDoc(doc(db, "company_settings", "global"));
+    const settings = settingsSnap.exists() ? settingsSnap.data() : {};
+    const token = settings.hrTelegramBotToken || settings.telegramToken;
+
+    if (!token) {
+      return res.status(400).send("Missing Bot Token");
+    }
+
+    // Load employee profile
+    const empSnap = await getDoc(doc(db, "employees", employeeId));
+    const employee = empSnap.exists() ? empSnap.data() : null;
+    if (!employee) {
+      return res.status(400).send("Employee not found");
+    }
+
+    // Load session to get latitude and longitude
+    const sessionDocRef = doc(db, "bot_sessions", chatId.toString());
+    const sessionSnap = await getDoc(sessionDocRef);
+    const session = sessionSnap.exists() ? sessionSnap.data() : {};
+
+    const now = new Date();
+    now.setUTCHours(now.getUTCHours() + 7); // Shift to Cambodia (UTC+7)
+    const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+    const timeStr = now.toISOString().split("T")[1].slice(0, 8); // HH:MM:SS
+    const attendanceId = `attendance_${employee.id}_${dateStr}`;
+    const docRef = doc(db, "attendance", attendanceId);
+
+    const menuMarkup = {
+      keyboard: [
+        [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
+        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }],
+        [{ text: "📅 ប្រវត្តិវត្តមាន" }, { text: "📢 សេចក្ដីជូនដំណឹង" }],
+        [{ text: "☎️ ទាក់ទង Admin" }]
+      ],
+      resize_keyboard: true
+    };
+
+    if (action === "checkin") {
+      const startHours = settings.hrWorkStart || "08:00";
+      const [startH, startM] = startHours.split(":").map(Number);
+      const [currentH, currentM] = timeStr.split(":").map(Number);
+      
+      let checkInStatus = "On Time";
+      let statusTextTelegram = "🟢 ទាន់ម៉ោង (On Time)";
+      
+      const startSec = startH * 3600 + startM * 60;
+      const currentSec = currentH * 3600 + currentM * 60;
+      
+      if (currentSec > startSec) {
+        checkInStatus = "Late";
+        const lateSec = currentSec - startSec;
+        const lateH = Math.floor(lateSec / 3600);
+        const lateM = Math.floor((lateSec % 3600) / 60);
+        let lateDurStr = "";
+        if (lateH > 0) lateDurStr += `${lateH}h`;
+        lateDurStr += `${lateM}mn`;
+        statusTextTelegram = `🔴 យឺត ${lateDurStr} (Late)`;
+      }
+
+      const attendanceData = {
+        id: attendanceId,
+        employeeId: employee.id,
+        employeeName: employee.fullName,
+        date: dateStr,
+        checkIn: {
+          time: timeStr,
+          latitude: session.latitude || 0,
+          longitude: session.longitude || 0,
+          selfieUrl: base64Image,
+          status: checkInStatus
+        }
+      };
+
+      await setDoc(docRef, attendanceData, { merge: true });
+
+      // Notify employee
+      await sendTelegram(token, "sendMessage", {
+        chat_id: chatId,
+        text: `✅ **ចូលការងារបានជោគជ័យ (តាមរយៈ Bot Camera)!**\n\n👤 ឈ្មោះ៖ ${employee.fullName}\n📅 កាលបរិច្ឆេទ៖ ${dateStr}\n⏰ ម៉ោងចូល៖ ${timeStr}\n📍 ស្ថានភាព៖ ${statusTextTelegram}`,
+        reply_markup: menuMarkup
+      });
+
+      // Forward to Admin Group
+      if (settings.hrTelegramGroupId) {
+        const checkInText = `📢 **ការជូនដំណឹងវត្តមាន (Check-In)**\n\n👤 ឈ្មោះ៖ ${employee.fullName} (${employee.id})\n📅 កាលបរិច្ឆេទ៖ ${dateStr}\n⏰ ម៉ោងចូល៖ ${timeStr}\n📍 ស្ថានភាព៖ ${statusTextTelegram}`;
+        await sendTelegram(token, "sendMessage", {
+          chat_id: settings.hrTelegramGroupId,
+          text: checkInText
+        });
+      }
+    } else {
+      // Check-out
+      const attSnap = await getDoc(docRef);
+      const existingAtt = attSnap.exists() ? attSnap.data() : null;
+
+      if (!existingAtt || !existingAtt.checkIn) {
+        return res.status(400).send("No Check-In record found for today.");
+      }
+
+      // Calculate working hours
+      const checkInTime = existingAtt.checkIn.time;
+      const [inH, inM, inS] = checkInTime.split(":").map(Number);
+      const [outH, outM, outS] = timeStr.split(":").map(Number);
+      
+      const inTotalSec = inH * 3600 + inM * 60 + inS;
+      const outTotalSec = outH * 3600 + outM * 60 + outS;
+      
+      const workedSec = outTotalSec - inTotalSec;
+      const workingHours = parseFloat((workedSec / 3600).toFixed(2));
+      
+      let overtime = 0;
+      if (workingHours > 8) {
+        overtime = parseFloat((workingHours - 8).toFixed(2));
+      }
+
+      await setDoc(docRef, {
+        checkOut: {
+          time: timeStr,
+          latitude: session.latitude || 0,
+          longitude: session.longitude || 0,
+          selfieUrl: base64Image
+        },
+        workingHours,
+        overtime
+      }, { merge: true });
+
+      // Notify employee
+      await sendTelegram(token, "sendMessage", {
+        chat_id: chatId,
+        text: `✅ **ចេញការងារបានជោគជ័យ (តាមរយៈ Bot Camera)!**\n\n📥 ម៉ោងចូល៖ ${checkInTime}\n📤 ម៉ោងចេញ៖ ${timeStr}\n⏱️ ម៉ោងធ្វើការ៖ ${workingHours} ម៉ោង\n⏱️ ម៉ោង OT៖ ${overtime} ម៉ោង`,
+        reply_markup: menuMarkup
+      });
+
+      // Forward to Admin Group
+      if (settings.hrTelegramGroupId) {
+        const checkOutText = `📢 **ការជូនដំណឹងវត្តមាន (Check-Out)**\n\n👤 ឈ្មោះ៖ ${employee.fullName} (${employee.id})\n📅 កាលបរិច្ឆេទ៖ ${dateStr}\n📥 ម៉ោងចូល៖ ${checkInTime}\n📤 ម៉ោងចេញ៖ ${timeStr}\n⏱️ ម៉ោងធ្វើការ៖ ${workingHours} ម៉ោង\n⏱️ ម៉ោង OT៖ ${overtime} ម៉ោង`;
+        await sendTelegram(token, "sendMessage", {
+          chat_id: settings.hrTelegramGroupId,
+          text: checkOutText
+        });
+      }
+    }
+
+    // Clear session action
+    await setDoc(sessionDocRef, { action: null });
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("handleWebAppPhoto error:", error);
+    return res.status(500).send(`Error processing photo: ${error.message}`);
   }
 }
