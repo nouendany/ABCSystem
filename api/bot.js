@@ -533,9 +533,9 @@ export default async function handler(req, res) {
       }
 
       if (session.action === "waiting_leave_reason") {
-        // Save Leave Request
-        const leaveRequestsRef = collection(db, "leave_requests");
+        const newDocRef = doc(collection(db, "leave_requests"));
         const newLeave = {
+          id: newDocRef.id,
           employeeId: employee.id,
           employeeName: employee.fullName,
           department: employee.department || "N/A",
@@ -547,7 +547,7 @@ export default async function handler(req, res) {
           createdAt: new Date().toISOString()
         };
 
-        await addDoc(leaveRequestsRef, newLeave);
+        await setDoc(newDocRef, newLeave);
 
         await sendTelegram(token, "sendMessage", {
           chat_id: chatId,

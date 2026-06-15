@@ -4875,7 +4875,11 @@
 
             const list = [];
             snapshot.forEach(doc => {
-              list.push(doc.data());
+              const data = doc.data();
+              if (idKey && !data[idKey]) {
+                data[idKey] = doc.id;
+              }
+              list.push(data);
             });
 
             // Sync always, including empty arrays to support clean resets across browsers
