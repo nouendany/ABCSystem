@@ -39,6 +39,9 @@
     commissionRules: {},
     companySettings: {},
     voidedTransactions: [],
+    employees: [],
+    attendance: [],
+    leaveRequests: [],
 
     // POS State
     cart: [],
@@ -75,7 +78,10 @@
     expenses: [],
     stockLogs: [],
     paymentLogs: [],
-    followups: []
+    followups: [],
+    employees: [],
+    attendance: [],
+    leaveRequests: []
   };
 
   let firebaseActive = false;
@@ -316,6 +322,9 @@
     state.stockLogs = safeParse('abc_stock_logs', []);
     state.paymentLogs = safeParse('abc_payment_logs', []);
     state.followups = safeParse('abc_followups', []);
+    state.employees = safeParse('abc_employees', []);
+    state.attendance = safeParse('abc_attendance', []);
+    state.leaveRequests = safeParse('abc_leave_requests', []);
     state.commissionRules = safeParse('abc_commission_rules', {});
     state.companySettings = safeParse('abc_company_settings', {});
     if (state.companySettings.startingCapital === undefined) {
@@ -362,7 +371,10 @@
       expenses: JSON.parse(JSON.stringify(state.expenses)),
       stockLogs: JSON.parse(JSON.stringify(state.stockLogs)),
       paymentLogs: JSON.parse(JSON.stringify(state.paymentLogs)),
-      followups: JSON.parse(JSON.stringify(state.followups))
+      followups: JSON.parse(JSON.stringify(state.followups)),
+      employees: JSON.parse(JSON.stringify(state.employees)),
+      attendance: JSON.parse(JSON.stringify(state.attendance)),
+      leaveRequests: JSON.parse(JSON.stringify(state.leaveRequests))
     };
 
     // Check Theme
@@ -501,6 +513,9 @@
     localStorage.setItem('abc_voided_transactions', JSON.stringify(state.voidedTransactions));
     localStorage.setItem('abc_closing_logs', JSON.stringify(state.closingLogs));
     localStorage.setItem('abc_audit_logs', JSON.stringify(state.auditLogs));
+    localStorage.setItem('abc_employees', JSON.stringify(state.employees));
+    localStorage.setItem('abc_attendance', JSON.stringify(state.attendance));
+    localStorage.setItem('abc_leave_requests', JSON.stringify(state.leaveRequests));
 
     // If Firebase Sync is active, write added/modified records to Firestore
     if (state.firebaseDb) {
@@ -539,6 +554,9 @@
         syncChanges('stock_logs', state.stockLogs, lastSyncedState.stockLogs, 'id');
         syncChanges('payment_logs', state.paymentLogs, lastSyncedState.paymentLogs, 'id');
         syncChanges('followups', state.followups, lastSyncedState.followups, 'id');
+        syncChanges('employees', state.employees, lastSyncedState.employees, 'id');
+        syncChanges('attendance', state.attendance, lastSyncedState.attendance, 'id');
+        syncChanges('leave_requests', state.leaveRequests, lastSyncedState.leaveRequests, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
 
@@ -553,7 +571,10 @@
           expenses: JSON.parse(JSON.stringify(state.expenses)),
           stockLogs: JSON.parse(JSON.stringify(state.stockLogs)),
           paymentLogs: JSON.parse(JSON.stringify(state.paymentLogs)),
-          followups: JSON.parse(JSON.stringify(state.followups))
+          followups: JSON.parse(JSON.stringify(state.followups)),
+          employees: JSON.parse(JSON.stringify(state.employees)),
+          attendance: JSON.parse(JSON.stringify(state.attendance)),
+          leaveRequests: JSON.parse(JSON.stringify(state.leaveRequests))
         };
       } catch (err) {
         console.error("Cloud sync diff error:", err);
@@ -986,6 +1007,7 @@
         renderFinance();
         break;
       case 'view-staff':
+        renderHRMain();
         renderStaff();
         break;
       case 'view-reports':
@@ -4884,6 +4906,9 @@
         setupListener('stock_logs', 'stockLogs', 'id', []);
         setupListener('payment_logs', 'paymentLogs', 'id', []);
         setupListener('followups', 'followups', 'id', [renderFollowups]);
+        setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
+        setupListener('attendance', 'attendance', 'id', [renderAttendanceLogs, renderHRDashboard]);
+        setupListener('leave_requests', 'leaveRequests', 'id', [renderLeaveRequests, renderHRDashboard]);
 
         // Company settings listener
         dbInstance.collection('company_settings').doc('global').onSnapshot(doc => {
@@ -7361,7 +7386,7 @@ CREATE TABLE sale_items (
       });
     }
 
-
+    setupHREventListeners();
   }
 
   function getCartTotal() {
@@ -7850,6 +7875,602 @@ CREATE TABLE sale_items (
     }
     translateApp();
   }
+
+  // ==================== HR & ATTENDANCE SYSTEM LOGIC ====================
+
+  function renderHRMain() {
+    const activeTabBtn = document.querySelector('.hr-tab-btn.active');
+    const targetTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'hr-dashboard';
+    
+    if (targetTab === 'hr-dashboard') {
+      renderHRDashboard();
+    } else if (targetTab === 'hr-employees') {
+      renderEmployeeList();
+    } else if (targetTab === 'hr-attendance') {
+      renderAttendanceLogs();
+    } else if (targetTab === 'hr-leaves') {
+      renderLeaveRequests();
+    } else if (targetTab === 'hr-settings') {
+      populateHRSettingsForm();
+    }
+  }
+
+  function setupHREventListeners() {
+    // 1. HR Main Sub-tabs switching
+    const hrTabBtns = document.querySelectorAll('.hr-tab-btn');
+    hrTabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        hrTabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const targetTab = btn.getAttribute('data-tab');
+        
+        document.querySelectorAll('.hr-view-panel').forEach(panel => {
+          panel.classList.remove('active-panel');
+        });
+        
+        const activePanel = document.getElementById(targetTab);
+        if (activePanel) {
+          activePanel.classList.add('active-panel');
+        }
+        
+        // Render target sub-tab
+        if (targetTab === 'hr-dashboard') {
+          renderHRDashboard();
+        } else if (targetTab === 'hr-employees') {
+          renderEmployeeList();
+        } else if (targetTab === 'hr-attendance') {
+          renderAttendanceLogs();
+        } else if (targetTab === 'hr-leaves') {
+          renderLeaveRequests();
+        } else if (targetTab === 'hr-settings') {
+          populateHRSettingsForm();
+        }
+      });
+    });
+
+    // 2. Toggle POS Staff vs HR Employees in Employee Database Tab
+    const btnToggleHr = document.getElementById('btn-toggle-hr-employees');
+    const btnTogglePos = document.getElementById('btn-toggle-pos-staff');
+    const panelHr = document.getElementById('panel-hr-employees');
+    const panelPos = document.getElementById('panel-pos-staff');
+    const hrActions = document.getElementById('hr-employee-actions');
+    const posActions = document.getElementById('pos-staff-actions');
+
+    if (btnToggleHr && btnTogglePos) {
+      btnToggleHr.addEventListener('click', () => {
+        btnToggleHr.style.background = 'var(--primary)';
+        btnToggleHr.style.color = 'white';
+        btnTogglePos.style.background = 'transparent';
+        btnTogglePos.style.color = 'var(--text-secondary)';
+        panelHr.style.display = 'block';
+        panelPos.style.display = 'none';
+        hrActions.style.display = 'flex';
+        posActions.style.display = 'none';
+      });
+
+      btnTogglePos.addEventListener('click', () => {
+        btnTogglePos.style.background = 'var(--primary)';
+        btnTogglePos.style.color = 'white';
+        btnToggleHr.style.background = 'transparent';
+        btnToggleHr.style.color = 'var(--text-secondary)';
+        panelHr.style.display = 'none';
+        panelPos.style.display = 'block';
+        hrActions.style.display = 'none';
+        posActions.style.display = 'flex';
+      });
+    }
+
+    // 3. Employee Modal Actions
+    const btnAddEmp = document.getElementById('btn-add-employee-modal');
+    if (btnAddEmp) {
+      btnAddEmp.addEventListener('click', () => {
+        openEmployeeModal(null);
+      });
+    }
+
+    const btnCloseEmp = document.getElementById('btn-close-employee');
+    if (btnCloseEmp) {
+      btnCloseEmp.addEventListener('click', () => {
+        document.getElementById('modal-employee').classList.remove('active-modal');
+      });
+    }
+
+    const btnCancelEmp = document.getElementById('btn-cancel-employee');
+    if (btnCancelEmp) {
+      btnCancelEmp.addEventListener('click', () => {
+        document.getElementById('modal-employee').classList.remove('active-modal');
+      });
+    }
+
+    // 4. Employee Form Submission
+    const empForm = document.getElementById('employee-form');
+    if (empForm) {
+      empForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveEmployee();
+      });
+    }
+
+    // 5. HR Settings Form Submission
+    const hrSettingsForm = document.getElementById('hr-settings-form');
+    if (hrSettingsForm) {
+      hrSettingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveHRSettings();
+      });
+    }
+
+    // 6. Copy Webhook URL
+    const btnCopyWebhook = document.getElementById('btn-copy-webhook');
+    if (btnCopyWebhook) {
+      btnCopyWebhook.addEventListener('click', () => {
+        const urlInput = document.getElementById('hr-settings-webhook-url');
+        if (urlInput) {
+          urlInput.select();
+          document.execCommand('copy');
+          alert('Webhook URL copied to clipboard!');
+        }
+      });
+    }
+
+    // 7. Search Employees Input
+    const empSearch = document.getElementById('hr-employee-search');
+    if (empSearch) {
+      empSearch.addEventListener('input', () => {
+        renderEmployeeList();
+      });
+    }
+
+    // 8. Attendance Date Filter
+    const attDateFilter = document.getElementById('hr-attendance-date-filter');
+    if (attDateFilter) {
+      attDateFilter.addEventListener('change', () => {
+        renderAttendanceLogs();
+      });
+    }
+
+    const btnClearAtt = document.getElementById('btn-clear-attendance-filter');
+    if (btnClearAtt) {
+      btnClearAtt.addEventListener('click', () => {
+        attDateFilter.value = '';
+        renderAttendanceLogs();
+      });
+    }
+  }
+
+  function openEmployeeModal(empId) {
+    if (!guardAction('edit')) return;
+    const form = document.getElementById('employee-form');
+    form.reset();
+    
+    const titleEl = document.getElementById('employee-modal-title');
+    const docIdInput = document.getElementById('employee-edit-doc-id');
+    const idInput = document.getElementById('employee-id');
+    
+    if (empId) {
+      const emp = state.employees.find(e => e.id === empId);
+      if (emp) {
+        titleEl.innerText = state.lang === 'km' ? 'កែសម្រួលព័ត៌មានបុគ្គលិក' : 'Edit Employee Details';
+        docIdInput.value = emp.id;
+        idInput.value = emp.id;
+        idInput.disabled = true;
+        
+        document.getElementById('employee-fullname').value = emp.fullName || '';
+        document.getElementById('employee-gender').value = emp.gender || 'Male';
+        document.getElementById('employee-dob').value = emp.dob || '';
+        document.getElementById('employee-phone').value = emp.phone || '';
+        document.getElementById('employee-telegram-id').value = emp.telegramId || '';
+        document.getElementById('employee-email').value = emp.email || '';
+        document.getElementById('employee-address').value = emp.address || '';
+        document.getElementById('employee-department').value = emp.department || '';
+        document.getElementById('employee-position').value = emp.position || '';
+        document.getElementById('employee-salary').value = emp.salary || '';
+        document.getElementById('employee-join-date').value = emp.joinDate || '';
+        document.getElementById('employee-status').value = emp.status || 'Active';
+      }
+    } else {
+      titleEl.innerText = state.lang === 'km' ? 'បន្ថែមបុគ្គលិកថ្មី' : 'Add New Employee';
+      docIdInput.value = '';
+      idInput.disabled = false;
+      
+      const nextIdNum = state.employees.length + 1;
+      idInput.value = 'EMP' + String(nextIdNum).padStart(3, '0');
+    }
+    
+    document.getElementById('modal-employee').classList.add('active-modal');
+  }
+
+  function saveEmployee() {
+    const docId = document.getElementById('employee-edit-doc-id').value;
+    const id = document.getElementById('employee-id').value.trim().toUpperCase();
+    const fullName = document.getElementById('employee-fullname').value.trim();
+    const gender = document.getElementById('employee-gender').value;
+    const dob = document.getElementById('employee-dob').value;
+    const phone = document.getElementById('employee-phone').value.trim();
+    const telegramId = document.getElementById('employee-telegram-id').value.trim();
+    const email = document.getElementById('employee-email').value.trim();
+    const address = document.getElementById('employee-address').value.trim();
+    const department = document.getElementById('employee-department').value.trim();
+    const position = document.getElementById('employee-position').value.trim();
+    const salary = parseFloat(document.getElementById('employee-salary').value) || 0;
+    const joinDate = document.getElementById('employee-join-date').value;
+    const status = document.getElementById('employee-status').value;
+
+    if (!id || !fullName || !phone) {
+      alert("Please fill in ID, Full Name, and Phone number.");
+      return;
+    }
+
+    const employeeData = {
+      id, fullName, gender, dob, phone, telegramId, email, address,
+      department, position, salary, joinDate, status,
+      updatedBy: state.currentUser ? state.currentUser.username : 'system',
+      timestamp: new Date().toISOString()
+    };
+
+    if (docId !== '') {
+      const idx = state.employees.findIndex(e => e.id === docId);
+      if (idx !== -1) {
+        state.employees[idx] = { ...state.employees[idx], ...employeeData };
+      }
+    } else {
+      if (state.employees.some(e => e.id === id)) {
+        alert("Employee ID already exists!");
+        return;
+      }
+      employeeData.createdBy = state.currentUser ? state.currentUser.username : 'system';
+      state.employees.push(employeeData);
+    }
+
+    saveStateToLocalStorage();
+    document.getElementById('modal-employee').classList.remove('active-modal');
+    renderEmployeeList();
+    renderHRDashboard();
+    alert("Employee record saved successfully!");
+  }
+
+  function deleteEmployee(empId) {
+    if (!guardAction('delete')) return;
+    if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
+      const idx = state.employees.findIndex(e => e.id === empId);
+      if (idx !== -1) {
+        state.employees.splice(idx, 1);
+        saveStateToLocalStorage();
+        renderEmployeeList();
+        renderHRDashboard();
+      }
+    }
+  }
+
+  function renderEmployeeList() {
+    const tbody = document.getElementById('hr-employees-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const searchQuery = document.getElementById('hr-employee-search').value.toLowerCase().trim();
+
+    state.employees.forEach(emp => {
+      if (searchQuery) {
+        const match = emp.id.toLowerCase().includes(searchQuery) ||
+                      (emp.fullName && emp.fullName.toLowerCase().includes(searchQuery)) ||
+                      (emp.phone && emp.phone.includes(searchQuery)) ||
+                      (emp.position && emp.position.toLowerCase().includes(searchQuery));
+        if (!match) return;
+      }
+
+      const tr = document.createElement('tr');
+      
+      const statusBadgeClass = emp.status === 'Active' ? 'badge-ontime' : 'badge-late';
+      const telegramDisplay = emp.telegramId ? `<span style="color:#0088cc; font-weight:600;">🔵 Connected (${emp.telegramId})</span>` : '<span style="color:var(--text-muted);">Not Linked</span>';
+
+      tr.innerHTML = `
+        <td><strong style="color:var(--secondary); font-family:monospace;">${emp.id}</strong></td>
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div>
+              <strong>${emp.fullName}</strong><br>
+              <span style="font-size:10px; color:var(--text-muted);">${emp.email || ''}</span>
+            </div>
+          </div>
+        </td>
+        <td>${emp.gender || '—'}</td>
+        <td><strong>${emp.position || '—'}</strong><br><span style="font-size:10px; color:var(--text-muted);">${emp.department || ''}</span></td>
+        <td>${emp.phone}</td>
+        <td>${telegramDisplay}</td>
+        <td><span class="badge ${statusBadgeClass}">${emp.status}</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm btn-edit-emp" data-id="${emp.id}" style="padding:2px 6px;">✏️</button>
+          <button class="btn btn-danger btn-sm btn-del-emp" data-id="${emp.id}" style="padding:2px 6px;">🗑️</button>
+        </td>
+      `;
+
+      tr.querySelector('.btn-edit-emp').addEventListener('click', () => openEmployeeModal(emp.id));
+      tr.querySelector('.btn-del-emp').addEventListener('click', () => deleteEmployee(emp.id));
+
+      tbody.appendChild(tr);
+    });
+
+    if (tbody.children.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);" data-translate="noData">No records found</td></tr>`;
+      translateApp();
+    }
+  }
+
+  function renderAttendanceLogs() {
+    const tbody = document.getElementById('hr-attendance-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const dateFilter = document.getElementById('hr-attendance-date-filter').value;
+
+    const logs = [...state.attendance].sort((a, b) => {
+      const dateA = a.date + ' ' + (a.checkIn ? a.checkIn.time : '00:00:00');
+      const dateB = b.date + ' ' + (b.checkIn ? b.checkIn.time : '00:00:00');
+      return new Date(dateB) - new Date(dateA);
+    });
+
+    logs.forEach(log => {
+      if (dateFilter && log.date !== dateFilter) return;
+
+      const emp = state.employees.find(e => e.id === log.employeeId) || {};
+      const empName = emp.fullName || log.employeeName || 'Unknown';
+
+      const checkInTime = log.checkIn ? log.checkIn.time : '—';
+      const checkInStatus = log.checkIn ? log.checkIn.status : '';
+      const checkInBadgeClass = checkInStatus === 'On Time' ? 'badge-ontime' : checkInStatus === 'Late' ? 'badge-late' : '';
+      
+      const checkOutTime = log.checkOut ? log.checkOut.time : '—';
+      const workingHours = log.checkOut && log.checkOut.workingHours ? log.checkOut.workingHours.toFixed(1) + ' hrs' : '—';
+      const overtime = log.checkOut && log.checkOut.overtime ? log.checkOut.overtime.toFixed(1) + ' hrs' : '—';
+
+      let gpsLink = '—';
+      if (log.checkIn && log.checkIn.latitude && log.checkIn.longitude) {
+        gpsLink = `<a href="https://www.google.com/maps?q=${log.checkIn.latitude},${log.checkIn.longitude}" target="_blank" class="gps-map-link">📍 Map</a>`;
+      }
+
+      let selfieHtml = '—';
+      if (log.checkIn && log.checkIn.selfieUrl) {
+        selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.open('${log.checkIn.selfieUrl}', '_blank')">`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family:monospace; font-weight:700;">${log.date}</td>
+        <td><strong style="color:var(--secondary); font-family:monospace;">${log.employeeId}</strong></td>
+        <td><strong>${empName}</strong></td>
+        <td>${checkInTime} ${checkInStatus ? `<span class="badge ${checkInBadgeClass}">${checkInStatus}</span>` : ''}</td>
+        <td>${checkOutTime}</td>
+        <td>${workingHours}</td>
+        <td style="color:var(--primary); font-weight:700;">${overtime}</td>
+        <td>${gpsLink}</td>
+        <td>${selfieHtml}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    if (tbody.children.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted);" data-translate="noData">No records found</td></tr>`;
+      translateApp();
+    }
+  }
+
+  function renderLeaveRequests() {
+    const tbody = document.getElementById('hr-leaves-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const leaves = [...state.leaveRequests].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+
+    leaves.forEach(req => {
+      const emp = state.employees.find(e => e.id === req.employeeId) || {};
+      const empName = emp.fullName || req.employeeName || 'Unknown';
+
+      const statusBadgeClass = req.status === 'Pending' ? 'badge-pending' : req.status === 'Approved' ? 'badge-approved' : 'badge-rejected';
+      const statusText = window.POS_TRANSLATIONS[state.lang][req.status.toLowerCase()] || req.status;
+
+      let actionHtml = '—';
+      if (req.status === 'Pending') {
+        actionHtml = `
+          <button class="btn btn-secondary btn-sm btn-approve-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px; margin-right:4px;" data-translate="approve">Approve</button>
+          <button class="btn btn-danger btn-sm btn-reject-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px;" data-translate="reject">Reject</button>
+        `;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong style="color:var(--secondary); font-family:monospace;">${req.employeeId}</strong></td>
+        <td><strong>${empName}</strong></td>
+        <td><strong>${req.leaveType}</strong></td>
+        <td>${req.startDate}</td>
+        <td>${req.endDate}</td>
+        <td style="font-size:11px; color:var(--text-secondary); max-width:200px; white-space:normal; line-height:1.3;">${req.reason || ''}</td>
+        <td><span class="badge ${statusBadgeClass}">${statusText}</span></td>
+        <td>${actionHtml}</td>
+      `;
+
+      if (req.status === 'Pending') {
+        tr.querySelector('.btn-approve-leave').addEventListener('click', () => processLeaveRequest(req.id, 'Approved'));
+        tr.querySelector('.btn-reject-leave').addEventListener('click', () => processLeaveRequest(req.id, 'Rejected'));
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    if (tbody.children.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);" data-translate="noData">No records found</td></tr>`;
+      translateApp();
+    }
+  }
+
+  function processLeaveRequest(reqId, newStatus) {
+    if (!guardAction('edit')) return;
+    const req = state.leaveRequests.find(r => r.id === reqId);
+    if (req) {
+      req.status = newStatus;
+      req.updatedBy = state.currentUser ? state.currentUser.username : 'system';
+      req.timestamp = new Date().toISOString();
+
+      saveStateToLocalStorage();
+      renderLeaveRequests();
+      renderHRDashboard();
+
+      const emp = state.employees.find(e => e.id === req.employeeId);
+      if (emp && emp.telegramId) {
+        const statusText = newStatus === 'Approved' ? '✅ ត្រូវបានអនុម័ត (APPROVED)' : '❌ ត្រូវបានបដិសេធ (REJECTED)';
+        const msg = `🔔 ព័ត៌មានលិខិតសុំច្បាប់៖\n\nលិខិតសុំច្បាប់របស់អ្នកសម្រាប់ថ្ងៃទី៖ ${req.startDate} ដល់ ${req.endDate} (${req.leaveType}) ${statusText} ដោយអ្នកគ្រប់គ្រង។`;
+        notifyEmployeeTelegram(emp.telegramId, msg);
+      }
+
+      alert(`Leave request has been ${newStatus.toLowerCase()}!`);
+    }
+  }
+
+  function renderHRDashboard() {
+    const total = state.employees.length;
+    const today = new Date().toLocaleDateString('en-CA');
+    const todayAtt = state.attendance.filter(a => a.date === today);
+    const present = todayAtt.filter(a => a.checkIn).length;
+    const late = todayAtt.filter(a => a.checkIn && a.checkIn.status === 'Late').length;
+    
+    const onLeave = state.leaveRequests.filter(req => {
+      if (req.status !== 'Approved') return false;
+      const start = new Date(req.startDate);
+      const end = new Date(req.endDate);
+      const cur = new Date(today);
+      return cur >= start && cur <= end;
+    }).length;
+
+    const absent = Math.max(0, total - present - onLeave);
+
+    const kpiTotal = document.getElementById('hr-kpi-total');
+    const kpiPresent = document.getElementById('hr-kpi-present');
+    const kpiAbsent = document.getElementById('hr-kpi-absent');
+    const kpiLate = document.getElementById('hr-kpi-late');
+    const kpiLeave = document.getElementById('hr-kpi-leave');
+
+    if (kpiTotal) kpiTotal.innerText = total;
+    if (kpiPresent) kpiPresent.innerText = present;
+    if (kpiAbsent) kpiAbsent.innerText = absent;
+    if (kpiLate) kpiLate.innerText = late;
+    if (kpiLeave) kpiLeave.innerText = onLeave;
+
+    const tbody = document.getElementById('hr-dashboard-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    state.employees.forEach(emp => {
+      if (emp.status !== 'Active') return;
+      
+      const log = todayAtt.find(a => a.employeeId === emp.id);
+      
+      let checkInTime = '—';
+      let checkInStatus = '';
+      let checkInBadgeClass = '';
+      let selfieHtml = '—';
+      
+      if (log && log.checkIn) {
+        checkInTime = log.checkIn.time;
+        checkInStatus = log.checkIn.status;
+        checkInBadgeClass = checkInStatus === 'On Time' ? 'badge-ontime' : checkInStatus === 'Late' ? 'badge-late' : '';
+        if (log.checkIn.selfieUrl) {
+          selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.open('${log.checkIn.selfieUrl}', '_blank')">`;
+        }
+      }
+
+      const checkOutTime = log && log.checkOut ? log.checkOut.time : '—';
+      
+      let empStatusHtml = '';
+      if (log) {
+        empStatusHtml = `<span class="badge badge-ontime">Present</span>`;
+      } else {
+        const leaveActive = state.leaveRequests.some(req => {
+          if (req.employeeId !== emp.id || req.status !== 'Approved') return false;
+          const start = new Date(req.startDate);
+          const end = new Date(req.endDate);
+          const cur = new Date(today);
+          return cur >= start && cur <= end;
+        });
+        
+        if (leaveActive) {
+          empStatusHtml = `<span class="badge badge-pending">On Leave</span>`;
+        } else {
+          empStatusHtml = `<span class="badge badge-late">Absent</span>`;
+        }
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong style="color:var(--secondary); font-family:monospace;">${emp.id}</strong></td>
+        <td><strong>${emp.fullName}</strong><br><span style="font-size:9.5px; color:var(--text-muted);">${emp.position || ''}</span></td>
+        <td>${checkInTime} ${checkInStatus ? `<span class="badge ${checkInBadgeClass}">${checkInStatus}</span>` : ''}</td>
+        <td>${checkOutTime}</td>
+        <td>${empStatusHtml}</td>
+        <td>${selfieHtml}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+
+    if (tbody.children.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);" data-translate="noData">No records found</td></tr>`;
+      translateApp();
+    }
+  }
+
+  function populateHRSettingsForm() {
+    const settings = state.companySettings || {};
+    
+    document.getElementById('hr-settings-token').value = settings.hrTelegramBotToken || '';
+    document.getElementById('hr-settings-username').value = settings.hrTelegramBotUsername || '';
+    document.getElementById('hr-settings-lat').value = settings.hrOfficeLatitude || '';
+    document.getElementById('hr-settings-lng').value = settings.hrOfficeLongitude || '';
+    document.getElementById('hr-settings-radius').value = settings.hrOfficeRadius || '100';
+    document.getElementById('hr-settings-start').value = settings.hrWorkStart || '08:00';
+    document.getElementById('hr-settings-end').value = settings.hrWorkEnd || '17:00';
+
+    const webhookUrlInput = document.getElementById('hr-settings-webhook-url');
+    if (webhookUrlInput) {
+      webhookUrlInput.value = window.location.origin + '/api/bot';
+    }
+  }
+
+  function saveHRSettings() {
+    if (!guardAction('edit')) return;
+    const token = document.getElementById('hr-settings-token').value.trim();
+    const username = document.getElementById('hr-settings-username').value.trim();
+    const lat = parseFloat(document.getElementById('hr-settings-lat').value) || 0;
+    const lng = parseFloat(document.getElementById('hr-settings-lng').value) || 0;
+    const radius = parseInt(document.getElementById('hr-settings-radius').value) || 100;
+    const start = document.getElementById('hr-settings-start').value;
+    const end = document.getElementById('hr-settings-end').value;
+
+    state.companySettings.hrTelegramBotToken = token;
+    state.companySettings.hrTelegramBotUsername = username;
+    state.companySettings.hrOfficeLatitude = lat;
+    state.companySettings.hrOfficeLongitude = lng;
+    state.companySettings.hrOfficeRadius = radius;
+    state.companySettings.hrWorkStart = start;
+    state.companySettings.hrWorkEnd = end;
+
+    saveStateToLocalStorage();
+    alert("HR and Bot configurations saved successfully!");
+  }
+
+  function notifyEmployeeTelegram(telegramId, text) {
+    const token = state.companySettings.hrTelegramBotToken;
+    if (!token || !telegramId) return;
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramId,
+        text: text
+      })
+    }).catch(err => console.error("Telegram notify error:", err));
+  }
+
+  // ==================== END HR & ATTENDANCE SYSTEM LOGIC ====================
 
   // Bind main DOM event
   document.addEventListener('DOMContentLoaded', () => {

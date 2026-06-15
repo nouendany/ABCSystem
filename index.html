@@ -141,7 +141,7 @@
         </li>
         <li class="nav-item" data-view="view-staff">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-          <span data-translate="staff">Staff & Payroll</span>
+          <span data-translate="hrAttendance">HR & Attendance</span>
         </li>
         <li class="nav-item" data-view="view-reports">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><rect x="3" y="4" width="18" height="16" rx="2"></rect></svg>
@@ -1244,32 +1244,275 @@
 
       <!-- VIEW 9: STAFF & PAYROLL MANAGER -->
       <div id="view-staff" class="view-panel">
-        <div class="table-actions-row">
-          <button class="btn btn-primary" id="btn-add-staff-modal" data-translate="addStaff">Add Staff Member</button>
+        <!-- Tab Row -->
+        <div class="hr-tab-row">
+          <button class="hr-tab-btn active" data-tab="hr-dashboard" data-translate="hrDashboard">HR Dashboard</button>
+          <button class="hr-tab-btn" data-tab="hr-employees" data-translate="employeeList">Employee Database</button>
+          <button class="hr-tab-btn" data-tab="hr-attendance" data-translate="attendanceLogs">Attendance Logs</button>
+          <button class="hr-tab-btn" data-tab="hr-leaves" data-translate="leaveRequests">Leave Requests</button>
+          <button class="hr-tab-btn" data-tab="hr-settings" data-translate="hrSettings">HR Settings</button>
         </div>
-        
-        <div class="glass-card">
-          <div class="table-header">
-            <h3 data-translate="staff">Staff Database</h3>
+
+        <!-- SUB VIEW 1: HR DASHBOARD -->
+        <div id="hr-dashboard" class="hr-view-panel active-panel">
+          <div class="hr-kpi-grid">
+            <div class="glass-card hr-kpi-card">
+              <div class="hr-kpi-icon" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">👥</div>
+              <div class="hr-kpi-data">
+                <div class="hr-kpi-label" data-translate="totalEmployees">Total Employees</div>
+                <div class="hr-kpi-val" id="hr-kpi-total">0</div>
+              </div>
+            </div>
+            <div class="glass-card hr-kpi-card">
+              <div class="hr-kpi-icon" style="background: linear-gradient(135deg, #10b981, #059669);">✅</div>
+              <div class="hr-kpi-data">
+                <div class="hr-kpi-label" data-translate="presentToday">Present Today</div>
+                <div class="hr-kpi-val" id="hr-kpi-present">0</div>
+              </div>
+            </div>
+            <div class="glass-card hr-kpi-card">
+              <div class="hr-kpi-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">❌</div>
+              <div class="hr-kpi-data">
+                <div class="hr-kpi-label" data-translate="absentToday">Absent Today</div>
+                <div class="hr-kpi-val" id="hr-kpi-absent">0</div>
+              </div>
+            </div>
+            <div class="glass-card hr-kpi-card">
+              <div class="hr-kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">⏰</div>
+              <div class="hr-kpi-data">
+                <div class="hr-kpi-label" data-translate="lateToday">Late Today</div>
+                <div class="hr-kpi-val" id="hr-kpi-late">0</div>
+              </div>
+            </div>
+            <div class="glass-card hr-kpi-card">
+              <div class="hr-kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">📅</div>
+              <div class="hr-kpi-data">
+                <div class="hr-kpi-label" data-translate="onLeaveToday">On Leave Today</div>
+                <div class="hr-kpi-val" id="hr-kpi-leave">0</div>
+              </div>
+            </div>
           </div>
-          <div class="table-responsive">
-            <table class="pos-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th data-translate="staffName">Name</th>
-                  <th data-translate="role">Position</th>
-                  <th data-translate="baseSalary">Base Salary</th>
-                  <th data-translate="commissionRate">Comm. Rate (%)</th>
-                  <th data-translate="salesAttributed">Sales Volume</th>
-                  <th data-translate="commissionEarned">Comm. Earned</th>
-                  <th data-translate="action">Action</th>
-                </tr>
-              </thead>
-              <tbody id="staff-table-body">
-                <!-- JS Injected -->
-              </tbody>
-            </table>
+
+          <div class="glass-card" style="padding: 20px;">
+            <div class="table-header">
+              <h3 data-translate="presentToday">Today's Attendance Status</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th data-translate="employeeId">Employee ID</th>
+                    <th data-translate="employeeName">Name</th>
+                    <th data-translate="checkIn">Check-In</th>
+                    <th data-translate="checkOut">Check-Out</th>
+                    <th data-translate="status">Status</th>
+                    <th data-translate="selfiePhoto">Selfie</th>
+                  </tr>
+                </thead>
+                <tbody id="hr-dashboard-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB VIEW 2: EMPLOYEE DATABASE -->
+        <div id="hr-employees" class="hr-view-panel">
+          <!-- Toggle Sub-tab for Employee list vs POS Staff list -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; gap:8px; background:rgba(255,255,255,0.05); padding:4px; border-radius:8px;">
+              <button class="btn btn-sm" id="btn-toggle-hr-employees" style="background:var(--primary); color:white; min-height:auto; padding:6px 12px;" data-translate="employeeList">Employees (Attendance)</button>
+              <button class="btn btn-sm" id="btn-toggle-pos-staff" style="background:transparent; color:var(--text-secondary); min-height:auto; padding:6px 12px;">POS Sales Staff</button>
+            </div>
+            
+            <div id="hr-employee-actions" style="display:flex; gap:10px; align-items:center;">
+              <input type="text" id="hr-employee-search" class="form-control" placeholder="Search employees..." style="max-width:200px; min-height:32px; padding:4px 10px; font-size:12px; margin:0;">
+              <button class="btn btn-primary btn-sm" id="btn-add-employee-modal" data-translate="addEmployee">Add Employee</button>
+            </div>
+            
+            <div id="pos-staff-actions" style="display:none; align-items:center;">
+              <button class="btn btn-primary btn-sm" id="btn-add-staff-modal" data-translate="addStaff">Add POS Staff</button>
+            </div>
+          </div>
+
+          <!-- HR Employees Table -->
+          <div id="panel-hr-employees" class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="employeeList">Employee Directory</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th data-translate="employeeName">Name</th>
+                    <th data-translate="gender">Gender</th>
+                    <th data-translate="role">Position</th>
+                    <th data-translate="phone">Phone</th>
+                    <th data-translate="telegramId">Telegram ID</th>
+                    <th data-translate="status">Status</th>
+                    <th data-translate="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="hr-employees-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- POS Sales Staff Table (Original View) -->
+          <div id="panel-pos-staff" class="glass-card" style="display:none;">
+            <div class="table-header">
+              <h3 data-translate="staff">Sales Staff Database</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th data-translate="staffName">Name</th>
+                    <th data-translate="role">Position</th>
+                    <th data-translate="baseSalary">Base Salary</th>
+                    <th data-translate="commissionRate">Comm. Rate (%)</th>
+                    <th data-translate="salesAttributed">Sales Volume</th>
+                    <th data-translate="commissionEarned">Comm. Earned</th>
+                    <th data-translate="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB VIEW 3: ATTENDANCE LOGS -->
+        <div id="hr-attendance" class="hr-view-panel">
+          <div class="table-actions-row" style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+            <div class="form-group" style="margin:0;">
+              <input type="date" id="hr-attendance-date-filter" class="form-control" style="min-height:36px; padding:6px 12px; font-size:13px;">
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-clear-attendance-filter" data-translate="all">All Dates</button>
+          </div>
+
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="attendanceLogs">Attendance Logs</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th data-translate="date">Date</th>
+                    <th data-translate="employeeId">Employee ID</th>
+                    <th data-translate="employeeName">Name</th>
+                    <th data-translate="checkIn">Check-In</th>
+                    <th data-translate="checkOut">Check-Out</th>
+                    <th data-translate="workingHours">Hours</th>
+                    <th data-translate="overtime">OT</th>
+                    <th data-translate="gpsLocation">GPS Map</th>
+                    <th data-translate="selfiePhoto">Selfie</th>
+                  </tr>
+                </thead>
+                <tbody id="hr-attendance-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB VIEW 4: LEAVE REQUESTS -->
+        <div id="hr-leaves" class="hr-view-panel">
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="leaveRequests">Leave Requests</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th data-translate="employeeId">Employee ID</th>
+                    <th data-translate="employeeName">Name</th>
+                    <th data-translate="leaveType">Type</th>
+                    <th data-translate="startDate">Start Date</th>
+                    <th data-translate="endDate">End Date</th>
+                    <th data-translate="reason">Reason</th>
+                    <th data-translate="status">Status</th>
+                    <th data-translate="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="hr-leaves-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB VIEW 5: HR SETTINGS -->
+        <div id="hr-settings" class="hr-view-panel">
+          <div class="glass-card" style="padding: 24px; max-width: 600px; margin: 0 auto;">
+            <div class="table-header" style="margin-bottom: 20px;">
+              <h3 data-translate="hrSettings">HR & Telegram Bot Settings</h3>
+            </div>
+            <form id="hr-settings-form">
+              <div class="form-group">
+                <label data-translate="telegramToken">Telegram Bot Token</label>
+                <input type="text" class="form-control" id="hr-settings-token" placeholder="Enter Bot Token from BotFather">
+                <small style="color: var(--text-muted); font-size: 11px;" data-translate="botTokenHelp">Used to receive location & selfie uploads and notify employees.</small>
+              </div>
+              <div class="form-group">
+                <label data-translate="botUsername">Telegram Bot Username</label>
+                <input type="text" class="form-control" id="hr-settings-username" placeholder="e.g. @MyCompanyAttendanceBot">
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                  <label data-translate="latitude">Office Latitude</label>
+                  <input type="number" step="any" class="form-control" id="hr-settings-lat" placeholder="e.g. 11.5564">
+                </div>
+                <div class="form-group">
+                  <label data-translate="longitude">Office Longitude</label>
+                  <input type="number" step="any" class="form-control" id="hr-settings-lng" placeholder="e.g. 104.9282">
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                  <label data-translate="allowedRadius">Allowed Radius (meters)</label>
+                  <input type="number" class="form-control" id="hr-settings-radius" value="100">
+                </div>
+                <div class="form-group">
+                  <label data-translate="workHours">Work Shift Hours</label>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="time" class="form-control" id="hr-settings-start" value="08:00" style="padding: 6px;">
+                    <span style="color:var(--text-muted); font-weight:bold;">-</span>
+                    <input type="time" class="form-control" id="hr-settings-end" value="17:00" style="padding: 6px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Telegram Webhook Registration Help -->
+              <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 10px;">
+                <label style="margin-bottom:4px; font-weight:700;" data-translate="botUrl">Webhook URL</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" class="form-control" id="hr-settings-webhook-url" readonly style="background: rgba(0,0,0,0.2);">
+                  <button type="button" class="btn btn-outline" id="btn-copy-webhook" style="min-height:auto; padding: 6px 12px; font-size:12px;">Copy</button>
+                </div>
+                <small style="color: var(--text-muted); font-size: 11px; display:block; margin-top:6px;">
+                  Copy this Webhook URL and register it to your Telegram Bot by visiting:<br>
+                  <code style="color: var(--primary); font-family: monospace; font-size:10px; word-break: break-all;">https://api.telegram.org/bot&lt;Token&gt;/setWebhook?url=&lt;URL&gt;</code>
+                </small>
+              </div>
+
+              <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary" data-translate="save">Save Settings</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -1731,6 +1974,103 @@
     </div>
   </div>
 
+  <!-- MODAL 13: ADD/EDIT EMPLOYEE MODAL -->
+  <div class="modal-overlay" id="modal-employee">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="employee-modal-title" data-translate="addEmployee">Add Employee</h3>
+        <button class="qty-btn" id="btn-close-employee">×</button>
+      </div>
+      <form id="employee-form">
+        <div class="modal-body" style="max-height: 480px; overflow-y: auto; text-align: left;">
+          <input type="hidden" id="employee-edit-doc-id">
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label data-translate="employeeId">Employee ID *</label>
+              <input type="text" class="form-control" id="employee-id" required placeholder="e.g. EMP001">
+            </div>
+            <div class="form-group">
+              <label data-translate="employeeName">Full Name *</label>
+              <input type="text" class="form-control" id="employee-fullname" required placeholder="e.g. Sok Dara">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label data-translate="gender">Gender</label>
+              <select class="form-control" id="employee-gender">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label data-translate="dob">Date of Birth</label>
+              <input type="date" class="form-control" id="employee-dob">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label data-translate="phone">Phone *</label>
+              <input type="text" class="form-control" id="employee-phone" required placeholder="e.g. 010955536">
+            </div>
+            <div class="form-group">
+              <label data-translate="telegramId">Telegram ID</label>
+              <input type="text" class="form-control" id="employee-telegram-id" placeholder="Linked automatically or type ID">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" class="form-control" id="employee-email" placeholder="e.g. sok.dara@company.com">
+            </div>
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" class="form-control" id="employee-address" placeholder="e.g. Phnom Penh">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Department</label>
+              <input type="text" class="form-control" id="employee-department" placeholder="e.g. IT, Sales">
+            </div>
+            <div class="form-group">
+              <label>Position</label>
+              <input type="text" class="form-control" id="employee-position" placeholder="e.g. Developer">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Salary ($)</label>
+              <input type="number" step="any" class="form-control" id="employee-salary" placeholder="e.g. 500">
+            </div>
+            <div class="form-group">
+              <label data-translate="joinDate">Join Date</label>
+              <input type="date" class="form-control" id="employee-join-date">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label data-translate="status">Status</label>
+            <select class="form-control" id="employee-status">
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+              <option value="Resigned">Resigned</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-employee" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-secondary" data-translate="save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL 7: PAY DEBT DIALOG -->
   <div class="modal-overlay" id="modal-pay-debt">
     <div class="modal-card" style="max-width: 380px;">
@@ -2015,6 +2355,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
   <!-- Core logic engine application file -->
-  <script src="app.js?v=1.3.1"></script>
+  <script src="app.js?v=1.3.2"></script>
 </body>
 </html>
