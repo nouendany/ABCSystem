@@ -110,9 +110,11 @@ export default async function handler(req, res) {
 
     // User is not registered
     if (!employee) {
-      // Handle registration text
-      if (text && text.toUpperCase().startsWith("EMP")) {
-        const empIdInput = text.toUpperCase();
+      const isCommand = text && (text.startsWith("/") || text.toLowerCase() === "start" || text.toLowerCase() === "cancel");
+      
+      // Handle registration text if it's not a command
+      if (text && !isCommand) {
+        const empIdInput = text.trim().toUpperCase();
         const checkRef = query(employeesRef, where("id", "==", empIdInput));
         const checkSnap = await getDocs(checkRef);
         
@@ -148,10 +150,10 @@ export default async function handler(req, res) {
         return res.status(200).send("OK");
       }
 
-      // If user typed anything else, show registration welcome message
+      // If user sent a command or just started, show registration welcome message
       await sendTelegram(token, "sendMessage", {
         chat_id: chatId,
-        text: `សួស្តី! គណនី Telegram របស់អ្នកមិនទាន់បានចុះឈ្មោះក្នុងប្រព័ន្ធវត្តមាននៅឡើយទេ។\n\n👉 សូមវាយអត្តលេខបុគ្គលិករបស់អ្នក (ឧទាហរណ៍៖ **EMP001** ឬ **EMP002**) ដើម្បីចុះឈ្មោះ៖`
+        text: `សួស្តី! គណនី Telegram របស់អ្នកមិនទាន់បានចុះឈ្មោះក្នុងប្រព័ន្ធវត្តមាននៅឡើយទេ។\n\n👉 សូមវាយអត្តលេខបុគ្គលិករបស់អ្នក (ឧទហរណ៍៖ **ABC2026001** ឬ **EMP001**) ដើម្បីចុះឈ្មោះ៖`
       });
       return res.status(200).send("OK");
     }
