@@ -282,7 +282,7 @@ export default async function handler(req, res) {
     if (text === "☎️ ទាក់ទង Admin") {
       await sendTelegram(token, "sendMessage", {
         chat_id: chatId,
-        text: `☎️ **ទាក់ទងផ្នែករដ្ឋបាល (Admin)**\n\n👤 ឈ្មោះ៖ NOUEN Dany (System Admin)\n📞 ទូរស័ព្ទ៖ 010 955 536\n💬 Telegram៖ @nouendany`,
+        text: `☎️ **ទាក់ទងផ្នែករដ្ឋបាល (Admin)**\n\n👤 ឈ្មោះ៖ NOUEN Dany (System Admin)\n📞 ទូរស័ព្ទ៖ 010 955 536\n💬 Telegram៖ @nouen_dany`,
         reply_markup: menuMarkup
       });
       return res.status(200).send("OK");
