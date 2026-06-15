@@ -253,6 +253,9 @@
     </button>
   </div>
 
+  <!-- Native Camera Fallback Input -->
+  <input type="file" id="native-camera-input" accept="image/*" capture="user" style="display: none;">
+
   <!-- Fullscreen Loading/Success Overlay -->
   <div class="overlay" id="overlay">
     <div class="spinner" id="overlay-spinner"></div>
@@ -331,7 +334,7 @@
         hideLoading();
       } catch (err) {
         console.error("Camera access error:", err);
-        showError("Unable to access camera! Please make sure Telegram has camera permissions enabled in your phone settings.");
+        showError("Unable to access camera! Please make sure Telegram has camera permissions enabled in your phone settings.", true);
       }
     }
 
@@ -353,6 +356,10 @@
 
     // Capture photo from video stream
     captureBtn.addEventListener('click', () => {
+      if (!currentStream) {
+        window.triggerNativeCamera();
+        return;
+      }
       if (capturedBase64) {
         // Reset to live camera view
         photoPreview.style.display = 'none';
@@ -432,7 +439,17 @@
       overlay.style.display = 'flex';
       overlaySpinner.style.display = 'block';
       overlaySuccess.style.display = 'none';
-      overlayMsg.innerText = msg;
+      
+      let extraHtml = '';
+      if (msg === "Starting camera...") {
+        extraHtml = `
+          <br><br>
+          <button class="btn" style="width:auto; margin:10px auto 0; padding:10px 20px; font-size:13px; background:#10b981; color:white; font-weight:700;" onclick="window.triggerNativeCamera()">
+            📸 Open Native Camera (ប្រើកាមេរ៉ាទូរស័ព្ទ)
+          </button>
+        `;
+      }
+      overlayMsg.innerHTML = msg + extraHtml;
     }
 
     function hideLoading() {
@@ -446,11 +463,64 @@
       overlayMsg.innerText = msg;
     }
 
-    function showError(msg) {
+    function showError(msg, isCameraError = false) {
       overlay.style.display = 'flex';
       overlaySpinner.style.display = 'none';
       overlaySuccess.style.display = 'none';
-      overlayMsg.innerHTML = `<span style="color:#ef4444; font-size:32px;">⚠️</span><br><br>${msg}<br><br><button class="btn btn-blue" style="width:auto; margin:0 auto; padding:8px 16px;" onclick="hideLoading()">OK</button>`;
+
+      let buttonHtml = `<button class="btn btn-blue" style="width:auto; margin:0 auto; padding:8px 16px;" onclick="hideLoading()">OK</button>`;
+      if (isCameraError) {
+        buttonHtml = `
+          <button class="btn" style="width:auto; margin:8px auto; padding:10px 20px; font-size:14px; background:#10b981; color:white; font-weight:700;" onclick="window.triggerNativeCamera()">
+            📸 Open Native Camera (បើកកាមេរ៉ាទូរស័ព្ទ)
+          </button>
+          <button class="btn" style="width:auto; margin:8px auto; padding:8px 16px; font-size:13px; background:transparent; border:1px solid #cbd5e1; color:#64748b;" onclick="hideLoading()">
+            Cancel
+          </button>
+        `;
+      }
+
+      overlayMsg.innerHTML = `
+        <span style="color:#ef4444; font-size:32px;">⚠️</span><br><br>
+        ${msg}<br><br>
+        ${buttonHtml}
+      `;
+    }
+
+    // Native Camera Fallback Logic
+    const nativeCameraInput = document.getElementById('native-camera-input');
+    
+    window.triggerNativeCamera = function() {
+      if (nativeCameraInput) {
+        nativeCameraInput.click();
+      }
+    };
+
+    if (nativeCameraInput) {
+      nativeCameraInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          showLoading("Processing photo...");
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            capturedBase64 = evt.target.result;
+            
+            // Show photo preview
+            photoPreview.src = capturedBase64;
+            photoPreview.style.display = 'block';
+            video.style.display = 'none';
+            
+            captureBtn.innerHTML = "Retake";
+            submitBtn.disabled = false;
+            submitBtn.classList.add('active');
+            hideLoading();
+          };
+          reader.onerror = function() {
+            showError("Failed to read photo file.");
+          };
+          reader.readAsDataURL(file);
+        }
+      });
     }
 
     // Start camera on page load

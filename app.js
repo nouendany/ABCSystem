@@ -8175,7 +8175,157 @@ CREATE TABLE sale_items (
         sendDailySummaryReport();
       });
     }
+
+    // 9. Edit Attendance Modal Event Listeners
+    const btnCloseEditAtt = document.getElementById('btn-close-edit-attendance');
+    if (btnCloseEditAtt) {
+      btnCloseEditAtt.addEventListener('click', () => {
+        document.getElementById('modal-edit-attendance').classList.remove('active-modal');
+      });
+    }
+
+    const btnCancelEditAtt = document.getElementById('btn-cancel-edit-attendance');
+    if (btnCancelEditAtt) {
+      btnCancelEditAtt.addEventListener('click', () => {
+        document.getElementById('modal-edit-attendance').classList.remove('active-modal');
+      });
+    }
+
+    const editAttForm = document.getElementById('attendance-edit-form');
+    if (editAttForm) {
+      editAttForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveAttendanceEdit();
+      });
+    }
+
+    // Auto-calculate Working Hours and Overtime when times change
+    const checkInInput = document.getElementById('attendance-edit-checkin-time');
+    const checkOutInput = document.getElementById('attendance-edit-checkout-time');
+    const workingHoursInput = document.getElementById('attendance-edit-working-hours');
+    const otHoursInput = document.getElementById('attendance-edit-ot-hours');
+
+    function recomputeHours() {
+      const inVal = checkInInput.value;
+      const outVal = checkOutInput.value;
+      if (inVal && outVal) {
+        const [inH, inM] = inVal.split(':').map(Number);
+        const [outH, outM] = outVal.split(':').map(Number);
+        
+        let diffSec = (outH * 3600 + outM * 60) - (inH * 3600 + inM * 60);
+        if (diffSec < 0) {
+          // Assume crossed midnight
+          diffSec += 24 * 3600;
+        }
+        
+        const hrs = parseFloat((diffSec / 3600).toFixed(2));
+        workingHoursInput.value = hrs;
+        
+        const ot = hrs > 8 ? parseFloat((hrs - 8).toFixed(2)) : 0;
+        otHoursInput.value = ot;
+      }
+    }
+
+    if (checkInInput && checkOutInput) {
+      checkInInput.addEventListener('change', recomputeHours);
+      checkOutInput.addEventListener('change', recomputeHours);
+    }
   }
+
+  function openEditAttendanceModal(logId) {
+    if (!guardAction('edit')) return;
+    const log = state.attendance.find(x => x.id === logId);
+    if (!log) {
+      alert("Attendance record not found.");
+      return;
+    }
+
+    const emp = state.employees.find(e => e.id === log.employeeId) || {};
+    const empName = emp.fullName || log.employeeName || 'Unknown';
+
+    document.getElementById('attendance-edit-log-id').value = log.id;
+    document.getElementById('attendance-edit-emp-name').value = empName;
+    document.getElementById('attendance-edit-date').value = log.date;
+    
+    document.getElementById('attendance-edit-checkin-time').value = log.checkIn ? log.checkIn.time : '';
+    document.getElementById('attendance-edit-checkout-time').value = log.checkOut ? log.checkOut.time : '';
+    
+    // Retrieve working hours and OT hours, check both root level and checkout level
+    const wHours = (log.workingHours !== undefined) ? log.workingHours : (log.checkOut ? log.checkOut.workingHours : '');
+    const otHours = (log.overtime !== undefined) ? log.overtime : (log.checkOut ? log.checkOut.overtime : '');
+    
+    document.getElementById('attendance-edit-working-hours').value = wHours;
+    document.getElementById('attendance-edit-ot-hours').value = otHours;
+
+    document.getElementById('modal-edit-attendance').classList.add('active-modal');
+  }
+
+  function saveAttendanceEdit() {
+    if (!guardAction('edit')) return;
+    const logId = document.getElementById('attendance-edit-log-id').value;
+    const log = state.attendance.find(x => x.id === logId);
+    if (!log) {
+      alert("Attendance record not found.");
+      return;
+    }
+
+    const inTime = document.getElementById('attendance-edit-checkin-time').value;
+    const outTime = document.getElementById('attendance-edit-checkout-time').value;
+    
+    let workingHoursVal = parseFloat(document.getElementById('attendance-edit-working-hours').value);
+    let otHoursVal = parseFloat(document.getElementById('attendance-edit-ot-hours').value);
+
+    if (isNaN(workingHoursVal)) workingHoursVal = 0;
+    if (isNaN(otHoursVal)) otHoursVal = 0;
+
+    // Update checkIn
+    if (inTime) {
+      if (!log.checkIn) {
+        log.checkIn = { latitude: 0, longitude: 0, selfieUrl: '' };
+      }
+      log.checkIn.time = inTime;
+      
+      // Determine if Late
+      let checkInStatus = 'On Time';
+      const settings = state.companySettings || {};
+      if (settings.checkInTime) {
+        const [sh, sm] = settings.checkInTime.split(':').map(Number);
+        const [ih, im] = inTime.split(':').map(Number);
+        if (ih > sh || (ih === sh && im > sm)) {
+          checkInStatus = 'Late';
+        }
+      }
+      log.checkIn.status = checkInStatus;
+    } else {
+      delete log.checkIn;
+    }
+
+    // Update checkOut
+    if (outTime) {
+      if (!log.checkOut) {
+        log.checkOut = { latitude: 0, longitude: 0, selfieUrl: '' };
+      }
+      log.checkOut.time = outTime;
+    } else {
+      delete log.checkOut;
+    }
+
+    // Write hours to both root level and checkout object
+    log.workingHours = workingHoursVal;
+    if (log.checkOut) log.checkOut.workingHours = workingHoursVal;
+
+    log.overtime = otHoursVal;
+    if (log.checkOut) log.checkOut.overtime = otHoursVal;
+
+    saveStateToLocalStorage();
+    document.getElementById('modal-edit-attendance').classList.remove('active-modal');
+    renderAttendanceLogs();
+    renderHRDashboard();
+    
+    alert("Attendance record updated successfully!");
+  }
+
+  window.openEditAttendanceModal = openEditAttendanceModal;
 
   function openEmployeeModal(empId) {
     if (!guardAction('edit')) return;
@@ -8359,18 +8509,40 @@ CREATE TABLE sale_items (
       const checkInBadgeClass = checkInStatus === 'On Time' ? 'badge-ontime' : checkInStatus === 'Late' ? 'badge-late' : '';
       
       const checkOutTime = log.checkOut ? log.checkOut.time : '—';
-      const workingHours = log.checkOut && log.checkOut.workingHours ? log.checkOut.workingHours.toFixed(1) + ' hrs' : '—';
-      const overtime = log.checkOut && log.checkOut.overtime ? log.checkOut.overtime.toFixed(1) + ' hrs' : '—';
+      const wHoursVal = (log.workingHours !== undefined) ? log.workingHours : (log.checkOut ? log.checkOut.workingHours : undefined);
+      const otHoursVal = (log.overtime !== undefined) ? log.overtime : (log.checkOut ? log.checkOut.overtime : undefined);
+      const workingHours = typeof wHoursVal === 'number' ? wHoursVal.toFixed(1) + ' hrs' : '—';
+      const overtime = typeof otHoursVal === 'number' ? otHoursVal.toFixed(1) + ' hrs' : '—';
 
       let gpsLink = '—';
       if (log.checkIn && log.checkIn.latitude && log.checkIn.longitude) {
         gpsLink = `<a href="https://www.google.com/maps?q=${log.checkIn.latitude},${log.checkIn.longitude}" target="_blank" class="gps-map-link">📍 Map</a>`;
       }
 
-      let selfieHtml = '—';
+      let selfieHtml = '';
       if (log.checkIn && log.checkIn.selfieUrl) {
-        selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.viewSelfiePhoto('${log.checkIn.selfieUrl}')">`;
+        selfieHtml += `
+          <div style="text-align: center; margin: 0 4px;">
+            <span style="font-size: 8px; color: var(--text-secondary); display: block; line-height: 1; margin-bottom: 2px;">IN</span>
+            <img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="In Selfie" onclick="window.viewSelfiePhoto('${log.checkIn.selfieUrl}')">
+          </div>
+        `;
       }
+      if (log.checkOut && log.checkOut.selfieUrl) {
+        selfieHtml += `
+          <div style="text-align: center; margin: 0 4px;">
+            <span style="font-size: 8px; color: var(--text-secondary); display: block; line-height: 1; margin-bottom: 2px;">OUT</span>
+            <img src="${log.checkOut.selfieUrl}" class="selfie-thumb" alt="Out Selfie" onclick="window.viewSelfiePhoto('${log.checkOut.selfieUrl}')">
+          </div>
+        `;
+      }
+      if (!selfieHtml) {
+        selfieHtml = '—';
+      } else {
+        selfieHtml = `<div style="display: flex; align-items: center; justify-content: center;">${selfieHtml}</div>`;
+      }
+
+      const editBtnText = state.lang === 'km' ? 'កែសម្រួល' : 'Edit';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -8383,13 +8555,18 @@ CREATE TABLE sale_items (
         <td style="color:var(--primary); font-weight:700;">${overtime}</td>
         <td>${gpsLink}</td>
         <td>${selfieHtml}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="window.openEditAttendanceModal('${log.id}')" style="padding:2px 8px; font-size:11px;">
+            📝 ${editBtnText}
+          </button>
+        </td>
       `;
 
       tbody.appendChild(tr);
     });
 
     if (tbody.children.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted);" data-translate="noData">No records found</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);" data-translate="noData">No records found</td></tr>`;
       translateApp();
     }
   }
