@@ -7878,6 +7878,30 @@ CREATE TABLE sale_items (
 
   // ==================== HR & ATTENDANCE SYSTEM LOGIC ====================
 
+  window.viewSelfiePhoto = function(dataUrl) {
+    if (!dataUrl || dataUrl === '—') return;
+    const win = window.open();
+    if (win) {
+      win.document.write(`
+        <html>
+          <head>
+            <title>Selfie Preview</title>
+            <style>
+              body { margin: 0; background: #0b0f19; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; color: white; }
+              img { max-width: 90%; max-height: 90vh; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+            </style>
+          </head>
+          <body>
+            <img src="${dataUrl}">
+          </body>
+        </html>
+      `);
+      win.document.close();
+    } else {
+      alert("Popup blocker blocked the window. Please allow popups.");
+    }
+  };
+
   function renderHRMain() {
     const activeTabBtn = document.querySelector('.hr-tab-btn.active');
     const targetTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'hr-dashboard';
@@ -8230,7 +8254,7 @@ CREATE TABLE sale_items (
 
       let selfieHtml = '—';
       if (log.checkIn && log.checkIn.selfieUrl) {
-        selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.open('${log.checkIn.selfieUrl}', '_blank')">`;
+        selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.viewSelfiePhoto('${log.checkIn.selfieUrl}')">`;
       }
 
       const tr = document.createElement('tr');
@@ -8374,7 +8398,7 @@ CREATE TABLE sale_items (
         checkInStatus = log.checkIn.status;
         checkInBadgeClass = checkInStatus === 'On Time' ? 'badge-ontime' : checkInStatus === 'Late' ? 'badge-late' : '';
         if (log.checkIn.selfieUrl) {
-          selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.open('${log.checkIn.selfieUrl}', '_blank')">`;
+          selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.viewSelfiePhoto('${log.checkIn.selfieUrl}')">`;
         }
       }
 
