@@ -5471,6 +5471,7 @@
               <div style="display: flex; gap: 8px;">
                 <input type="text" class="form-control" id="hr-settings-webhook-url-master" readonly style="background: rgba(0,0,0,0.2);" value="${window.location.origin + '/api/bot'}">
                 <button type="button" class="btn btn-outline" id="btn-copy-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;">Copy</button>
+                <button type="button" class="btn btn-primary" id="btn-register-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;" data-translate="registerWebhook">Set Webhook</button>
               </div>
               <small style="color: var(--text-muted); font-size: 11px; display:block; margin-top:6px;">
                 Copy this Webhook URL and register it to your Telegram Bot by visiting:<br>
@@ -5519,6 +5520,18 @@
           document.execCommand('copy');
           alert('Webhook URL copied to clipboard!');
         }
+      });
+
+      document.getElementById('btn-register-webhook-master').addEventListener('click', () => {
+        const token = document.getElementById('hr-settings-token-master').value.trim();
+        const webhookUrl = document.getElementById('hr-settings-webhook-url-master').value.trim();
+        if (!token) {
+          alert(state.lang === 'km' ? 'សូមបញ្ចូល Telegram Bot Token ជាមុនសិន!' : 'Please enter the Telegram Bot Token first!');
+          return;
+        }
+        
+        const registerUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
+        window.open(registerUrl, '_blank');
       });
 
       translateApp();
