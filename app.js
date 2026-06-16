@@ -8327,6 +8327,35 @@ CREATE TABLE sale_items (
 
   window.openEditAttendanceModal = openEditAttendanceModal;
 
+  function deleteAttendanceLog(logId) {
+    if (!guardAction('delete')) return;
+    const log = state.attendance.find(x => x.id === logId);
+    if (!log) {
+      alert("Attendance record not found.");
+      return;
+    }
+
+    const emp = state.employees.find(e => e.id === log.employeeId) || {};
+    const empName = emp.fullName || log.employeeName || 'Unknown';
+    
+    const confirmMsg = state.lang === 'km' 
+      ? `តើលោកអ្នកពិតជាចង់លុបកំណត់ត្រាវត្តមានរបស់ ${empName} សម្រាប់ថ្ងៃទី ${log.date} មែនទេ?`
+      : `Are you sure you want to delete the attendance log for ${empName} on ${log.date}?`;
+
+    if (confirm(confirmMsg)) {
+      const idx = state.attendance.findIndex(x => x.id === logId);
+      if (idx !== -1) {
+        state.attendance.splice(idx, 1);
+        saveStateToLocalStorage();
+        renderAttendanceLogs();
+        renderHRDashboard();
+        alert(state.lang === 'km' ? "បានលុបកំណត់ត្រាវត្តមានដោយជោគជ័យ!" : "Attendance record deleted successfully!");
+      }
+    }
+  }
+
+  window.deleteAttendanceLog = deleteAttendanceLog;
+
   function openEmployeeModal(empId) {
     if (!guardAction('edit')) return;
     const form = document.getElementById('employee-form');
@@ -8543,6 +8572,7 @@ CREATE TABLE sale_items (
       }
 
       const editBtnText = state.lang === 'km' ? 'កែសម្រួល' : 'Edit';
+      const deleteBtnText = state.lang === 'km' ? 'លុប' : 'Delete';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -8556,9 +8586,14 @@ CREATE TABLE sale_items (
         <td>${gpsLink}</td>
         <td>${selfieHtml}</td>
         <td>
-          <button class="btn btn-secondary btn-sm" onclick="window.openEditAttendanceModal('${log.id}')" style="padding:2px 8px; font-size:11px;">
-            📝 ${editBtnText}
-          </button>
+          <div style="display: flex; gap: 4px; justify-content: center;">
+            <button class="btn btn-secondary btn-sm" onclick="window.openEditAttendanceModal('${log.id}')" style="padding:2px 8px; font-size:11px;">
+              📝 ${editBtnText}
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="window.deleteAttendanceLog('${log.id}')" style="padding:2px 8px; font-size:11px; background-color: var(--danger); border: none;">
+              🗑️ ${deleteBtnText}
+            </button>
+          </div>
         </td>
       `;
 
