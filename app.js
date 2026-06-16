@@ -1,5 +1,65 @@
 // ABC System Enterprise POS & ERP System Logic
 (function() {
+  // Global memory fallbacks if LocalStorage/SessionStorage are blocked
+  const memoryStorage = {};
+  const memorySessionStorage = {};
+
+  function safeGetItem(key, fallback = null) {
+    try {
+      const val = localStorage.getItem(key);
+      return val !== null ? val : fallback;
+    } catch (e) {
+      console.warn(`LocalStorage read failed for "${key}", using memory storage fallback:`, e);
+      return memoryStorage[key] !== undefined ? memoryStorage[key] : fallback;
+    }
+  }
+
+  function safeSetItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn(`LocalStorage write failed for "${key}", using memory storage fallback:`, e);
+      memoryStorage[key] = String(value);
+    }
+  }
+
+  function safeRemoveItem(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`LocalStorage remove failed for "${key}", using memory storage fallback:`, e);
+      delete memoryStorage[key];
+    }
+  }
+
+  function safeGetSessionItem(key, fallback = null) {
+    try {
+      const val = sessionStorage.getItem(key);
+      return val !== null ? val : fallback;
+    } catch (e) {
+      console.warn(`SessionStorage read failed for "${key}", using memory storage fallback:`, e);
+      return memorySessionStorage[key] !== undefined ? memorySessionStorage[key] : fallback;
+    }
+  }
+
+  function safeSetSessionItem(key, value) {
+    try {
+      sessionStorage.setItem(key, value);
+    } catch (e) {
+      console.warn(`SessionStorage write failed for "${key}", using memory storage fallback:`, e);
+      memorySessionStorage[key] = String(value);
+    }
+  }
+
+  function safeRemoveSessionItem(key) {
+    try {
+      sessionStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`SessionStorage remove failed for "${key}", using memory storage fallback:`, e);
+      delete memorySessionStorage[key];
+    }
+  }
+
   // Auto-migrate old local storage database keys from geda_ to abc_
   const migrateKeys = [
     'lang', 'theme', 'users', 'branches', 'customers', 'brands', 'units', 
@@ -8,19 +68,19 @@
     'voided_transactions', 'closing_logs', 'audit_logs', 'current_user'
   ];
   migrateKeys.forEach(key => {
-    const oldVal = localStorage.getItem('geda_' + key);
-    const newVal = localStorage.getItem('abc_' + key);
+    const oldVal = safeGetItem('geda_' + key);
+    const newVal = safeGetItem('abc_' + key);
     if (oldVal !== null && newVal === null) {
-      localStorage.setItem('abc_' + key, oldVal);
+      safeSetItem('abc_' + key, oldVal);
     }
   });
   const state = {
-    lang: localStorage.getItem('abc_lang') || 'en',
-    theme: localStorage.getItem('abc_theme') || 'dark',
+    lang: safeGetItem('abc_lang') || 'en',
+    theme: safeGetItem('abc_theme') || 'dark',
     activeView: 'view-dashboard',
     activeSettingTab: 'company',
     activeReportTab: 'prodReport',
-    hideFollowupRoadmap: localStorage.getItem('abc_hide_followup_roadmap') === 'true',
+    hideFollowupRoadmap: safeGetItem('abc_hide_followup_roadmap') === 'true',
     
     // DB Collections
     users: [],
@@ -234,9 +294,9 @@
   // Database LocalStorage Seeding
   function initLocalStorageData() {
     const seed = (key, fallback) => {
-      const val = localStorage.getItem(key);
+      const val = safeGetItem(key);
       if (!val || val === 'null' || val === 'undefined') {
-        localStorage.setItem(key, JSON.stringify(fallback));
+        safeSetItem(key, JSON.stringify(fallback));
       }
     };
 
@@ -292,7 +352,7 @@
 
     const safeParse = (key, fallback) => {
       try {
-        const val = localStorage.getItem(key);
+        const val = safeGetItem(key);
         if (!val || val === 'null' || val === 'undefined') return fallback;
         return JSON.parse(val) || fallback;
       } catch (e) {
@@ -311,13 +371,13 @@
       }
     });
     if (usersUpdated) {
-      localStorage.setItem('abc_users', JSON.stringify(state.users));
-      const savedUser = sessionStorage.getItem('abc_current_user');
+      safeSetItem('abc_users', JSON.stringify(state.users));
+      const savedUser = safeGetSessionItem('abc_current_user');
       if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
         const matched = state.users.find(u => u.id === parsedUser.id);
         if (matched) {
-          sessionStorage.setItem('abc_current_user', JSON.stringify(matched));
+          safeSetSessionItem('abc_current_user', JSON.stringify(matched));
         }
       }
     }
@@ -356,7 +416,7 @@
         state.companySettings.companyName === 'ABA System') {
       state.companySettings.companyName = 'ABC System';
     }
-    localStorage.setItem('abc_company_settings', JSON.stringify(state.companySettings));
+    safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
     state.voidedTransactions = safeParse('abc_voided_transactions', []);
     state.closingLogs = safeParse('abc_closing_logs', []);
     state.auditLogs = safeParse('abc_audit_logs', []);
@@ -400,7 +460,7 @@
     document.getElementById('btn-theme-toggle').innerText = state.theme === 'light' ? '☀ Light Mode' : '🌙 Dark Mode';
 
     // Active session
-    const savedUser = sessionStorage.getItem('abc_current_user');
+    const savedUser = safeGetSessionItem('abc_current_user');
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       const actualUserObj = state.users.find(u => u.id === parsedUser.id);
@@ -410,7 +470,7 @@
         updateUserCardHeader();
       } else {
         state.currentUser = null;
-        sessionStorage.removeItem('abc_current_user');
+        safeRemoveSessionItem('abc_current_user');
         document.getElementById('login-screen').classList.add('active-login');
       }
     } else {
@@ -507,39 +567,39 @@
         c.timeline = entries;
       }
     });
-    localStorage.setItem('abc_followups', JSON.stringify(state.followups));
-    localStorage.setItem('abc_customers', JSON.stringify(state.customers));
+    safeSetItem('abc_followups', JSON.stringify(state.followups));
+    safeSetItem('abc_customers', JSON.stringify(state.customers));
     try { cleanupOldSelfies(); } catch(e) {}
   }
 
   function saveStateToLocalStorage() {
-    localStorage.setItem('abc_users', JSON.stringify(state.users));
-    localStorage.setItem('abc_branches', JSON.stringify(state.branches));
-    localStorage.setItem('abc_customers', JSON.stringify(state.customers));
-    localStorage.setItem('abc_brands', JSON.stringify(state.brands));
-    localStorage.setItem('abc_units', JSON.stringify(state.units));
-    localStorage.setItem('abc_categories', JSON.stringify(state.categories));
-    localStorage.setItem('abc_products', JSON.stringify(state.products));
-    localStorage.setItem('abc_staff', JSON.stringify(state.staff));
-    localStorage.setItem('abc_transactions', JSON.stringify(state.transactions));
-    localStorage.setItem('abc_expenses', JSON.stringify(state.expenses));
-    localStorage.setItem('abc_stock_logs', JSON.stringify(state.stockLogs));
-    localStorage.setItem('abc_payment_logs', JSON.stringify(state.paymentLogs));
-    localStorage.setItem('abc_followups', JSON.stringify(state.followups));
-    localStorage.setItem('abc_commission_rules', JSON.stringify(state.commissionRules));
-    localStorage.setItem('abc_company_settings', JSON.stringify(state.companySettings));
-    localStorage.setItem('abc_voided_transactions', JSON.stringify(state.voidedTransactions));
-    localStorage.setItem('abc_closing_logs', JSON.stringify(state.closingLogs));
-    localStorage.setItem('abc_audit_logs', JSON.stringify(state.auditLogs));
-    localStorage.setItem('abc_employees', JSON.stringify(state.employees));
-    localStorage.setItem('abc_attendance', JSON.stringify(state.attendance));
-    localStorage.setItem('abc_leave_requests', JSON.stringify(state.leaveRequests));
-    localStorage.setItem('abc_companies', JSON.stringify(state.companies));
-    localStorage.setItem('abc_departments', JSON.stringify(state.departments));
-    localStorage.setItem('abc_teams', JSON.stringify(state.teams));
-    localStorage.setItem('abc_positions', JSON.stringify(state.positions));
-    localStorage.setItem('abc_payroll_items', JSON.stringify(state.payrollItems));
-    localStorage.setItem('abc_kpis', JSON.stringify(state.kpis));
+    safeSetItem('abc_users', JSON.stringify(state.users));
+    safeSetItem('abc_branches', JSON.stringify(state.branches));
+    safeSetItem('abc_customers', JSON.stringify(state.customers));
+    safeSetItem('abc_brands', JSON.stringify(state.brands));
+    safeSetItem('abc_units', JSON.stringify(state.units));
+    safeSetItem('abc_categories', JSON.stringify(state.categories));
+    safeSetItem('abc_products', JSON.stringify(state.products));
+    safeSetItem('abc_staff', JSON.stringify(state.staff));
+    safeSetItem('abc_transactions', JSON.stringify(state.transactions));
+    safeSetItem('abc_expenses', JSON.stringify(state.expenses));
+    safeSetItem('abc_stock_logs', JSON.stringify(state.stockLogs));
+    safeSetItem('abc_payment_logs', JSON.stringify(state.paymentLogs));
+    safeSetItem('abc_followups', JSON.stringify(state.followups));
+    safeSetItem('abc_commission_rules', JSON.stringify(state.commissionRules));
+    safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
+    safeSetItem('abc_voided_transactions', JSON.stringify(state.voidedTransactions));
+    safeSetItem('abc_closing_logs', JSON.stringify(state.closingLogs));
+    safeSetItem('abc_audit_logs', JSON.stringify(state.auditLogs));
+    safeSetItem('abc_employees', JSON.stringify(state.employees));
+    safeSetItem('abc_attendance', JSON.stringify(state.attendance));
+    safeSetItem('abc_leave_requests', JSON.stringify(state.leaveRequests));
+    safeSetItem('abc_companies', JSON.stringify(state.companies));
+    safeSetItem('abc_departments', JSON.stringify(state.departments));
+    safeSetItem('abc_teams', JSON.stringify(state.teams));
+    safeSetItem('abc_positions', JSON.stringify(state.positions));
+    safeSetItem('abc_payroll_items', JSON.stringify(state.payrollItems));
+    safeSetItem('abc_kpis', JSON.stringify(state.kpis));
 
     // If Firebase Sync is active, write added/modified records to Firestore
     if (state.firebaseDb) {
@@ -716,7 +776,7 @@
       activityDetails: activityDetails
     };
     state.auditLogs.push(newLog);
-    localStorage.setItem('abc_audit_logs', JSON.stringify(state.auditLogs));
+    safeSetItem('abc_audit_logs', JSON.stringify(state.auditLogs));
   }
 
   // Permission Verification Helper
@@ -884,7 +944,7 @@
         document.body.className = 'dark-theme';
         toggleBtn.innerText = '🌙 Dark Mode';
       }
-      localStorage.setItem('abc_theme', state.theme);
+      safeSetItem('abc_theme', state.theme);
       renderDashboard(); // Re-draw charts with new text contrasts
     });
   }
@@ -907,7 +967,7 @@
           return;
         }
         state.currentUser = matched;
-        sessionStorage.setItem('abc_current_user', JSON.stringify(matched));
+        safeSetSessionItem('abc_current_user', JSON.stringify(matched));
         document.getElementById('login-screen').classList.remove('active-login');
         errorMsg.style.display = 'none';
         
@@ -932,7 +992,7 @@
     logoutBtn.addEventListener('click', () => {
       if (confirm(state.lang === 'km' ? 'តើអ្នកចង់ចាកចេញពីប្រព័ន្ធ?' : 'Log out from system?')) {
         state.currentUser = null;
-        sessionStorage.removeItem('abc_current_user');
+        safeRemoveSessionItem('abc_current_user');
         document.getElementById('login-screen').classList.add('active-login');
         state.activeView = 'view-dashboard';
       }
@@ -980,7 +1040,7 @@
         // No views are accessible (e.g. view permission disabled)! Force logout.
         alert(window.POS_TRANSLATIONS[state.lang].permissionError);
         state.currentUser = null;
-        sessionStorage.removeItem('abc_current_user');
+        safeRemoveSessionItem('abc_current_user');
         document.getElementById('login-screen').classList.add('active-login');
         return;
       }
@@ -1062,7 +1122,7 @@
 
     const switchLang = (newLang) => {
       state.lang = newLang;
-      localStorage.setItem('abc_lang', newLang);
+      safeSetItem('abc_lang', newLang);
       
       if (newLang === 'km') {
         btnKm.classList.add('active');
@@ -4884,7 +4944,7 @@
       // Auto-save configuration to company settings to populate Settings UI
       state.companySettings.firebaseEnabled = true;
       state.companySettings.firebaseConfig = configStr;
-      localStorage.setItem('abc_company_settings', JSON.stringify(state.companySettings));
+      safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
     }
 
     if (!enabled || !config) {
@@ -4937,7 +4997,7 @@
             lastSyncedState[stateKey] = JSON.parse(JSON.stringify(list));
             
             // Save local cache
-            localStorage.setItem('abc_' + (colName === 'stock_logs' ? 'stock_logs' : colName === 'payment_logs' ? 'payment_logs' : colName), JSON.stringify(list));
+            safeSetItem('abc_' + (colName === 'stock_logs' ? 'stock_logs' : colName === 'payment_logs' ? 'payment_logs' : colName), JSON.stringify(list));
 
             // Re-render UI views
             if (renderFns) {
@@ -4995,7 +5055,7 @@
           if (doc.exists && doc.data() && Object.keys(doc.data()).length > 0) {
             const settings = doc.data();
             state.companySettings = settings;
-            localStorage.setItem('abc_company_settings', JSON.stringify(settings));
+            safeSetItem('abc_company_settings', JSON.stringify(settings));
             updateUserCardHeader();
             updateCompanyLogoUI();
           }
@@ -6301,7 +6361,7 @@
         const keys = ['abc_users', 'abc_branches', 'abc_customers', 'abc_brands', 'abc_units', 'abc_categories', 'abc_products', 'abc_staff', 'abc_transactions', 'abc_expenses', 'abc_stock_logs', 'abc_payment_logs', 'abc_followups', 'abc_commission_rules', 'abc_company_settings', 'abc_voided_transactions'];
         
         keys.forEach(k => {
-          backupData[k] = localStorage.getItem(k);
+          backupData[k] = safeGetItem(k);
         });
 
         const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
@@ -6327,7 +6387,7 @@
               const data = JSON.parse(e.target.result);
               for (const k in data) {
                 if (k.startsWith('abc_')) {
-                  localStorage.setItem(k, data[k]);
+                  safeSetItem(k, data[k]);
                 }
               }
               alert(window.POS_TRANSLATIONS[state.lang].restoreSuccess);
@@ -6718,7 +6778,7 @@ CREATE TABLE sale_items (
             <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
               The system encountered an error while trying to render this settings panel: <strong>${error.message}</strong>
             </p>
-            <button class="btn btn-danger" onclick="localStorage.clear(); window.location.reload();" style="font-weight: 700; padding: 10px 16px; cursor: pointer;">
+             <button class="btn btn-danger" onclick="try { localStorage.clear(); sessionStorage.clear(); } catch(e) {} window.location.reload();" style="font-weight: 700; padding: 10px 16px; cursor: pointer;">
               Reset Database & Fix Storage
             </button>
           </div>
@@ -6734,7 +6794,7 @@ CREATE TABLE sale_items (
     if (btnToggleRoadmap) {
       btnToggleRoadmap.addEventListener('click', () => {
         state.hideFollowupRoadmap = !state.hideFollowupRoadmap;
-        localStorage.setItem('abc_hide_followup_roadmap', state.hideFollowupRoadmap);
+        safeSetItem('abc_hide_followup_roadmap', state.hideFollowupRoadmap);
         updateRoadmapVisibility();
       });
     }
@@ -10087,8 +10147,8 @@ CREATE TABLE sale_items (
   // Bind main DOM event
   document.addEventListener('DOMContentLoaded', () => {
     console.log("=== STARTUP DATABASE DIAGNOSTICS ===");
-    console.log("abc_transactions in localStorage:", localStorage.getItem('abc_transactions'));
-    console.log("abc_products in localStorage:", localStorage.getItem('abc_products'));
+    console.log("abc_transactions in storage:", safeGetItem('abc_transactions'));
+    console.log("abc_products in storage:", safeGetItem('abc_products'));
     console.log("Firebase enabled:", state.companySettings ? state.companySettings.firebaseEnabled : "no settings");
     console.log("=====================================");
     initLocalStorageData();

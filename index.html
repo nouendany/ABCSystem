@@ -3,28 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <script>
+    // Global Diagnostic & Error Store
+    window.SYSTEM_DIAGNOSTICS = {
+      errors: [],
+      blockedScripts: [],
+      storageOk: false,
+      firebaseOk: false,
+      chartjsOk: false,
+      isOnline: navigator.onLine
+    };
+
+    // Safe diagnostic checking
+    try {
+      localStorage.setItem('__storage_test__', '1');
+      localStorage.removeItem('__storage_test__');
+      window.SYSTEM_DIAGNOSTICS.storageOk = true;
+    } catch(e) {
+      window.SYSTEM_DIAGNOSTICS.storageOk = false;
+    }
+
+    // Robust error toast display
+    function displayDiagnosticError(title, message, details) {
+      const show = () => {
+        let container = document.getElementById('diagnostic-errors-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'diagnostic-errors-container';
+          container.style.cssText = 'position:fixed; bottom:60px; right:16px; max-width:400px; z-index:999999; display:flex; flex-direction:column; gap:10px; font-family:system-ui, -apple-system, sans-serif;';
+          (document.body || document.documentElement).appendChild(container);
+        }
+        
+        const toast = document.createElement('div');
+        toast.style.cssText = 'background:#1e293b; color:#f8fafc; border:1px solid #ef4444; border-radius:12px; padding:16px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.5); font-size:13px; line-height:1.45; position:relative; overflow:hidden;';
+        toast.innerHTML = `
+          <div style="position:absolute; top:0; left:0; width:4px; height:100%; background:#ef4444;"></div>
+          <div style="font-weight:700; color:#ef4444; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <span>🚨</span> <span>${title}</span>
+          </div>
+          <div style="margin-bottom:8px; font-weight:500;">${message}</div>
+          <div style="font-size:11px; color:#94a3b8; font-family:monospace; background:rgba(0,0,0,0.2); padding:6px; border-radius:6px; overflow-x:auto; max-height:80px; white-space:pre-wrap;">${details}</div>
+          <div style="margin-top:10px; display:flex; gap:8px;">
+            <button onclick="try { localStorage.clear(); } catch(e){} try { sessionStorage.clear(); } catch(e){} window.location.reload();" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:600; font-size:11px; cursor:pointer; transition:opacity 0.2s;">Reset Storage & Reload</button>
+            <button onclick="this.parentElement.parentElement.remove();" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:none; padding:6px 12px; border-radius:6px; font-weight:500; font-size:11px; cursor:pointer;">Dismiss</button>
+          </div>
+        `;
+        container.appendChild(toast);
+        
+        // Add indicator to diagnostic button if available
+        const badge = document.getElementById('diag-badge');
+        if (badge) {
+          badge.style.display = 'block';
+          badge.innerText = window.SYSTEM_DIAGNOSTICS.errors.length;
+        }
+      };
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', show);
+      } else {
+        show();
+      }
+    }
+
+    // Capture standard script/compile runtime errors
     window.onerror = function(message, source, lineno, colno, error) {
-      const div = document.createElement('div');
-      div.style.position = 'fixed';
-      div.style.top = '0';
-      div.style.left = '0';
-      div.style.width = '100%';
-      div.style.background = '#ef4444';
-      div.style.color = '#ffffff';
-      div.style.padding = '15px';
-      div.style.zIndex = '999999';
-      div.style.fontFamily = 'monospace';
-      div.style.fontSize = '12px';
-      div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-      div.innerHTML = `
-        <strong>[CRITICAL SYSTEM ERROR]</strong>: ${message}<br>
-        <span style="opacity: 0.8;">File: ${source} (Line ${lineno}:${colno})</span><br>
-        <button onclick="localStorage.clear(); window.location.reload();" style="margin-top: 10px; padding: 6px 12px; background: white; color: #ef4444; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Reset Database & Reload</button>
-        <button onclick="this.parentElement.remove();" style="margin-top: 10px; margin-left: 10px; padding: 6px 12px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; cursor: pointer;">Dismiss</button>
-      `;
-      document.body.appendChild(div);
+      const errInfo = { message, source, lineno, colno, stack: error ? error.stack : '' };
+      window.SYSTEM_DIAGNOSTICS.errors.push(errInfo);
+      
+      const file = source ? source.split('/').pop() : 'unknown';
+      displayDiagnosticError(
+        "Critical Script Error",
+        message,
+        `File: ${file} (Line ${lineno}:${colno})\nStack: ${error ? error.stack : 'No stack available'}`
+      );
+      
+      // Update drawer if opened
+      if (window.updateDiagnosticUI) window.updateDiagnosticUI();
       return false;
     };
+
+    // Capture unhandled promise rejections (async/await errors)
+    window.addEventListener('unhandledrejection', function(event) {
+      const reason = event.reason;
+      const message = reason instanceof Error ? reason.message : String(reason);
+      const stack = reason instanceof Error ? reason.stack : '';
+      
+      window.SYSTEM_DIAGNOSTICS.errors.push({ message, source: 'PromiseRejection', stack });
+      displayDiagnosticError(
+        "Unhandled Promise Rejection",
+        message,
+        `Stack: ${stack || 'No stack available'}`
+      );
+      
+      // Update drawer if opened
+      if (window.updateDiagnosticUI) window.updateDiagnosticUI();
+    });
+
+    // Capture resource load errors (e.g. CDNs blocked)
+    window.addEventListener('error', function(event) {
+      const target = event.target;
+      if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+        const url = target.src || target.href;
+        if (!url) return;
+        window.SYSTEM_DIAGNOSTICS.blockedScripts.push(url);
+        
+        // Check if critical CDN failed
+        if (url.includes('firebase')) {
+          displayDiagnosticError(
+            "Cloud Sync CDN Blocked",
+            "Failed to load Firebase library. Cloud Sync is disabled.",
+            `URL: ${url}\nPossible cause: Adblocker extension or Firewall blocking gstatic.com.`
+          );
+        } else if (url.includes('chart')) {
+          displayDiagnosticError(
+            "Analytics CDN Blocked",
+            "Failed to load Chart.js library. Graphical analytics are disabled.",
+            `URL: ${url}\nPossible cause: Adblocker extension or Firewall blocking jsdelivr.net.`
+          );
+        }
+      }
+    }, true);
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ABC System - POS & ERP System</title>
@@ -47,15 +144,23 @@
         btn.addEventListener('click', () => {
           const confirmMsg = confirm("🚨 តើអ្នកពិតជាចង់កំណត់ប្រព័ន្ធឡើងវិញមែនទេ? ទិន្នន័យក្នុងម៉ាស៊ីនចាស់នឹងត្រូវបានសម្អាត ដើម្បីទាញយកទិន្នន័យថ្មីពី Cloud!\\n\\nAre you sure you want to reset the local cache to resync from Cloud?");
           if (confirmMsg) {
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && (key.startsWith('abc_') || key.startsWith('geda_'))) {
-                keysToRemove.push(key);
+            try {
+              const keysToRemove = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('abc_') || key.startsWith('geda_'))) {
+                  keysToRemove.push(key);
+                }
               }
+              keysToRemove.forEach(k => localStorage.removeItem(k));
+            } catch(e) {
+              console.error("Failed to clear localStorage keys:", e);
             }
-            keysToRemove.forEach(k => localStorage.removeItem(k));
-            sessionStorage.clear();
+            try {
+              sessionStorage.clear();
+            } catch(e) {
+              console.error("Failed to clear sessionStorage:", e);
+            }
             alert("Local storage cleared! Reloading system...");
             window.location.reload();
           }
@@ -2842,5 +2947,237 @@
   
   <!-- Core logic engine application file -->
   <script src="app.js?v=1.3.2"></script>
+
+  <!-- Floating Diagnostics Trigger Button -->
+  <button id="btn-diagnostics-toggle" style="position:fixed; bottom:12px; right:12px; z-index:999990; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; padding:8px 14px; border-radius:30px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.3); transition:all 0.2s ease-in-out;">
+    <span style="font-size:12px;">🛠️</span>
+    <span>Diagnostics (វិភាគប្រព័ន្ធ)</span>
+    <span id="diag-badge" style="display:none; background:#ef4444; color:white; border-radius:50%; min-width:16px; height:16px; font-size:9px; line-height:16px; text-align:center; padding:0 3px;">0</span>
+  </button>
+
+  <!-- Diagnostics Drawer -->
+  <div id="diagnostics-drawer" style="position:fixed; top:0; right:-400px; width:360px; height:100vh; background:#0f172a; border-left:1px solid rgba(255,255,255,0.1); box-shadow:-10px 0 30px rgba(0,0,0,0.5); z-index:999995; display:flex; flex-direction:column; color:#f8fafc; font-family:system-ui, -apple-system, sans-serif; transition:right 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-sizing:border-box;">
+    
+    <!-- Header -->
+    <div style="padding:16px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
+      <h3 style="margin:0; font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px;">
+        <span>🛠️</span> System Diagnostics
+      </h3>
+      <button id="btn-close-diagnostics" style="background:transparent; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">&times;</button>
+    </div>
+
+    <!-- Body -->
+    <div style="flex-grow:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px;">
+      
+      <!-- Group 1: Checklist -->
+      <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:14px;">
+        <h4 style="margin:0 0 10px 0; font-size:12px; text-transform:uppercase; color:#94a3b8; letter-spacing:0.5px;">Checklist (ស្ថានភាពប្រព័ន្ធ)</h4>
+        
+        <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+          <!-- Storage Check -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>LocalStorage Status</span>
+            <span id="diag-chk-storage" style="font-weight:600;">Checking...</span>
+          </div>
+          <!-- SessionStorage Check -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>SessionStorage Status</span>
+            <span id="diag-chk-session" style="font-weight:600;">Checking...</span>
+          </div>
+          <!-- Network Check -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Network Status</span>
+            <span id="diag-chk-network" style="font-weight:600;">Checking...</span>
+          </div>
+          <!-- Firebase Check -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Firebase SDK</span>
+            <span id="diag-chk-firebase" style="font-weight:600;">Checking...</span>
+          </div>
+          <!-- ChartJS Check -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Chart.js Engine</span>
+            <span id="diag-chk-chart" style="font-weight:600;">Checking...</span>
+          </div>
+          <!-- Translation Dictionary Check -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Translations Dictionary</span>
+            <span id="diag-chk-translations" style="font-weight:600;">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 2: Error Logs -->
+      <div style="flex-grow:1; display:flex; flex-direction:column; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:14px; min-height:150px;">
+        <h4 style="margin:0 0 10px 0; font-size:12px; text-transform:uppercase; color:#94a3b8; letter-spacing:0.5px; display:flex; justify-content:space-between;">
+          <span>Error Log</span>
+          <a href="#" id="btn-clear-diag-logs" style="color:#3b82f6; text-decoration:none; font-size:10px; font-weight:bold;">Clear Logs</a>
+        </h4>
+        <div id="diag-errors-list" style="flex-grow:1; overflow-y:auto; font-family:monospace; font-size:11px; color:#cbd5e1; display:flex; flex-direction:column; gap:8px; max-height:250px;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div style="padding:16px; border-top:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:10px; background:rgba(255,255,255,0.01);">
+      <button id="btn-copy-diag-logs" style="background:#4f46e5; color:white; border:none; padding:10px 14px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer; width:100%; transition:opacity 0.2s;">
+        📋 Copy Diagnostics Log (ចម្លង Log)
+      </button>
+      <button id="btn-force-hard-reset" style="background:rgba(239, 68, 68, 0.15); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.3); padding:10px 14px; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer; width:100%; transition:all 0.2s;">
+        🚨 WIPE EVERYTHING & RESET
+      </button>
+    </div>
+  </div>
+
+  <!-- Diagnostics UI Drawer Control Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const drawer = document.getElementById('diagnostics-drawer');
+      const toggleBtn = document.getElementById('btn-diagnostics-toggle');
+      const closeBtn = document.getElementById('btn-close-diagnostics');
+      const copyBtn = document.getElementById('btn-copy-diag-logs');
+      const hardResetBtn = document.getElementById('btn-force-hard-reset');
+      const clearLogsBtn = document.getElementById('btn-clear-diag-logs');
+
+      // Show/Hide Drawer
+      const openDrawer = () => {
+        updateDiagnosticUI();
+        drawer.style.right = '0px';
+      };
+      const closeDrawer = () => {
+        drawer.style.right = '-400px';
+      };
+
+      toggleBtn.addEventListener('click', openDrawer);
+      closeBtn.addEventListener('click', closeDrawer);
+
+      // Render details dynamically
+      window.updateDiagnosticUI = function() {
+        // 1. Storage Status Checks
+        const localEl = document.getElementById('diag-chk-storage');
+        const sessionEl = document.getElementById('diag-chk-session');
+        const netEl = document.getElementById('diag-chk-network');
+        const fbEl = document.getElementById('diag-chk-firebase');
+        const chartEl = document.getElementById('diag-chk-chart');
+        const transEl = document.getElementById('diag-chk-translations');
+
+        // LocalStorage Check
+        try {
+          localStorage.setItem('__storage_test__', '1');
+          localStorage.removeItem('__storage_test__');
+          localEl.innerHTML = '<span style="color:#10b981;">🟢 Active (OK)</span>';
+          window.SYSTEM_DIAGNOSTICS.storageOk = true;
+        } catch(e) {
+          localEl.innerHTML = '<span style="color:#ef4444;">🔴 Blocked / Error</span>';
+          window.SYSTEM_DIAGNOSTICS.storageOk = false;
+        }
+
+        // SessionStorage Check
+        try {
+          sessionStorage.setItem('__storage_test__', '1');
+          sessionStorage.removeItem('__storage_test__');
+          sessionEl.innerHTML = '<span style="color:#10b981;">🟢 Active (OK)</span>';
+        } catch(e) {
+          sessionEl.innerHTML = '<span style="color:#ef4444;">🔴 Blocked / Error</span>';
+        }
+
+        // Online State
+        window.SYSTEM_DIAGNOSTICS.isOnline = navigator.onLine;
+        netEl.innerHTML = window.SYSTEM_DIAGNOSTICS.isOnline 
+          ? '<span style="color:#10b981;">🟢 Online</span>' 
+          : '<span style="color:#f59e0b;">🟡 Offline</span>';
+
+        // Firebase Check
+        window.SYSTEM_DIAGNOSTICS.firebaseOk = (typeof firebase !== 'undefined');
+        fbEl.innerHTML = window.SYSTEM_DIAGNOSTICS.firebaseOk 
+          ? '<span style="color:#10b981;">🟢 Loaded</span>' 
+          : '<span style="color:#ef4444;">🔴 Blocked / Missing</span>';
+
+        // ChartJS Check
+        window.SYSTEM_DIAGNOSTICS.chartjsOk = (typeof Chart !== 'undefined');
+        chartEl.innerHTML = window.SYSTEM_DIAGNOSTICS.chartjsOk 
+          ? '<span style="color:#10b981;">🟢 Loaded</span>' 
+          : '<span style="color:#ef4444;">🔴 Blocked / Missing</span>';
+
+        // Translation dictionary Check
+        const transOk = (typeof window.POS_TRANSLATIONS !== 'undefined');
+        transEl.innerHTML = transOk 
+          ? '<span style="color:#10b981;">🟢 Loaded</span>' 
+          : '<span style="color:#ef4444;">🔴 Missing Script</span>';
+
+        // 2. Render Errors list
+        const errorsList = document.getElementById('diag-errors-list');
+        const errors = window.SYSTEM_DIAGNOSTICS.errors;
+        
+        // Update badge
+        const badge = document.getElementById('diag-badge');
+        if (errors.length > 0) {
+          badge.style.display = 'block';
+          badge.innerText = errors.length;
+        } else {
+          badge.style.display = 'none';
+        }
+
+        if (errors.length === 0) {
+          errorsList.innerHTML = '<div style="color:#94a3b8; font-style:italic; padding:20px 0; text-align:center;">No errors detected. System is running cleanly.</div>';
+        } else {
+          errorsList.innerHTML = errors.map((err, idx) => `
+            <div style="background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.15); border-radius:8px; padding:10px; margin-bottom:4px; line-height:1.4;">
+              <div style="font-weight:700; color:#ef4444; margin-bottom:4px;">#${idx+1}: ${err.message}</div>
+              <div style="color:#94a3b8; font-size:10px;">Source: ${err.source || 'unknown'} (Line ${err.lineno || '?'}:${err.colno || '?'})</div>
+              ${err.stack ? `<details style="margin-top:6px; cursor:pointer;"><summary style="color:#3b82f6; font-size:10px;">View Stack Trace</summary><pre style="font-size:9.5px; color:#cbd5e1; margin-top:4px; overflow-x:auto; padding:6px; background:rgba(0,0,0,0.3); border-radius:4px; white-space:pre;">${err.stack}</pre></details>` : ''}
+            </div>
+          `).join('');
+        }
+      };
+
+      // Clear Logs action
+      clearLogsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.SYSTEM_DIAGNOSTICS.errors = [];
+        updateDiagnosticUI();
+      });
+
+      // Copy Logs action
+      copyBtn.addEventListener('click', () => {
+        const report = {
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          onLine: navigator.onLine,
+          diagnosticsState: {
+            storageOk: window.SYSTEM_DIAGNOSTICS.storageOk,
+            firebaseOk: window.SYSTEM_DIAGNOSTICS.firebaseOk,
+            chartjsOk: window.SYSTEM_DIAGNOSTICS.chartjsOk,
+            blockedScripts: window.SYSTEM_DIAGNOSTICS.blockedScripts
+          },
+          errors: window.SYSTEM_DIAGNOSTICS.errors
+        };
+        
+        navigator.clipboard.writeText(JSON.stringify(report, null, 2))
+          .then(() => {
+            alert("📋 Diagnostics log copied to clipboard! (បានចម្លង Log ជោគជ័យ)");
+          })
+          .catch(err => {
+            console.error("Clipboard copy failed:", err);
+            alert("Failed to copy automatically.");
+          });
+      });
+
+      // Hard Reset Action
+      hardResetBtn.addEventListener('click', () => {
+        const check = confirm("⚠️ ប្រយ័ត្ន៖ ការធ្វើបែបនេះនឹងលុប Cache/Database ក្នុងម៉ាស៊ីននេះទាំងអស់ ១០០%!\\n\\nAre you sure you want to completely clear all local database records and reset the system?");
+        if (check) {
+          try { localStorage.clear(); } catch(e){}
+          try { sessionStorage.clear(); } catch(e){}
+          alert("All local database storage cleared! Reloading application...");
+          window.location.reload();
+        }
+      });
+
+      // Initial diagnostics check
+      setTimeout(updateDiagnosticUI, 1000);
+    });
+  </script>
 </body>
 </html>
