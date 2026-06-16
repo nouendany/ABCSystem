@@ -5058,6 +5058,9 @@
             safeSetItem('abc_company_settings', JSON.stringify(settings));
             updateUserCardHeader();
             updateCompanyLogoUI();
+            if (state.activeView === 'view-settings') {
+              renderSettings();
+            }
           }
         });
       };
