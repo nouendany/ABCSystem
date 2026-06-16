@@ -5427,6 +5427,10 @@
               <small style="color: var(--text-muted); font-size: 11px;" data-translate="botTokenHelp">Used to receive location & selfie uploads and notify employees.</small>
             </div>
             <div class="form-group">
+              <label data-translate="botUsername">Telegram Bot Username</label>
+              <input type="text" class="form-control" id="hr-settings-username-master" placeholder="e.g. abc_attendance_bot" value="${state.companySettings.hrTelegramBotUsername || ''}">
+            </div>
+            <div class="form-group">
               <label data-translate="telegramGroupId">Telegram Group/Channel ID (for Admin Reports)</label>
               <input type="text" class="form-control" id="hr-settings-group-id-master" placeholder="e.g. -100123456789" value="${state.companySettings.hrTelegramGroupId || ''}">
               <small style="color: var(--text-muted); font-size: 11px;" data-translate="groupIdHelp">Add Bot as Admin to the group, get Chat ID starting with minus (-), e.g. -100123456789</small>
