@@ -1002,12 +1002,16 @@
   // Routing Framework SPA
   function setupRouting() {
     const navItems = document.querySelectorAll('.nav-menu .nav-item, .pos-cta-btn');
+    console.log("setupRouting: found nav items count:", navItems.length);
     navItems.forEach(item => {
       item.addEventListener('click', () => {
         const targetView = item.getAttribute('data-view');
+        console.log("setupRouting: Navigation item clicked:", targetView);
         
         // Permission routing guard
-        if (!isViewAccessible(targetView)) {
+        const isAccessible = isViewAccessible(targetView);
+        console.log(`setupRouting: isViewAccessible('${targetView}') =`, isAccessible);
+        if (!isAccessible) {
           alert(window.POS_TRANSLATIONS[state.lang].permissionError);
           return;
         }
@@ -1020,6 +1024,7 @@
   }
 
   function navigateToView(targetView) {
+    console.log("navigateToView: targetView =", targetView);
     // Check if target view is accessible; if not, try to fallback to the first allowed view
     if (!isViewAccessible(targetView)) {
       let fallbackView = null;
@@ -1034,6 +1039,7 @@
         }
       }
       
+      console.log("navigateToView: view is blocked, fallbackView =", fallbackView);
       if (fallbackView) {
         targetView = fallbackView;
       } else {
@@ -1047,6 +1053,7 @@
     }
 
     state.activeView = targetView;
+    console.log("navigateToView: state.activeView updated to", state.activeView);
     
     // Ensure correct nav menu highlights are matched
     document.querySelectorAll('.nav-menu .nav-item, .pos-cta-btn').forEach(nav => {
@@ -1077,6 +1084,7 @@
   }
 
   function renderCurrentView() {
+    console.log("renderCurrentView: Rendering activeView =", state.activeView);
     switch(state.activeView) {
       case 'view-dashboard':
         renderDashboard();
