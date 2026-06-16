@@ -242,12 +242,10 @@
       </div>
     </div>
 
-    <!-- Use Phone Camera Instead Link -->
-    <div style="text-align: center; margin: -4px 0 4px 0;">
-      <a href="#" onclick="window.triggerNativeCamera(); return false;" style="font-size: 13px; color: #2563eb; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-        📸 ប្រើកាមេរ៉ាទូរស័ព្ទជំនួសវិញ (Use Phone Camera)
-      </a>
-    </div>
+    <!-- Use Phone Camera Instead Button Fallback -->
+    <button type="button" class="btn" onclick="window.triggerNativeCamera(); return false;" style="background: rgba(37, 99, 235, 0.08); color: #2563eb; border: 1.5px dashed #2563eb; font-weight: 700; margin-top: -4px;">
+      📸 ប្រើកាមេរ៉ាទូរស័ព្ទធម្មតា (Use System Camera)
+    </button>
 
     <!-- Take Photo Action -->
     <button class="btn btn-blue" id="btn-capture">
@@ -260,8 +258,8 @@
     </button>
   </div>
 
-  <!-- Native Camera Fallback Input -->
-  <input type="file" id="native-camera-input" accept="image/*" capture="user" style="display: none;">
+  <!-- Native Camera Fallback Input (No capture constraint to prevent device/browser lock issues) -->
+  <input type="file" id="native-camera-input" accept="image/*" style="display: none;">
 
   <!-- Fullscreen Loading/Success Overlay -->
   <div class="overlay" id="overlay">

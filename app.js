@@ -5258,13 +5258,16 @@
               <small style="color: var(--text-muted); font-size: 11px;" data-translate="botTokenHelp">Used to receive location & selfie uploads and notify employees.</small>
             </div>
             <div class="form-group">
-              <label data-translate="botUsername">Telegram Bot Username</label>
-              <input type="text" class="form-control" id="hr-settings-username-master" placeholder="e.g. @MyCompanyAttendanceBot" value="${state.companySettings.hrTelegramBotUsername || ''}">
-            </div>
-            <div class="form-group">
               <label data-translate="telegramGroupId">Telegram Group/Channel ID (for Admin Reports)</label>
               <input type="text" class="form-control" id="hr-settings-group-id-master" placeholder="e.g. -100123456789" value="${state.companySettings.hrTelegramGroupId || ''}">
               <small style="color: var(--text-muted); font-size: 11px;" data-translate="groupIdHelp">Add Bot as Admin to the group, get Chat ID starting with minus (-), e.g. -100123456789</small>
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" id="hr-settings-location-check-master" ${state.companySettings.hrLocationCheckEnabled !== false ? 'checked' : ''}>
+                <span data-translate="enableGpsCheck">Enable GPS Location Check</span>
+              </label>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -5319,6 +5322,7 @@
         const token = document.getElementById('hr-settings-token-master').value.trim();
         const username = document.getElementById('hr-settings-username-master').value.trim();
         const groupId = document.getElementById('hr-settings-group-id-master').value.trim();
+        const locationCheckEnabled = document.getElementById('hr-settings-location-check-master').checked;
         const lat = parseFloat(document.getElementById('hr-settings-lat-master').value) || 0;
         const lng = parseFloat(document.getElementById('hr-settings-lng-master').value) || 0;
         const radius = parseInt(document.getElementById('hr-settings-radius-master').value) || 100;
@@ -5328,6 +5332,7 @@
         state.companySettings.hrTelegramBotToken = token;
         state.companySettings.hrTelegramBotUsername = username;
         state.companySettings.hrTelegramGroupId = groupId;
+        state.companySettings.hrLocationCheckEnabled = locationCheckEnabled;
         state.companySettings.hrOfficeLatitude = lat;
         state.companySettings.hrOfficeLongitude = lng;
         state.companySettings.hrOfficeRadius = radius;
@@ -8855,15 +8860,35 @@ CREATE TABLE sale_items (
       let checkInTime = '—';
       let checkInStatus = '';
       let checkInBadgeClass = '';
-      let selfieHtml = '—';
+      let selfieHtml = '';
       
       if (log && log.checkIn) {
         checkInTime = log.checkIn.time;
         checkInStatus = log.checkIn.status;
         checkInBadgeClass = checkInStatus === 'On Time' ? 'badge-ontime' : checkInStatus === 'Late' ? 'badge-late' : '';
         if (log.checkIn.selfieUrl) {
-          selfieHtml = `<img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="Selfie" onclick="window.viewSelfiePhoto('${log.checkIn.selfieUrl}')">`;
+          selfieHtml += `
+            <div style="text-align: center; margin: 0 4px; display: inline-block;">
+              <span style="font-size: 8px; color: var(--text-secondary); display: block; line-height: 1; margin-bottom: 2px;">IN</span>
+              <img src="${log.checkIn.selfieUrl}" class="selfie-thumb" alt="In Selfie" onclick="window.viewSelfiePhoto('${log.checkIn.selfieUrl}')">
+            </div>
+          `;
         }
+      }
+
+      if (log && log.checkOut && log.checkOut.selfieUrl) {
+        selfieHtml += `
+          <div style="text-align: center; margin: 0 4px; display: inline-block;">
+            <span style="font-size: 8px; color: var(--text-secondary); display: block; line-height: 1; margin-bottom: 2px;">OUT</span>
+            <img src="${log.checkOut.selfieUrl}" class="selfie-thumb" alt="Out Selfie" onclick="window.viewSelfiePhoto('${log.checkOut.selfieUrl}')">
+          </div>
+        `;
+      }
+
+      if (!selfieHtml) {
+        selfieHtml = '—';
+      } else {
+        selfieHtml = `<div style="display: flex; align-items: center; justify-content: center;">${selfieHtml}</div>`;
       }
 
       const checkOutTime = log && log.checkOut ? log.checkOut.time : '—';
@@ -8968,19 +8993,31 @@ CREATE TABLE sale_items (
     let changed = false;
     state.attendance.forEach(log => {
       if (log.date && log.date < cutoffDateStr) {
+        let docChanged = false;
+        const updatePayload = {};
+
         if (log.checkIn && log.checkIn.selfieUrl) {
           log.checkIn.selfieUrl = "";
+          updatePayload["checkIn.selfieUrl"] = "";
           changed = true;
+          docChanged = true;
         }
         if (log.checkOut && log.checkOut.selfieUrl) {
           log.checkOut.selfieUrl = "";
+          updatePayload["checkOut.selfieUrl"] = "";
           changed = true;
+          docChanged = true;
+        }
+
+        if (docChanged && state.firebaseDb && log.id) {
+          state.firebaseDb.collection('attendance').doc(log.id).update(updatePayload)
+            .catch(e => console.error(`Error updating direct selfie cleanup for ${log.id}:`, e));
         }
       }
     });
 
     if (changed) {
-      console.log(`Auto-cleared old selfies (older than 45 days, cutoff: ${cutoffDateStr}). Saving updates to database...`);
+      console.log(`Auto-cleared old selfies (older than 45 days, cutoff: ${cutoffDateStr}). Saving updates to local cache...`);
       saveStateToLocalStorage();
     }
   }

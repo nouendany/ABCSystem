@@ -184,6 +184,37 @@ export default async function handler(req, res) {
 
     // Handle Menu Navigation Buttons
     if (text === "✅ ចូលការងារ (Check-In)") {
+      const locationCheckEnabled = settings.hrLocationCheckEnabled !== false;
+      
+      if (!locationCheckEnabled) {
+        const nextAction = "waiting_selfie_checkin";
+        await setDoc(sessionDocRef, {
+          action: nextAction,
+          latitude: 0,
+          longitude: 0
+        });
+
+        const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
+        const protocol = req.headers["x-forwarded-proto"] || "https";
+        const webAppUrl = `${protocol}://${host}/telegram-camera.html?employeeId=${employee.id}&chatId=${chatId}&action=checkin`;
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `📸 **សូមចុចប៊ូតុងខាងក្រោមដើម្បីថតរូប Selfie ដើម្បីចូលការងារ (Check-In)៖**\n\n🔗 ឬចុចលើតំណភ្ជាប់នេះ (Or click this link if button doesn't work):\n${webAppUrl}\n\n💡 ឬលោកអ្នកអាចថតរូប Selfie រួចផ្ញើជារូបភាពចូលមកក្នុង Chat នេះផ្ទាល់ក៏បាន!`,
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "📸 ថតរូប Selfie",
+                  web_app: { url: webAppUrl }
+                }
+              ]
+            ]
+          }
+        });
+        return res.status(200).send("OK");
+      }
+
       await setDoc(sessionDocRef, { action: "waiting_location_checkin" });
       await sendTelegram(token, "sendMessage", {
         chat_id: chatId,
@@ -201,6 +232,37 @@ export default async function handler(req, res) {
     }
 
     if (text === "✅ ចេញការងារ (Check-Out)") {
+      const locationCheckEnabled = settings.hrLocationCheckEnabled !== false;
+      
+      if (!locationCheckEnabled) {
+        const nextAction = "waiting_selfie_checkout";
+        await setDoc(sessionDocRef, {
+          action: nextAction,
+          latitude: 0,
+          longitude: 0
+        });
+
+        const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
+        const protocol = req.headers["x-forwarded-proto"] || "https";
+        const webAppUrl = `${protocol}://${host}/telegram-camera.html?employeeId=${employee.id}&chatId=${chatId}&action=checkout`;
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `📸 **សូមចុចប៊ូតុងខាងក្រោមដើម្បីថតរូប Selfie ដើម្បីចេញការងារ (Check-Out)៖**\n\n🔗 ឬចុចលើតំណភ្ជាប់នេះ (Or click this link if button doesn't work):\n${webAppUrl}\n\n💡 ឬលោកអ្នកអាចថតរូប Selfie រួចផ្ញើជារូបភាពចូលមកក្នុង Chat នេះផ្ទាល់ក៏បាន!`,
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "📸 ថតរូប Selfie",
+                  web_app: { url: webAppUrl }
+                }
+              ]
+            ]
+          }
+        });
+        return res.status(200).send("OK");
+      }
+
       await setDoc(sessionDocRef, { action: "waiting_location_checkout" });
       await sendTelegram(token, "sendMessage", {
         chat_id: chatId,
@@ -401,31 +463,18 @@ export default async function handler(req, res) {
     // HANDLE INCOMING LOCATION SHARING
     if (location) {
       if (session && (session.action === "waiting_location_checkin" || session.action === "waiting_location_checkout")) {
-        const officeLat = parseFloat(settings.hrOfficeLatitude) || 11.5564;
-        const officeLng = parseFloat(settings.hrOfficeLongitude) || 104.9282;
+        const officeLat = parseFloat(settings.hrOfficeLatitude);
+        const officeLng = parseFloat(settings.hrOfficeLongitude);
         const allowedRadius = parseFloat(settings.hrOfficeRadius) || 100;
 
-        const distance = calculateDistance(
-          location.latitude,
-          location.longitude,
-          officeLat,
-          officeLng
-        );
+        const bypassLocation = !officeLat && !officeLng;
 
-        if (distance > allowedRadius) {
-          await sendTelegram(token, "sendMessage", {
-            chat_id: chatId,
-            text: `❌ **ទីតាំងមិនត្រឹមត្រូវទេ!**\n\nទីតាំងរបស់អ្នកនៅឆ្ងាយពីការិយាល័យពេក (ចម្ងាយ៖ **${Math.round(distance)} ម៉ែត្រ**)។ ចម្ងាយអនុញ្ញាតគឺក្នុងរង្វង់ **${allowedRadius} ម៉ែត្រ** តែប៉ុណ្ណោះ។`,
-            reply_markup: menuMarkup
-          });
-          await setDoc(sessionDocRef, { action: null });
-        } else {
-          // Inside Radius -> Send Web App Camera Button
+        if (bypassLocation) {
           const nextAction = session.action === "waiting_location_checkin" ? "waiting_selfie_checkin" : "waiting_selfie_checkout";
           await setDoc(sessionDocRef, {
             action: nextAction,
-            latitude: location.latitude,
-            longitude: location.longitude
+            latitude: location.latitude || 0,
+            longitude: location.longitude || 0
           });
 
           const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
@@ -435,7 +484,7 @@ export default async function handler(req, res) {
 
           await sendTelegram(token, "sendMessage", {
             chat_id: chatId,
-            text: `📍 **ទីតាំងត្រឹមត្រូវ! (ចម្ងាយ៖ ${Math.round(distance)} ម៉ែត្រ)**\n\n📸 សូមចុចប៊ូតុងខាងក្រោមដើម្បីថតរូប **Selfie** ផ្ទាល់ខ្លួនរបស់អ្នក ចូលទៅក្នុងប្រព័ន្ធ៖`,
+            text: `📍 **ទីតាំងត្រូវបានទទួលយក! (Bypassed distance check)**\n\n📸 សូមចុចប៊ូតុងខាងក្រោមដើម្បីថតរូប **Selfie** ផ្ទាល់ខ្លួនរបស់អ្នក ចូលទៅក្នុងប្រព័ន្ធ៖\n\n🔗 ឬចុចលើតំណភ្ជាប់នេះ (Or click this link if button doesn't work):\n${webAppUrl}\n\n💡 ឬលោកអ្នកអាចថតរូប Selfie ដោយប្រើកាមេរ៉ាទូរស័ព្ទធម្មតា រួចផ្ញើជារូបភាពចូលមកក្នុង Chat នេះផ្ទាល់ក៏បាន!`,
             reply_markup: {
               inline_keyboard: [
                 [
@@ -447,6 +496,49 @@ export default async function handler(req, res) {
               ]
             }
           });
+        } else {
+          const distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            officeLat,
+            officeLng
+          );
+
+          if (distance > allowedRadius) {
+            await sendTelegram(token, "sendMessage", {
+              chat_id: chatId,
+              text: `❌ **ទីតាំងមិនត្រឹមត្រូវទេ!**\n\nទីតាំងរបស់អ្នកនៅឆ្ងាយពីការិយាល័យពេក (ចម្ងាយ៖ **${Math.round(distance)} ម៉ែត្រ**)។ ចម្ងាយអនុញ្ញាតគឺក្នុងរង្វង់ **${allowedRadius} ម៉ែត្រ** តែប៉ុណ្ណោះ។`,
+              reply_markup: menuMarkup
+            });
+            await setDoc(sessionDocRef, { action: null });
+          } else {
+            const nextAction = session.action === "waiting_location_checkin" ? "waiting_selfie_checkin" : "waiting_selfie_checkout";
+            await setDoc(sessionDocRef, {
+              action: nextAction,
+              latitude: location.latitude,
+              longitude: location.longitude
+            });
+
+            const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
+            const protocol = req.headers["x-forwarded-proto"] || "https";
+            const actionType = session.action === "waiting_location_checkin" ? "checkin" : "checkout";
+            const webAppUrl = `${protocol}://${host}/telegram-camera.html?employeeId=${employee.id}&chatId=${chatId}&action=${actionType}`;
+
+            await sendTelegram(token, "sendMessage", {
+              chat_id: chatId,
+              text: `📍 **ទីតាំងត្រឹមត្រូវ! (ចម្ងាយ៖ ${Math.round(distance)} ម៉ែត្រ)**\n\n📸 សូមចុចប៊ូតុងខាងក្រោមដើម្បីថតរូប **Selfie** ផ្ទាល់ខ្លួនរបស់អ្នក ចូលទៅក្នុងប្រព័ន្ធ៖\n\n🔗 ឬចុចលើតំណភ្ជាប់នេះ (Or click this link if button doesn't work):\n${webAppUrl}\n\n💡 ឬលោកអ្នកអាចថតរូប Selfie ដោយប្រើកាមេរ៉ាទូរស័ព្ទធម្មតា រួចផ្ញើជារូបភាពចូលមកក្នុង Chat នេះផ្ទាល់ក៏បាន!`,
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: "📸 ថតរូប Selfie",
+                      web_app: { url: webAppUrl }
+                    }
+                  ]
+                ]
+              }
+            });
+          }
         }
         return res.status(200).send("OK");
       }
@@ -500,8 +592,8 @@ export default async function handler(req, res) {
             date: dateStr,
             checkIn: {
               time: timeStr,
-              latitude: session.latitude,
-              longitude: session.longitude,
+              latitude: session.latitude || 0,
+              longitude: session.longitude || 0,
               selfieUrl: base64Image,
               status: checkInStatus
             }
@@ -557,8 +649,8 @@ export default async function handler(req, res) {
           await setDoc(docRef, {
             checkOut: {
               time: timeStr,
-              latitude: session.latitude,
-              longitude: session.longitude,
+              latitude: session.latitude || 0,
+              longitude: session.longitude || 0,
               selfieUrl: base64Image
             },
             workingHours,
