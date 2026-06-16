@@ -4942,7 +4942,11 @@
             // Re-render UI views
             if (renderFns) {
               renderFns.forEach(fn => {
-                try { fn(); } catch(e) {}
+                try {
+                  fn();
+                } catch(e) {
+                  console.error("Render error in " + (fn.name || "anonymous") + ":", e);
+                }
               });
             }
           }, err => {
