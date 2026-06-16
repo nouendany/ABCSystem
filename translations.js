@@ -241,6 +241,10 @@ window.POS_TRANSLATIONS = {
     restoreBtn: "Import Database Restore (JSON)",
     restoreSuccess: "Local database restored successfully! Page will now reload.",
     restoreError: "Invalid backup file format!",
+    seedDemoTitle: "Seed Demo & HR Data",
+    seedDemoDesc: "Instantly populate the system with a complete set of mock products, sales transactions, employees, departments, and attendance logs for demonstration and testing.",
+    seedDemoBtn: "Load Demo & HR Data",
+    seedSuccess: "Demo database seeded successfully! Page will now reload.",
 
     // Reports Section
     reportsCenter: "Reports & Analytics Center",
@@ -661,6 +665,10 @@ window.POS_TRANSLATIONS = {
     restoreBtn: "បញ្ចូលឯកសារស្តារទិន្នន័យ (JSON Restore)",
     restoreSuccess: "បានស្តារទិន្នន័យជោគជ័យ! ទំព័រនឹងផ្ទុកឡើងវិញ។",
     restoreError: "ទម្រង់ឯកសារស្តារទិន្នន័យមិនត្រឹមត្រូវឡើយ!",
+    seedDemoTitle: "បញ្ចូលទិន្នន័យគំរូ និងធនធានមនុស្ស (Demo)",
+    seedDemoDesc: "បញ្ចូលទិន្នន័យគំរូភ្លាមៗ រួមមាន៖ ផលិតផល ប្រតិបត្តិការលក់ ព័ត៌មានបុគ្គលិក ផ្នែក/នាយកដ្ឋាន និងទិន្នន័យវត្តមានបុគ្គលិក ដើម្បីសាកល្បងប្រព័ន្ធ។",
+    seedDemoBtn: "ទាញយកទិន្នន័យគំរូ និង HR",
+    seedSuccess: "បានបញ្ចូលទិន្នន័យគំរូដោយជោគជ័យ! ទំព័រនឹងផ្ទុកឡើងវិញ។",
 
     // Reports Section
     reportsCenter: "មជ្ឈមណ្ឌលរបាយការណ៍ និងការវិភាគ",

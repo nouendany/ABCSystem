@@ -6087,6 +6087,18 @@
             </div>
           </div>
 
+          <div class="glass-card" style="padding:16px; border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.02);">
+            <div class="table-header" style="padding:0 0 14px 0; margin-bottom:14px; border-bottom:1px solid rgba(16, 185, 129, 0.15);">
+              <h3 style="color: var(--success);" data-translate="seedDemoTitle">Seed Demo & HR Data</h3>
+            </div>
+            <p style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-bottom:20px;" data-translate="seedDemoDesc">
+              Instantly populate the system with a complete set of mock products, sales transactions, employees, departments, and attendance logs for demonstration and testing.
+            </p>
+            <button class="btn btn-success" id="btn-seed-demo-data" style="width:100%; justify-content:center; padding:12px; font-weight:700;" data-translate="seedDemoBtn">
+              Load Demo & HR Data
+            </button>
+          </div>
+
           <div class="glass-card" style="padding:16px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02);">
             <div class="table-header" style="padding:0 0 14px 0; margin-bottom:14px; border-bottom:1px solid rgba(239, 68, 68, 0.15);">
               <h3 style="color: var(--danger);" data-translate="cleanSystemTitle">Clean & Initialize Production DB</h3>
@@ -6103,6 +6115,182 @@
       `;
 
       // Set handlers
+      document.getElementById('btn-seed-demo-data').addEventListener('click', async () => {
+        if (!guardAction('add')) return;
+        const confirmMsg = state.lang === 'km' 
+          ? 'តើអ្នកពិតជាចង់បញ្ចូលទិន្នន័យគំរូ និងធនធានមនុស្សមែនទេ? ទិន្នន័យចាស់ទាំងអស់នឹងត្រូវបានជំនួស!' 
+          : 'Are you sure you want to load the demo database? All existing data will be overwritten!';
+        if (!confirm(confirmMsg)) return;
+
+        const btn = document.getElementById('btn-seed-demo-data');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = state.lang === 'km' ? 'កំពុងបញ្ចូលទិន្នន័យ... សូមរង់ចាំ' : 'Seeding database... Please wait';
+
+        try {
+          // 1. Core POS & Config Seeding
+          state.users = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.users));
+          state.branches = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.branches));
+          state.customers = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.customers));
+          state.brands = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.brands));
+          state.units = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.units));
+          state.categories = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.categories));
+          state.products = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.products));
+          state.staff = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.staff));
+          state.transactions = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.transactions));
+          state.expenses = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.expenses));
+          state.stockLogs = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.stockLogs));
+          state.paymentLogs = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.paymentLogs));
+          state.followups = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.followups));
+          state.commissionRules = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.commissionRules));
+          
+          // Preserving settings but merging features/logo if empty
+          state.companySettings.companyName = state.companySettings.companyName || "ABC System";
+          state.companySettings.currency = state.companySettings.currency || "USD";
+          state.companySettings.defaultVatRate = state.companySettings.defaultVatRate !== undefined ? state.companySettings.defaultVatRate : 10;
+          state.companySettings.invoicePrefix = state.companySettings.invoicePrefix || "INV-2026-";
+          state.companySettings.startingCapital = state.companySettings.startingCapital || 15000;
+          state.companySettings.featuresEnabled = JSON.parse(JSON.stringify(window.POS_DUMMY_DATA.companySettings.featuresEnabled));
+
+          // 2. Default HR Data Seeding
+          state.companies = [
+            { id: "COM-001", name: "ABC System", phone: "+855 (0) 23 999 555", email: "info@aroma-business.com.kh", address: "St. 310, BKK1, Phnom Penh, Cambodia", status: "active" }
+          ];
+          state.departments = [
+            { id: "DEP-001", companyId: "COM-001", name: "Sales & Marketing", code: "SALES", manager: "Phnom Penh Manager" },
+            { id: "DEP-002", companyId: "COM-001", name: "Operations & Inventory", code: "OPS", manager: "Kosal Stocks Keeper" },
+            { id: "DEP-003", companyId: "COM-001", name: "Finance & Accounting", code: "FIN", manager: "Sreypich Lead Accountant" }
+          ];
+          state.teams = [
+            { id: "TEM-001", departmentId: "DEP-001", name: "POS Sales Team A", leader: "Chantra POS Cashier" },
+            { id: "TEM-002", departmentId: "DEP-002", name: "HQ Warehouse Team", leader: "Kosal Stocks Keeper" }
+          ];
+          state.positions = [
+            { id: "POS-001", departmentId: "DEP-001", name: "Senior Cashier", rank: "Junior" },
+            { id: "POS-002", departmentId: "DEP-002", name: "Inventory Controller", rank: "Senior" },
+            { id: "POS-003", departmentId: "DEP-003", name: "Lead Accountant", rank: "Manager" }
+          ];
+          
+          state.employees = [
+            { id: "EMP-001", name: "Sokhom Phalla", gender: "Male", phone: "012-777-111", email: "phalla@abc.com", status: "active", positionId: "POS-001", teamId: "TEM-001", departmentId: "DEP-001", companyId: "COM-001", hireDate: "2026-01-15", baseSalary: 280, payType: "monthly", telegramUserId: "" },
+            { id: "EMP-002", name: "Chanthou Pich", gender: "Female", phone: "099-333-222", email: "chanthou@abc.com", status: "active", positionId: "POS-001", teamId: "TEM-001", departmentId: "DEP-001", companyId: "COM-001", hireDate: "2026-02-10", baseSalary: 200, payType: "monthly", telegramUserId: "" },
+            { id: "EMP-003", name: "Kosal Stocks", gender: "Male", phone: "088-555-333", email: "kosal@abc.com", status: "active", positionId: "POS-002", teamId: "TEM-002", departmentId: "DEP-002", companyId: "COM-001", hireDate: "2026-01-20", baseSalary: 350, payType: "monthly", telegramUserId: "" }
+          ];
+
+          state.attendance = [
+            {
+              id: "ATT-1001",
+              employeeId: "EMP-001",
+              employeeName: "Sokhom Phalla",
+              date: "2026-06-15",
+              checkIn: {
+                time: "08:02:15",
+                latitude: 11.5564,
+                longitude: 104.9282,
+                status: "on-time",
+                selfieUrl: ""
+              },
+              checkOut: {
+                time: "17:05:30",
+                latitude: 11.5564,
+                longitude: 104.9282,
+                selfieUrl: ""
+              },
+              workingHours: 9.05,
+              otHours: 1.05,
+              status: "present"
+            },
+            {
+              id: "ATT-1002",
+              employeeId: "EMP-002",
+              employeeName: "Chanthou Pich",
+              date: "2026-06-15",
+              checkIn: {
+                time: "08:15:00",
+                latitude: 11.5564,
+                longitude: 104.9282,
+                status: "late",
+                selfieUrl: ""
+              },
+              checkOut: {
+                time: "17:01:00",
+                latitude: 11.5564,
+                longitude: 104.9282,
+                selfieUrl: ""
+              },
+              workingHours: 8.76,
+              otHours: 0.76,
+              status: "present"
+            }
+          ];
+
+          state.leaveRequests = [
+            { id: "LV-001", employeeId: "EMP-001", employeeName: "Sokhom Phalla", leaveType: "sick", startDate: "2026-06-18", endDate: "2026-06-19", durationDays: 2, reason: "Dental checkup and recovery", status: "approved", approvedBy: "admin", approvedDate: "2026-06-16" }
+          ];
+
+          state.payrollItems = [];
+          state.kpis = [
+            { id: "KPI-001", employeeId: "EMP-001", employeeName: "Sokhom Phalla", period: "2026-05", score: 85, evaluator: "admin", reviewDate: "2026-06-01", comments: "Great sales contribution and punctual attendance." }
+          ];
+
+          // 3. Save to local storage
+          saveStateToLocalStorage();
+
+          // 4. Push all to Firestore if active
+          if (state.firebaseDb) {
+            const db = state.firebaseDb;
+            const uploadPromises = [];
+            
+            const pushCollection = (colName, list, idKey) => {
+              list.forEach(item => {
+                const id = item[idKey];
+                if (id) {
+                  const p = db.collection(colName).doc(id).set(item).catch(e => console.error(e));
+                  uploadPromises.push(p);
+                }
+              });
+            };
+
+            pushCollection('users', state.users, 'id');
+            pushCollection('branches', state.branches, 'id');
+            pushCollection('customers', state.customers, 'id');
+            pushCollection('brands', state.brands, 'id');
+            pushCollection('units', state.units, 'id');
+            pushCollection('categories', state.categories, 'id');
+            pushCollection('products', state.products, 'sku');
+            pushCollection('staff', state.staff, 'id');
+            pushCollection('transactions', state.transactions, 'id');
+            pushCollection('expenses', state.expenses, 'id');
+            pushCollection('stock_logs', state.stockLogs, 'id');
+            pushCollection('payment_logs', state.paymentLogs, 'id');
+            pushCollection('followups', state.followups, 'id');
+            pushCollection('employees', state.employees, 'id');
+            pushCollection('attendance', state.attendance, 'id');
+            pushCollection('leave_requests', state.leaveRequests, 'id');
+            pushCollection('companies', state.companies, 'id');
+            pushCollection('departments', state.departments, 'id');
+            pushCollection('teams', state.teams, 'id');
+            pushCollection('positions', state.positions, 'id');
+            pushCollection('payroll_items', state.payrollItems, 'id');
+            pushCollection('kpis', state.kpis, 'id');
+            
+            const pSettings = db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
+            uploadPromises.push(pSettings);
+
+            await Promise.all(uploadPromises);
+          }
+
+          alert(window.POS_TRANSLATIONS[state.lang].seedSuccess || "Database seeded successfully!");
+          window.location.reload();
+
+        } catch (error) {
+          console.error("Error seeding database:", error);
+          alert("Error seeding database: " + error.message);
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
+      });
+
       document.getElementById('btn-export-db').addEventListener('click', () => {
         if (!guardAction('export')) return;
         const backupData = {};
