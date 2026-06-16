@@ -108,9 +108,10 @@ export default async function handler(req, res) {
     const menuMarkup = {
       keyboard: [
         [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
-        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }],
-        [{ text: "📅 ប្រវត្តិវត្តមាន" }, { text: "📢 សេចក្ដីជូនដំណឹង" }],
-        [{ text: "☎️ ទាក់ទង Admin" }]
+        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "🕒 សុំម៉ោងបន្ថែម (OT)" }],
+        [{ text: "📄 ប័ណ្ណបើកប្រាក់ខែ" }, { text: "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)" }],
+        [{ text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }, { text: "📅 ប្រវត្តិវត្តមាន" }],
+        [{ text: "📢 សេចក្ដីជូនដំណឹង" }, { text: "☎️ ទាក់ទង Admin" }]
       ],
       resize_keyboard: true
     };
@@ -217,11 +218,80 @@ export default async function handler(req, res) {
     }
 
     if (text === "👤 ព័ត៌មានខ្ញុំ (Profile)") {
+      const bankText = employee.bankInfo ? `${employee.bankInfo.bankName || 'N/A'} (${employee.bankInfo.accountNumber || 'N/A'})` : 'N/A';
+      const nssfText = employee.nssfInfo?.nssfCardNumber || 'N/A';
       await sendTelegram(token, "sendMessage", {
         chat_id: chatId,
-        text: `👤 **ព័ត៌មានបុគ្គលិក**\n\n🆔 អត្តលេខ៖ ${employee.id}\n📛 ឈ្មោះ៖ ${employee.fullName}\n🚻 ភេទ៖ ${employee.gender || 'N/A'}\n📞 ទូរស័ព្ទ៖ ${employee.phone || 'N/A'}\n🏢 ផ្នែក៖ ${employee.department || 'N/A'}\n📌 តួនាទី៖ ${employee.position || 'N/A'}\n📅 ថ្ងៃចូលការងារ៖ ${employee.joinDate || 'N/A'}\n🟢 ស្ថានភាព៖ ${employee.status || 'Active'}`,
+        text: `👤 **ព័ត៌មានបុគ្គលិក**\n\n🆔 អត្តលេខ៖ ${employee.id}\n📛 ឈ្មោះ៖ ${employee.fullName}\n🚻 ភេទ៖ ${employee.gender || 'N/A'}\n📞 ទូរស័ព្ទ៖ ${employee.phone || 'N/A'}\n🏢 ផ្នែក៖ ${employee.department || 'N/A'}\n📌 តួនាទី៖ ${employee.position || 'N/A'}\n📝 ប្រភេទកិច្ចសន្យា៖ ${employee.contractType || 'Probation'}\n🏦 គណនីធនាគារ៖ ${bankText}\n💳 លេខកាត ប.ស.ស៖ ${nssfText}\n📅 ថ្ងៃចូលការងារ៖ ${employee.joinDate || 'N/A'}\n🟢 ស្ថានភាព៖ ${employee.status || 'Active'}`,
         reply_markup: menuMarkup
       });
+      return res.status(200).send("OK");
+    }
+
+    if (text === "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)") {
+      let companyName = "ABC Enterprise Co., Ltd.";
+      let companyAddress = "Sensok, Phnom Penh";
+      if (employee.companyId) {
+        const compSnap = await getDoc(doc(db, "companies", employee.companyId));
+        if (compSnap.exists()) {
+          const compData = compSnap.data();
+          companyName = compData.name;
+          companyAddress = compData.address || companyAddress;
+        }
+      }
+
+      await sendTelegram(token, "sendMessage", {
+        chat_id: chatId,
+        text: `🏢 **ព័ត៌មានក្រុមហ៊ុន & រចនាសម្ព័ន្ធ**\n\n🏢 ក្រុមហ៊ុន៖ ${companyName}\n📍 អាសយដ្ឋាន៖ ${companyAddress}\n📁 ផ្នែក/ដេប៉ាតឺម៉ង់៖ ${employee.department || 'N/A'}\n📌 តួនាទី៖ ${employee.position || 'N/A'}\n👤 អ្នកគ្រប់គ្រងផ្ទាល់៖ ${employee.managerId || 'N/A'}`,
+        reply_markup: menuMarkup
+      });
+      return res.status(200).send("OK");
+    }
+
+    if (text === "📄 ប័ណ្ណបើកប្រាក់ខែ") {
+      const payRef = collection(db, "payroll_items");
+      const payQuery = query(
+        payRef,
+        where("employeeId", "==", employee.id),
+        orderBy("timestamp", "desc"),
+        limit(1)
+      );
+      const paySnap = await getDocs(payQuery);
+      
+      let payItem = null;
+      paySnap.forEach(d => {
+        payItem = d.data();
+      });
+
+      if (payItem) {
+        const allowancesTotal = Object.values(payItem.allowances || {}).reduce((a, b) => a + b, 0);
+        const deductionsTotal = Object.values(payItem.deductions || {}).reduce((a, b) => a + b, 0);
+
+        const payslipMsg = `📄 **ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ចុងក្រោយ (Pay Slip)**\n\n` +
+          `👤 ឈ្មោះ៖ ${payItem.employeeName} (${payItem.employeeId})\n` +
+          `📅 សម្រាប់ខែ៖ ${payItem.payrollId.replace('payroll_', '')}\n` +
+          `------------------------\n` +
+          `💵 ប្រាក់ខែគោល៖ $${payItem.basicSalary.toFixed(2)}\n` +
+          `➕ ប្រាក់ឧបត្ថម្ភសរុប៖ $${allowancesTotal.toFixed(2)}\n` +
+          `➕ ម៉ោងបន្ថែម OT (${payItem.overtimeHours || 0}h)៖ $${payItem.overtimeAmount.toFixed(2)}\n` +
+          `➖ ការកាត់កាត់យឺត/អវត្តមាន៖ $${((payItem.deductions?.late || 0) + (payItem.deductions?.absent || 0)).toFixed(2)}\n` +
+          `➖ ការកាត់ ប.ស.ស (NSSF)៖ $${(payItem.deductions?.nssf || 0).toFixed(2)}\n` +
+          `➖ ពន្ធលើប្រាក់បៀវត្សរ៍៖ $${(payItem.deductions?.tax || 0).toFixed(2)}\n` +
+          `------------------------\n` +
+          `💰 **ប្រាក់ខែទទួលបានពិតប្រាកដ (Net)៖ $${payItem.netSalary.toFixed(2)}**`;
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: payslipMsg,
+          reply_markup: menuMarkup
+        });
+      } else {
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `🚫 មិនទាន់មានប័ណ្ណប្រាក់ខែផ្លូវការសម្រាប់អ្នកនៅឡើយទេ។`,
+          reply_markup: menuMarkup
+        });
+      }
       return res.status(200).send("OK");
     }
 
@@ -277,10 +347,43 @@ export default async function handler(req, res) {
       return res.status(200).send("OK");
     }
 
-    if (text === "📢 សេចក្ដីជូនដំណឹង") {
+    if (text === "🕒 សុំម៉ោងបន្ថែម (OT)") {
+      await setDoc(sessionDocRef, { action: "waiting_ot_date" });
       await sendTelegram(token, "sendMessage", {
         chat_id: chatId,
-        text: `📢 **សេចក្ដីជូនដំណឹងក្រុមហ៊ុន**\n\nបច្ចុប្បន្នគ្មានសេចក្តីជូនដំណឹងថ្មីនៅឡើយទេ។`,
+        text: `🕒 **សូមវាយបញ្ចូល កាលបរិច្ឆេទសុំធ្វើការបន្ថែម (OT)** ឧទាហរណ៍៖ \`2026-06-16\` ឬ \`ថ្ងៃនេះ\` ឬ \`ថ្ងៃស្អែក\`៖`,
+        reply_markup: {
+          keyboard: [
+            [{ text: "ថ្ងៃនេះ" }, { text: "ថ្ងៃស្អែក" }],
+            [{ text: "❌ បោះបង់" }]
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true
+        }
+      });
+      return res.status(200).send("OK");
+    }
+
+    if (text === "📢 សេចក្ដីជូនដំណឹង") {
+      const annRef = collection(db, "announcements");
+      const annQuery = query(annRef, orderBy("timestamp", "desc"), limit(3));
+      const annSnap = await getDocs(annQuery);
+
+      let annText = `📢 **សេចក្ដីជូនដំណឹងក្រុមហ៊ុន**\n\n`;
+      let count = 0;
+      annSnap.forEach(d => {
+        const item = d.data();
+        annText += `🔔 **${item.title}** (${item.date || ''})\n📝 ${item.content}\n------------------------\n`;
+        count++;
+      });
+
+      if (count === 0) {
+        annText += `បច្ចុប្បន្នគ្មានសេចក្តីជូនដំណឹងថ្មីនៅឡើយទេ។`;
+      }
+
+      await sendTelegram(token, "sendMessage", {
+        chat_id: chatId,
+        text: annText,
         reply_markup: menuMarkup
       });
       return res.status(200).send("OK");
@@ -499,7 +602,7 @@ export default async function handler(req, res) {
       return res.status(200).send("OK");
     }
 
-    // HANDLE TEXT-BASED MULTI-STEP INPUTS (LEAVE REQUEST DATES/REASON)
+    // HANDLE TEXT-BASED MULTI-STEP INPUTS (LEAVE & OT REQUESTS)
     if (text && session) {
       if (session.action === "waiting_leave_start_date") {
         let startDateInput = text;
@@ -521,7 +624,7 @@ export default async function handler(req, res) {
 
         await sendTelegram(token, "sendMessage", {
           chat_id: chatId,
-          text: `🗓️ ថ្ងៃចាប់ផ្តើម៖ *${startDateInput}*\n\n👉 សូមវាយបញ្ចូល **ថ្ងៃបញ្ចប់** ឧទាហរណ៍៖ \`2026-06-17\` ឬ \`ថ្ងៃស្អែក\`៖`
+          text: `🗓️ ថ្ងៃចាប់ផ្តើម៖ *${startDateInput}*\n\n👉 សូមវាយបញ្ចូល **ថ្ងៃបញ្ចប់** ឧទហរណ៍៖ \`2026-06-17\` ឬ \`ថ្ងៃស្អែក\`៖`
         });
         return res.status(200).send("OK");
       }
@@ -584,6 +687,88 @@ export default async function handler(req, res) {
         await setDoc(sessionDocRef, { action: null });
         return res.status(200).send("OK");
       }
+
+      if (session.action === "waiting_ot_date") {
+        let otDateInput = text;
+        const today = new Date();
+        today.setUTCHours(today.getUTCHours() + 7);
+
+        if (text === "ថ្ងៃនេះ") {
+          otDateInput = today.toISOString().split("T")[0];
+        } else if (text === "ថ្ងៃស្អែក") {
+          today.setDate(today.getDate() + 1);
+          otDateInput = today.toISOString().split("T")[0];
+        }
+
+        await setDoc(sessionDocRef, {
+          action: "waiting_ot_hours",
+          otDate: otDateInput
+        });
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `🗓️ កាលបរិច្ឆេទសុំ OT៖ *${otDateInput}*\n\n👉 សូមវាយបញ្ចូល **ចំនួនម៉ោងធ្វើការបន្ថែម (OT)** (ឧទាហរណ៍៖ \`2\` ឬ \`2.5\` ម៉ោង)៖`
+        });
+        return res.status(200).send("OK");
+      }
+
+      if (session.action === "waiting_ot_hours") {
+        const hoursVal = parseFloat(text);
+        if (isNaN(hoursVal) || hoursVal <= 0) {
+          await sendTelegram(token, "sendMessage", {
+            chat_id: chatId,
+            text: `❌ សូមវាយបញ្ចូលចំនួនម៉ោងជាលេខត្រឹមត្រូវ (ធំជាង 0)៖`
+          });
+          return res.status(200).send("OK");
+        }
+
+        await setDoc(sessionDocRef, {
+          action: "waiting_ot_reason",
+          otDate: session.otDate,
+          otHours: hoursVal
+        });
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `⏱️ ចំនួនម៉ោង OT៖ *${hoursVal} ម៉ោង*\n\n👉 សូមបញ្ជាក់ពី **មូលហេតុនៃការសុំ OT**៖`
+        });
+        return res.status(200).send("OK");
+      }
+
+      if (session.action === "waiting_ot_reason") {
+        const newDocRef = doc(collection(db, "overtime_requests"));
+        const newOT = {
+          id: newDocRef.id,
+          employeeId: employee.id,
+          employeeName: employee.fullName,
+          date: session.otDate,
+          requestedHours: session.otHours,
+          reason: text,
+          managerApproval: "Pending",
+          hrApproval: "Pending",
+          status: "Pending",
+          createdAt: new Date().toISOString()
+        };
+
+        await setDoc(newDocRef, newOT);
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `✅ **ការស្នើសុំម៉ោងបន្ថែម (OT) ត្រូវបានបញ្ជូនជោគជ័យ!**\n\n👤 ឈ្មោះ៖ ${employee.fullName}\n📅 កាលបរិច្ឆេទ៖ ${session.otDate}\n⏱️ ចំនួនម៉ោង៖ ${session.otHours} ម៉ោង\n✍️ មូលហេតុ៖ ${text}\n\n*រង់ចាំការអនុម័តពី Manager/HR*`,
+          reply_markup: menuMarkup
+        });
+
+        if (settings.hrTelegramGroupId) {
+          const otNotifyText = `📢 **ការស្នើសុំម៉ោងបន្ថែមថ្មី (New OT Request)**\n\n👤 ឈ្មោះ៖ ${employee.fullName} (${employee.id})\n📅 កាលបរិច្ឆេទ៖ ${session.otDate}\n⏱️ ចំនួនម៉ោង៖ ${session.otHours} ម៉ោង\n✍️ មូលហេតុ៖ ${text}`;
+          await sendTelegram(token, "sendMessage", {
+            chat_id: settings.hrTelegramGroupId,
+            text: otNotifyText
+          });
+        }
+
+        await setDoc(sessionDocRef, { action: null });
+        return res.status(200).send("OK");
+      }
     }
 
     // Fallback default message
@@ -634,9 +819,10 @@ async function handleWebAppPhoto(req, res, body) {
     const menuMarkup = {
       keyboard: [
         [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
-        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }],
-        [{ text: "📅 ប្រវត្តិវត្តមាន" }, { text: "📢 សេចក្ដីជូនដំណឹង" }],
-        [{ text: "☎️ ទាក់ទង Admin" }]
+        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "🕒 សុំម៉ោងបន្ថែម (OT)" }],
+        [{ text: "📄 ប័ណ្ណបើកប្រាក់ខែ" }, { text: "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)" }],
+        [{ text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }, { text: "📅 ប្រវត្តិវត្តមាន" }],
+        [{ text: "📢 សេចក្ដីជូនដំណឹង" }, { text: "☎️ ទាក់ទង Admin" }]
       ],
       resize_keyboard: true
     };

@@ -42,6 +42,12 @@
     employees: [],
     attendance: [],
     leaveRequests: [],
+    companies: [],
+    departments: [],
+    teams: [],
+    positions: [],
+    payrollItems: [],
+    kpis: [],
 
     // POS State
     cart: [],
@@ -81,7 +87,13 @@
     followups: [],
     employees: [],
     attendance: [],
-    leaveRequests: []
+    leaveRequests: [],
+    companies: [],
+    departments: [],
+    teams: [],
+    positions: [],
+    payrollItems: [],
+    kpis: []
   };
 
   let firebaseActive = false;
@@ -325,6 +337,12 @@
     state.employees = safeParse('abc_employees', []);
     state.attendance = safeParse('abc_attendance', []);
     state.leaveRequests = safeParse('abc_leave_requests', []);
+    state.companies = safeParse('abc_companies', []);
+    state.departments = safeParse('abc_departments', []);
+    state.teams = safeParse('abc_teams', []);
+    state.positions = safeParse('abc_positions', []);
+    state.payrollItems = safeParse('abc_payroll_items', []);
+    state.kpis = safeParse('abc_kpis', []);
     state.commissionRules = safeParse('abc_commission_rules', {});
     state.companySettings = safeParse('abc_company_settings', {});
     if (state.companySettings.startingCapital === undefined) {
@@ -516,6 +534,12 @@
     localStorage.setItem('abc_employees', JSON.stringify(state.employees));
     localStorage.setItem('abc_attendance', JSON.stringify(state.attendance));
     localStorage.setItem('abc_leave_requests', JSON.stringify(state.leaveRequests));
+    localStorage.setItem('abc_companies', JSON.stringify(state.companies));
+    localStorage.setItem('abc_departments', JSON.stringify(state.departments));
+    localStorage.setItem('abc_teams', JSON.stringify(state.teams));
+    localStorage.setItem('abc_positions', JSON.stringify(state.positions));
+    localStorage.setItem('abc_payroll_items', JSON.stringify(state.payrollItems));
+    localStorage.setItem('abc_kpis', JSON.stringify(state.kpis));
 
     // If Firebase Sync is active, write added/modified records to Firestore
     if (state.firebaseDb) {
@@ -557,6 +581,12 @@
         syncChanges('employees', state.employees, lastSyncedState.employees, 'id');
         syncChanges('attendance', state.attendance, lastSyncedState.attendance, 'id');
         syncChanges('leave_requests', state.leaveRequests, lastSyncedState.leaveRequests, 'id');
+        syncChanges('companies', state.companies, lastSyncedState.companies, 'id');
+        syncChanges('departments', state.departments, lastSyncedState.departments, 'id');
+        syncChanges('teams', state.teams, lastSyncedState.teams, 'id');
+        syncChanges('positions', state.positions, lastSyncedState.positions, 'id');
+        syncChanges('payroll_items', state.payrollItems, lastSyncedState.payrollItems, 'id');
+        syncChanges('kpis', state.kpis, lastSyncedState.kpis, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
 
@@ -574,7 +604,13 @@
           followups: JSON.parse(JSON.stringify(state.followups)),
           employees: JSON.parse(JSON.stringify(state.employees)),
           attendance: JSON.parse(JSON.stringify(state.attendance)),
-          leaveRequests: JSON.parse(JSON.stringify(state.leaveRequests))
+          leaveRequests: JSON.parse(JSON.stringify(state.leaveRequests)),
+          companies: JSON.parse(JSON.stringify(state.companies)),
+          departments: JSON.parse(JSON.stringify(state.departments)),
+          teams: JSON.parse(JSON.stringify(state.teams)),
+          positions: JSON.parse(JSON.stringify(state.positions)),
+          payrollItems: JSON.parse(JSON.stringify(state.payrollItems)),
+          kpis: JSON.parse(JSON.stringify(state.kpis))
         };
       } catch (err) {
         console.error("Cloud sync diff error:", err);
@@ -4913,6 +4949,12 @@
         setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
         setupListener('attendance', 'attendance', 'id', [cleanupOldSelfies, renderAttendanceLogs, renderHRDashboard]);
         setupListener('leave_requests', 'leaveRequests', 'id', [renderLeaveRequests, renderHRDashboard]);
+        setupListener('companies', 'companies', 'id', [renderHROrg, populateEmployeeFormDropdowns]);
+        setupListener('departments', 'departments', 'id', [renderHROrg]);
+        setupListener('teams', 'teams', 'id', [renderHROrg]);
+        setupListener('positions', 'positions', 'id', [renderHROrg]);
+        setupListener('payroll_items', 'payrollItems', 'id', [renderHRPayroll]);
+        setupListener('kpis', 'kpis', 'id', [renderHRPerformance]);
 
         // Company settings listener
         dbInstance.collection('company_settings').doc('global').onSnapshot(doc => {
@@ -8016,12 +8058,20 @@ CREATE TABLE sale_items (
     
     if (targetTab === 'hr-dashboard') {
       renderHRDashboard();
+    } else if (targetTab === 'hr-org') {
+      renderHROrg();
     } else if (targetTab === 'hr-employees') {
       renderEmployeeList();
     } else if (targetTab === 'hr-attendance') {
       renderAttendanceLogs();
     } else if (targetTab === 'hr-leaves') {
       renderLeaveRequests();
+    } else if (targetTab === 'hr-payroll') {
+      renderHRPayroll();
+    } else if (targetTab === 'hr-performance') {
+      renderHRPerformance();
+    } else if (targetTab === 'hr-security') {
+      renderHRAdminSecurity();
     } else if (targetTab === 'hr-settings') {
       populateHRSettingsForm();
     }
@@ -8048,12 +8098,20 @@ CREATE TABLE sale_items (
         // Render target sub-tab
         if (targetTab === 'hr-dashboard') {
           renderHRDashboard();
+        } else if (targetTab === 'hr-org') {
+          renderHROrg();
         } else if (targetTab === 'hr-employees') {
           renderEmployeeList();
         } else if (targetTab === 'hr-attendance') {
           renderAttendanceLogs();
         } else if (targetTab === 'hr-leaves') {
           renderLeaveRequests();
+        } else if (targetTab === 'hr-payroll') {
+          renderHRPayroll();
+        } else if (targetTab === 'hr-performance') {
+          renderHRPerformance();
+        } else if (targetTab === 'hr-security') {
+          renderHRAdminSecurity();
         } else if (targetTab === 'hr-settings') {
           populateHRSettingsForm();
         }
@@ -8356,8 +8414,29 @@ CREATE TABLE sale_items (
 
   window.deleteAttendanceLog = deleteAttendanceLog;
 
+  function populateEmployeeFormDropdowns() {
+    const compSelect = document.getElementById('employee-company-id');
+    const deptCompSelect = document.getElementById('dept-company-id');
+    if (compSelect) {
+      compSelect.innerHTML = state.companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('') || '<option value="">None</option>';
+    }
+    if (deptCompSelect) {
+      deptCompSelect.innerHTML = state.companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('') || '<option value="">None</option>';
+    }
+
+    const teamDeptSelect = document.getElementById('team-dept-id');
+    const posDeptSelect = document.getElementById('pos-dept-id');
+    if (teamDeptSelect) {
+      teamDeptSelect.innerHTML = state.departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('') || '<option value="">None</option>';
+    }
+    if (posDeptSelect) {
+      posDeptSelect.innerHTML = state.departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('') || '<option value="">None</option>';
+    }
+  }
+
   function openEmployeeModal(empId) {
     if (!guardAction('edit')) return;
+    populateEmployeeFormDropdowns();
     const form = document.getElementById('employee-form');
     form.reset();
     
@@ -8385,6 +8464,23 @@ CREATE TABLE sale_items (
         document.getElementById('employee-salary').value = emp.salary || '';
         document.getElementById('employee-join-date').value = emp.joinDate || '';
         document.getElementById('employee-status').value = emp.status || 'Active';
+
+        document.getElementById('employee-contract-type').value = emp.contractType || 'Probation';
+        document.getElementById('employee-allowance-position').value = emp.allowances?.position || emp.allowancePosition || '';
+        document.getElementById('employee-allowance-phone').value = emp.allowances?.phone || emp.allowancePhone || '';
+        document.getElementById('employee-allowance-fuel').value = emp.allowances?.fuel || emp.allowanceFuel || '';
+        document.getElementById('employee-allowance-meal').value = emp.allowances?.meal || emp.allowanceMeal || '';
+        document.getElementById('employee-company-id').value = emp.companyId || '';
+        document.getElementById('employee-bank-name').value = emp.bankInfo?.bankName || emp.bankName || '';
+        document.getElementById('employee-bank-acc-name').value = emp.bankInfo?.accountName || emp.bankAccName || '';
+        document.getElementById('employee-bank-acc-num').value = emp.bankInfo?.accountNumber || emp.bankAccNum || '';
+        document.getElementById('employee-nssf-num').value = emp.nssfInfo?.nssfCardNumber || emp.nssfNum || '';
+        document.getElementById('employee-nssf-health').checked = emp.nssfInfo ? !!emp.nssfInfo.healthInsurance : true;
+        document.getElementById('employee-nssf-risk').checked = emp.nssfInfo ? !!emp.nssfInfo.occupationalRisk : true;
+        document.getElementById('employee-nssf-pension').checked = emp.nssfInfo ? !!emp.nssfInfo.pensionScheme : true;
+        document.getElementById('employee-emergency-name').value = emp.emergencyContact?.name || emp.emergencyName || '';
+        document.getElementById('employee-emergency-relation').value = emp.emergencyContact?.relation || emp.emergencyRelation || '';
+        document.getElementById('employee-emergency-phone').value = emp.emergencyContact?.phone || emp.emergencyPhone || '';
       }
     } else {
       titleEl.innerText = state.lang === 'km' ? 'បន្ថែមបុគ្គលិកថ្មី' : 'Add New Employee';
@@ -8414,6 +8510,23 @@ CREATE TABLE sale_items (
     const joinDate = document.getElementById('employee-join-date').value;
     const status = document.getElementById('employee-status').value;
 
+    const contractType = document.getElementById('employee-contract-type').value;
+    const allowancePosition = parseFloat(document.getElementById('employee-allowance-position').value) || 0;
+    const allowancePhone = parseFloat(document.getElementById('employee-allowance-phone').value) || 0;
+    const allowanceFuel = parseFloat(document.getElementById('employee-allowance-fuel').value) || 0;
+    const allowanceMeal = parseFloat(document.getElementById('employee-allowance-meal').value) || 0;
+    const companyId = document.getElementById('employee-company-id').value;
+    const bankName = document.getElementById('employee-bank-name').value.trim();
+    const bankAccName = document.getElementById('employee-bank-acc-name').value.trim();
+    const bankAccNum = document.getElementById('employee-bank-acc-num').value.trim();
+    const nssfNum = document.getElementById('employee-nssf-num').value.trim();
+    const nssfHealth = document.getElementById('employee-nssf-health').checked;
+    const nssfRisk = document.getElementById('employee-nssf-risk').checked;
+    const nssfPension = document.getElementById('employee-nssf-pension').checked;
+    const emergencyName = document.getElementById('employee-emergency-name').value.trim();
+    const emergencyRelation = document.getElementById('employee-emergency-relation').value.trim();
+    const emergencyPhone = document.getElementById('employee-emergency-phone').value.trim();
+
     if (!id || !fullName || !phone) {
       alert("Please fill in ID, Full Name, and Phone number.");
       return;
@@ -8422,6 +8535,30 @@ CREATE TABLE sale_items (
     const employeeData = {
       id, fullName, gender, dob, phone, telegramId, email, address,
       department, position, salary, joinDate, status,
+      contractType,
+      allowances: {
+        position: allowancePosition,
+        phone: allowancePhone,
+        fuel: allowanceFuel,
+        meal: allowanceMeal
+      },
+      companyId,
+      bankInfo: {
+        bankName,
+        accountName: bankAccName,
+        accountNumber: bankAccNum
+      },
+      nssfInfo: {
+        nssfCardNumber: nssfNum,
+        healthInsurance: nssfHealth,
+        occupationalRisk: nssfRisk,
+        pensionScheme: nssfPension
+      },
+      emergencyContact: {
+        name: emergencyName,
+        relation: emergencyRelation,
+        phone: emergencyPhone
+      },
       updatedBy: state.currentUser ? state.currentUser.username : 'system',
       timestamp: new Date().toISOString()
     };
@@ -8961,7 +9098,723 @@ CREATE TABLE sale_items (
     }).catch(err => console.error("Telegram notify error:", err));
   }
 
-  // ==================== END HR & ATTENDANCE SYSTEM LOGIC ====================
+  // ==================== NEW ENTERPRISE HRMS UPGRADE LOGIC ====================
+
+  let activeOrgSubTab = 'companies';
+  function switchOrgSubTab(subTab) {
+    activeOrgSubTab = subTab;
+    const btns = ['companies', 'departments', 'teams', 'positions'];
+    btns.forEach(b => {
+      const btn = document.getElementById('btn-org-' + b);
+      const panel = document.getElementById('org-' + b + '-panel');
+      if (btn) btn.classList.toggle('active', b === subTab);
+      if (panel) panel.style.display = b === subTab ? 'block' : 'none';
+    });
+    renderHROrg();
+  }
+  window.switchOrgSubTab = switchOrgSubTab;
+
+  function renderHROrg() {
+    populateEmployeeFormDropdowns();
+
+    // Render Companies
+    const compBody = document.getElementById('org-companies-list');
+    if (compBody) {
+      compBody.innerHTML = state.companies.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td>${c.taxId || 'N/A'}</td>
+          <td>${c.address || 'N/A'}</td>
+          <td>${c.phone || 'N/A'}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="deleteOrgItem('companies', '${c.id}')">🗑️</button></td>
+        </tr>
+      `).join('') || `<tr><td colspan="5" style="text-align:center;">No companies defined yet.</td></tr>`;
+    }
+
+    // Render Departments
+    const deptBody = document.getElementById('org-depts-list');
+    if (deptBody) {
+      deptBody.innerHTML = state.departments.map(d => {
+        const company = state.companies.find(c => c.id === d.companyId)?.name || 'N/A';
+        return `
+          <tr>
+            <td><strong>${d.name}</strong></td>
+            <td>${company}</td>
+            <td>${d.manager || 'N/A'}</td>
+            <td><button class="btn btn-sm btn-outline" onclick="deleteOrgItem('departments', '${d.id}')">🗑️</button></td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="4" style="text-align:center;">No departments defined yet.</td></tr>`;
+    }
+
+    // Render Teams
+    const teamBody = document.getElementById('org-teams-list');
+    if (teamBody) {
+      teamBody.innerHTML = state.teams.map(t => {
+        const dept = state.departments.find(d => d.id === t.departmentId)?.name || 'N/A';
+        return `
+          <tr>
+            <td><strong>${t.name}</strong></td>
+            <td>${dept}</td>
+            <td>${t.leader || 'N/A'}</td>
+            <td><button class="btn btn-sm btn-outline" onclick="deleteOrgItem('teams', '${t.id}')">🗑️</button></td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="4" style="text-align:center;">No teams defined yet.</td></tr>`;
+    }
+
+    // Render Positions
+    const posBody = document.getElementById('org-positions-list');
+    if (posBody) {
+      posBody.innerHTML = state.positions.map(p => {
+        const dept = state.departments.find(d => d.id === p.departmentId)?.name || 'N/A';
+        return `
+          <tr>
+            <td><strong>${p.title}</strong></td>
+            <td>${dept}</td>
+            <td>$${p.baseSalary?.toFixed(2)}</td>
+            <td><button class="btn btn-sm btn-outline" onclick="deleteOrgItem('positions', '${p.id}')">🗑️</button></td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="4" style="text-align:center;">No positions defined yet.</td></tr>`;
+    }
+  }
+
+  function deleteOrgItem(type, id) {
+    if (!guardAction('delete')) return;
+    if (confirm("Are you sure you want to delete this organizational unit?")) {
+      const idx = state[type].findIndex(item => item.id === id);
+      if (idx !== -1) {
+        state[type].splice(idx, 1);
+        saveStateToLocalStorage();
+        renderHROrg();
+      }
+    }
+  }
+  window.deleteOrgItem = deleteOrgItem;
+
+  function setupOrgEventListeners() {
+    // Tab buttons
+    ['companies', 'departments', 'teams', 'positions'].forEach(tab => {
+      const btn = document.getElementById('btn-org-' + tab);
+      if (btn) {
+        btn.addEventListener('click', () => switchOrgSubTab(tab));
+      }
+    });
+
+    const orgCompanyForm = document.getElementById('org-company-form');
+    if (orgCompanyForm) {
+      orgCompanyForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('company-name').value.trim();
+        const taxId = document.getElementById('company-tax-id').value.trim();
+        const address = document.getElementById('company-address').value.trim();
+        const phone = document.getElementById('company-phone').value.trim();
+        const id = 'COMP' + String(state.companies.length + 1).padStart(3, '0');
+        state.companies.push({ id, name, taxId, address, phone });
+        saveStateToLocalStorage();
+        orgCompanyForm.reset();
+        renderHROrg();
+        alert("Company saved successfully!");
+      });
+    }
+
+    const orgDeptForm = document.getElementById('org-dept-form');
+    if (orgDeptForm) {
+      orgDeptForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('dept-name').value.trim();
+        const companyId = document.getElementById('dept-company-id').value;
+        const manager = document.getElementById('dept-manager').value.trim();
+        const id = 'DEPT' + String(state.departments.length + 1).padStart(3, '0');
+        state.departments.push({ id, name, companyId, manager });
+        saveStateToLocalStorage();
+        orgDeptForm.reset();
+        renderHROrg();
+        alert("Department saved successfully!");
+      });
+    }
+
+    const orgTeamForm = document.getElementById('org-team-form');
+    if (orgTeamForm) {
+      orgTeamForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('team-name').value.trim();
+        const departmentId = document.getElementById('team-dept-id').value;
+        const leader = document.getElementById('team-leader').value.trim();
+        const id = 'TEAM' + String(state.teams.length + 1).padStart(3, '0');
+        state.teams.push({ id, name, departmentId, leader });
+        saveStateToLocalStorage();
+        orgTeamForm.reset();
+        renderHROrg();
+        alert("Team saved successfully!");
+      });
+    }
+
+    const orgPositionForm = document.getElementById('org-position-form');
+    if (orgPositionForm) {
+      orgPositionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('pos-title').value.trim();
+        const departmentId = document.getElementById('pos-dept-id').value;
+        const baseSalary = parseFloat(document.getElementById('pos-base-salary').value) || 0;
+        const id = 'POS' + String(state.positions.length + 1).padStart(3, '0');
+        state.positions.push({ id, title, departmentId, baseSalary });
+        saveStateToLocalStorage();
+        orgPositionForm.reset();
+        renderHROrg();
+        alert("Position saved successfully!");
+      });
+    }
+  }
+
+  function renderHRPayroll() {
+    const monthVal = document.getElementById('payroll-month-input')?.value || '';
+    const tbody = document.getElementById('hr-payroll-table-body');
+    if (!tbody) return;
+
+    const items = state.payrollItems.filter(item => item.payrollId === `payroll_${monthVal}`);
+    let totalNet = 0;
+
+    tbody.innerHTML = items.map(item => {
+      totalNet += item.netSalary || 0;
+      const allowancesTotal = Object.values(item.allowances || {}).reduce((a, b) => a + b, 0);
+      const deductionsTotal = Object.values(item.deductions || {}).reduce((a, b) => a + b, 0);
+      
+      return `
+        <tr>
+          <td><strong>${item.employeeId}</strong></td>
+          <td>${item.employeeName}</td>
+          <td>$${item.basicSalary?.toFixed(2)}</td>
+          <td>$${allowancesTotal.toFixed(2)}</td>
+          <td>$${item.overtimeAmount?.toFixed(2)}</td>
+          <td>$${deductionsTotal.toFixed(2)}</td>
+          <td><strong style="color: var(--primary);">$${item.netSalary?.toFixed(2)}</strong></td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="openPayslipModal('${item.id}')">📄 Payslip</button>
+          </td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="8" style="text-align:center;">No payroll calculated for this month. Click "Run Payroll Calculation".</td></tr>`;
+
+    const totalEl = document.getElementById('payroll-total-net-payout');
+    if (totalEl) {
+      totalEl.innerText = `$${totalNet.toFixed(2)}`;
+    }
+  }
+
+  function runPayroll() {
+    if (!guardAction('approve')) return;
+    const monthVal = document.getElementById('payroll-month-input')?.value;
+    if (!monthVal) {
+      alert("Please select a month first!");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to run payroll calculation for ${monthVal}?`)) {
+      return;
+    }
+
+    state.employees.forEach(emp => {
+      if (emp.status !== 'Active') return;
+
+      const basicSalary = emp.salary || 0;
+      const allowances = {
+        position: emp.allowances?.position || 0,
+        phone: emp.allowances?.phone || 0,
+        fuel: emp.allowances?.fuel || 0,
+        meal: emp.allowances?.meal || 0
+      };
+      const totalAllowances = allowances.position + allowances.phone + allowances.fuel + allowances.meal;
+
+      const empLogs = state.attendance.filter(log => log.employeeId === emp.id && log.date?.startsWith(monthVal));
+      let otHours = 0;
+      let lateDaysCount = 0;
+      let presentDaysCount = 0;
+
+      empLogs.forEach(log => {
+        presentDaysCount++;
+        otHours += parseFloat(log.overtime) || 0;
+        if (log.checkIn && log.checkIn.status === 'Late') {
+          lateDaysCount++;
+        }
+      });
+
+      const hourlyRate = basicSalary / 208;
+      const overtimeAmount = hourlyRate * 1.5 * otHours;
+
+      const lateDeductions = lateDaysCount * 2.0; 
+      const expectedDays = 26;
+      let absentDays = expectedDays - presentDaysCount;
+      if (absentDays < 0) absentDays = 0;
+      const absentDeductions = basicSalary * (absentDays / expectedDays);
+
+      let nssfDeduction = 0;
+      if (emp.nssfInfo && emp.nssfInfo.nssfCardNumber) {
+        if (emp.nssfInfo.healthInsurance) nssfDeduction += 5.0;
+        if (emp.nssfInfo.occupationalRisk) nssfDeduction += 2.0;
+        if (emp.nssfInfo.pensionScheme) nssfDeduction += 5.0;
+      }
+
+      const grossSalary = basicSalary + totalAllowances + overtimeAmount - (lateDeductions + absentDeductions);
+
+      let taxDeduction = 0;
+      if (grossSalary > 375) {
+        if (grossSalary <= 500) {
+          taxDeduction = (grossSalary - 375) * 0.05;
+        } else if (grossSalary <= 2125) {
+          taxDeduction = (500 - 375) * 0.05 + (grossSalary - 500) * 0.10;
+        } else {
+          taxDeduction = (500 - 375) * 0.05 + (2125 - 500) * 0.10 + (grossSalary - 2125) * 0.20;
+        }
+      }
+
+      const netSalary = grossSalary - taxDeduction - nssfDeduction;
+
+      const payrollItemId = `payitem_${emp.id}_${monthVal}`;
+      const payrollItem = {
+        id: payrollItemId,
+        payrollId: `payroll_${monthVal}`,
+        employeeId: emp.id,
+        employeeName: emp.fullName,
+        basicSalary,
+        allowances,
+        overtimeHours: otHours,
+        overtimeAmount,
+        deductions: {
+          late: lateDeductions,
+          absent: absentDeductions,
+          nssf: nssfDeduction,
+          tax: taxDeduction
+        },
+        netSalary,
+        status: 'Approved',
+        timestamp: new Date().toISOString()
+      };
+
+      const existingIdx = state.payrollItems.findIndex(item => item.id === payrollItemId);
+      if (existingIdx !== -1) {
+        state.payrollItems[existingIdx] = payrollItem;
+      } else {
+        state.payrollItems.push(payrollItem);
+      }
+    });
+
+    saveStateToLocalStorage();
+    renderHRPayroll();
+    alert("Payroll calculated successfully for " + monthVal + "!");
+  }
+
+  function exportPayrollCSV() {
+    const monthVal = document.getElementById('payroll-month-input')?.value;
+    if (!monthVal) {
+      alert("Please select a month first!");
+      return;
+    }
+    const items = state.payrollItems.filter(item => item.payrollId === `payroll_${monthVal}`);
+    if (items.length === 0) {
+      alert("No calculated payroll items for this month.");
+      return;
+    }
+
+    let csv = "Employee ID,Name,Basic Salary,Position Allowance,Phone Allowance,Fuel Allowance,Meal Allowance,OT Hours,OT Amount,Late Deductions,Absent Deductions,NSSF,Tax,Net Salary\n";
+    items.forEach(i => {
+      csv += `"${i.employeeId}","${i.employeeName}",${i.basicSalary},${i.allowances?.position || 0},${i.allowances?.phone || 0},${i.allowances?.fuel || 0},${i.allowances?.meal || 0},${i.overtimeHours || 0},${i.overtimeAmount.toFixed(2)},${i.deductions?.late || 0},${i.deductions?.absent.toFixed(2)},${i.deductions?.nssf || 0},${i.deductions?.tax.toFixed(2)},${i.netSalary.toFixed(2)}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `payroll_summary_${monthVal}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  let activePayslipId = '';
+  function openPayslipModal(payrollItemId) {
+    const item = state.payrollItems.find(x => x.id === payrollItemId);
+    if (!item) return;
+
+    activePayslipId = payrollItemId;
+    const emp = state.employees.find(e => e.id === item.employeeId);
+    const companyName = state.companies.find(c => c.id === emp?.companyId)?.name || 'ABC Enterprise Co., Ltd.';
+
+    const allowancesTotal = Object.values(item.allowances || {}).reduce((a, b) => a + b, 0);
+    const deductionsTotal = Object.values(item.deductions || {}).reduce((a, b) => a + b, 0);
+
+    const payslipHtml = `
+      <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #333;">${companyName}</h2>
+        <p style="margin: 5px 0; color: #666; font-size: 13px;">Salary Pay Slip</p>
+        <strong style="color: #333;">Month: ${item.payrollId.replace('payroll_', '')}</strong>
+      </div>
+      
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
+        <tr>
+          <td style="padding: 4px 0; font-weight: bold;">Employee ID:</td>
+          <td style="padding: 4px 0;">${item.employeeId}</td>
+          <td style="padding: 4px 0; font-weight: bold;">Bank Name:</td>
+          <td style="padding: 4px 0;">${emp?.bankInfo?.bankName || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; font-weight: bold;">Full Name:</td>
+          <td style="padding: 4px 0;">${item.employeeName}</td>
+          <td style="padding: 4px 0; font-weight: bold;">Account Name:</td>
+          <td style="padding: 4px 0;">${emp?.bankInfo?.accountName || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; font-weight: bold;">Position:</td>
+          <td style="padding: 4px 0;">${emp?.position || 'N/A'}</td>
+          <td style="padding: 4px 0; font-weight: bold;">Account No:</td>
+          <td style="padding: 4px 0;">${emp?.bankInfo?.accountNumber || 'N/A'}</td>
+        </tr>
+      </table>
+
+      <h4 style="margin: 10px 0 5px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Earnings</h4>
+      <table style="width: 100%; font-size: 14px; margin-bottom: 15px;">
+        <tr>
+          <td>Basic Salary</td>
+          <td style="text-align: right; font-weight: bold;">$${item.basicSalary.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Position Allowance</td>
+          <td style="text-align: right;">$${(item.allowances?.position || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Phone Allowance</td>
+          <td style="text-align: right;">$${(item.allowances?.phone || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Fuel Allowance</td>
+          <td style="text-align: right;">$${(item.allowances?.fuel || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Meal Allowance</td>
+          <td style="text-align: right;">$${(item.allowances?.meal || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Overtime (${item.overtimeHours || 0} hrs)</td>
+          <td style="text-align: right;">$${item.overtimeAmount.toFixed(2)}</td>
+        </tr>
+        <tr style="font-weight: bold; border-top: 1px dashed #ccc;">
+          <td>Total Earnings</td>
+          <td style="text-align: right;">$${(item.basicSalary + allowancesTotal + item.overtimeAmount).toFixed(2)}</td>
+        </tr>
+      </table>
+
+      <h4 style="margin: 10px 0 5px 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 4px;">Deductions</h4>
+      <table style="width: 100%; font-size: 14px; margin-bottom: 15px;">
+        <tr>
+          <td>Late Deductions</td>
+          <td style="text-align: right; color: #c00;">$${(item.deductions?.late || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Absent Deductions</td>
+          <td style="text-align: right; color: #c00;">$${(item.deductions?.absent || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>NSSF Contribution</td>
+          <td style="text-align: right; color: #c00;">$${(item.deductions?.nssf || 0).toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>Salary Tax</td>
+          <td style="text-align: right; color: #c00;">$${(item.deductions?.tax || 0).toFixed(2)}</td>
+        </tr>
+        <tr style="font-weight: bold; border-top: 1px dashed #ccc;">
+          <td>Total Deductions</td>
+          <td style="text-align: right; color: #c00;">$${deductionsTotal.toFixed(2)}</td>
+        </tr>
+      </table>
+
+      <div style="border-top: 2px solid #333; padding-top: 10px; margin-top: 20px; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold;">
+        <span>Net Salary Payout:</span>
+        <span style="color: #4f46e5;">$${item.netSalary.toFixed(2)}</span>
+      </div>
+    `;
+
+    const printArea = document.getElementById('payslip-print-area');
+    if (printArea) {
+      printArea.innerHTML = payslipHtml;
+    }
+
+    document.getElementById('modal-payslip-details').classList.add('active-modal');
+  }
+  window.openPayslipModal = openPayslipModal;
+
+  function printPayslip() {
+    const printContent = document.getElementById('payslip-print-area').innerHTML;
+    const win = window.open('', '_blank');
+    win.document.write('<html><head><title>Payslip Print</title></head><body onload="window.print();window.close();">');
+    win.document.write(printContent);
+    win.document.write('</body></html>');
+    win.document.close();
+  }
+
+  function sendPayslipToTelegram() {
+    const item = state.payrollItems.find(x => x.id === activePayslipId);
+    if (!item) return;
+
+    const emp = state.employees.find(e => e.id === item.employeeId);
+    if (!emp || !emp.telegramId) {
+      alert("This employee does not have a linked Telegram account!");
+      return;
+    }
+
+    const token = state.companySettings.hrTelegramBotToken || state.companySettings.telegramToken;
+    if (!token) {
+      alert("Telegram Bot Token is not configured!");
+      return;
+    }
+
+    const allowancesTotal = Object.values(item.allowances || {}).reduce((a, b) => a + b, 0);
+    const deductionsTotal = Object.values(item.deductions || {}).reduce((a, b) => a + b, 0);
+
+    const payslipMsg = `📄 **ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ (Pay Slip)**\n\n` +
+      `👤 ឈ្មោះ៖ ${item.employeeName} (${item.employeeId})\n` +
+      `📅 សម្រាប់ខែ៖ ${item.payrollId.replace('payroll_', '')}\n` +
+      `------------------------\n` +
+      `💵 ប្រាក់ខែគោល៖ $${item.basicSalary.toFixed(2)}\n` +
+      `➕ ប្រាក់ឧបត្ថម្ភសរុប៖ $${allowancesTotal.toFixed(2)}\n` +
+      `➕ ម៉ោងបន្ថែម OT (${item.overtimeHours || 0}h)៖ $${item.overtimeAmount.toFixed(2)}\n` +
+      `➖ ការកាត់កាត់យឺត/អវត្តមាន៖ $${((item.deductions?.late || 0) + (item.deductions?.absent || 0)).toFixed(2)}\n` +
+      `➖ ការកាត់ ប.ស.ស (NSSF)៖ $${(item.deductions?.nssf || 0).toFixed(2)}\n` +
+      `➖ ពន្ធលើប្រាក់បៀវត្សរ៍៖ $${(item.deductions?.tax || 0).toFixed(2)}\n` +
+      `------------------------\n` +
+      `💰 **ប្រាក់ខែទទួលបានពិតប្រាកដ (Net)៖ $${item.netSalary.toFixed(2)}**`;
+
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: emp.telegramId,
+        text: payslipMsg
+      })
+    }).then(res => res.json()).then(data => {
+      if (data.ok) {
+        alert("Payslip successfully sent to employee via Telegram Bot!");
+      } else {
+        alert("Failed to send payslip to Telegram: " + data.description);
+      }
+    }).catch(err => {
+      alert("Error sending payslip: " + err.message);
+    });
+  }
+
+  function setupPayrollEventListeners() {
+    const btnRun = document.getElementById('btn-run-payroll');
+    if (btnRun) btnRun.addEventListener('click', runPayroll);
+
+    const btnExport = document.getElementById('btn-export-payroll-csv');
+    if (btnExport) btnExport.addEventListener('click', exportPayrollCSV);
+
+    const btnClose1 = document.getElementById('btn-close-payslip-details');
+    if (btnClose1) {
+      btnClose1.addEventListener('click', () => {
+        document.getElementById('modal-payslip-details').classList.remove('active-modal');
+      });
+    }
+    const btnClose2 = document.getElementById('btn-close-payslip-modal-btn');
+    if (btnClose2) {
+      btnClose2.addEventListener('click', () => {
+        document.getElementById('modal-payslip-details').classList.remove('active-modal');
+      });
+    }
+
+    const btnPrint = document.getElementById('btn-print-payslip');
+    if (btnPrint) btnPrint.addEventListener('click', printPayslip);
+
+    const btnSend = document.getElementById('btn-send-payslip-telegram');
+    if (btnSend) btnSend.addEventListener('click', sendPayslipToTelegram);
+
+    // Pre-fill month
+    const monthInput = document.getElementById('payroll-month-input');
+    if (monthInput && !monthInput.value) {
+      const d = new Date();
+      monthInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+  }
+
+  function renderHRPerformance() {
+    const tbody = document.getElementById('hr-performance-table-body');
+    if (!tbody) return;
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+
+    tbody.innerHTML = state.employees.map(emp => {
+      const empKpis = state.kpis.filter(k => k.employeeId === emp.id);
+      const currentEval = empKpis.find(k => k.month === currentMonth);
+      const lastEval = empKpis.length > 0 ? empKpis[empKpis.length - 1] : null;
+
+      let scoreStr = 'Not Evaluated';
+      let gradeStr = 'N/A';
+      if (currentEval) {
+        scoreStr = `${currentEval.score}%`;
+        gradeStr = getKpiGrade(currentEval.score);
+      }
+
+      let lastEvalStr = 'None';
+      if (lastEval) {
+        lastEvalStr = `${lastEval.month} (Score: ${lastEval.score}%)`;
+      }
+
+      return `
+        <tr>
+          <td><strong>${emp.id}</strong></td>
+          <td>${emp.fullName}</td>
+          <td>${emp.position || 'N/A'}</td>
+          <td>${currentMonth}</td>
+          <td><strong style="color: ${currentEval ? 'var(--primary)' : 'var(--text-secondary)'};">${scoreStr}</strong></td>
+          <td><span class="status-badge" style="background: ${getKpiGradeColor(gradeStr)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${gradeStr}</span></td>
+          <td>${lastEvalStr}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="openKpiEvalModal('${emp.id}')">✍️ Evaluate</button>
+          </td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="8" style="text-align:center;">No employees in the database.</td></tr>`;
+  }
+
+  function getKpiGrade(score) {
+    if (score >= 90) return 'Grade A (Outstanding)';
+    if (score >= 80) return 'Grade B (Excellent)';
+    if (score >= 70) return 'Grade C (Good)';
+    if (score >= 50) return 'Grade D (Satisfactory)';
+    return 'Grade F (Fail)';
+  }
+
+  function getKpiGradeColor(grade) {
+    if (grade.includes('Grade A')) return 'linear-gradient(135deg, #10b981, #059669)';
+    if (grade.includes('Grade B')) return 'linear-gradient(135deg, #3b82f6, #2563eb)';
+    if (grade.includes('Grade C')) return 'linear-gradient(135deg, #f59e0b, #d97706)';
+    if (grade.includes('Grade D')) return 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
+    return 'linear-gradient(135deg, #ef4444, #dc2626)';
+  }
+
+  function openKpiEvalModal(empId) {
+    if (!guardAction('edit')) return;
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return;
+
+    document.getElementById('kpi-eval-employee-id').value = emp.id;
+    document.getElementById('kpi-eval-employee-name').value = emp.fullName;
+    
+    const d = new Date();
+    document.getElementById('kpi-eval-month').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('kpi-eval-goal-score').value = '';
+    document.getElementById('kpi-eval-competency-score').value = '';
+    document.getElementById('kpi-eval-comment').value = '';
+
+    document.getElementById('modal-kpi-evaluation').classList.add('active-modal');
+  }
+  window.openKpiEvalModal = openKpiEvalModal;
+
+  function saveKpiEvaluation() {
+    const empId = document.getElementById('kpi-eval-employee-id').value;
+    const month = document.getElementById('kpi-eval-month').value;
+    const goalScore = parseFloat(document.getElementById('kpi-eval-goal-score').value) || 0;
+    const competencyScore = parseFloat(document.getElementById('kpi-eval-competency-score').value) || 0;
+    const comment = document.getElementById('kpi-eval-comment').value.trim();
+
+    if (!month) {
+      alert("Please select evaluation month.");
+      return;
+    }
+
+    const overallScore = Math.round((goalScore + competencyScore) / 2);
+    const kpiId = `kpi_${empId}_${month}`;
+
+    const newKpi = {
+      id: kpiId,
+      employeeId: empId,
+      month,
+      goals: [
+        { title: "Goal Achievement", score: goalScore },
+        { title: "Core Competency", score: competencyScore }
+      ],
+      score: overallScore,
+      managerScore: overallScore,
+      managerComment: comment,
+      status: 'Completed',
+      timestamp: new Date().toISOString()
+    };
+
+    const existingIdx = state.kpis.findIndex(k => k.id === kpiId);
+    if (existingIdx !== -1) {
+      state.kpis[existingIdx] = newKpi;
+    } else {
+      state.kpis.push(newKpi);
+    }
+
+    saveStateToLocalStorage();
+    document.getElementById('modal-kpi-evaluation').classList.remove('active-modal');
+    renderHRPerformance();
+    alert("KPI evaluation saved successfully!");
+  }
+
+  function setupKpiEventListeners() {
+    const btnClose = document.getElementById('btn-close-kpi-eval');
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        document.getElementById('modal-kpi-evaluation').classList.remove('active-modal');
+      });
+    }
+    const btnCancel = document.getElementById('btn-cancel-kpi-eval');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', () => {
+        document.getElementById('modal-kpi-evaluation').classList.remove('active-modal');
+      });
+    }
+
+    const form = document.getElementById('kpi-evaluation-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveKpiEvaluation();
+      });
+    }
+  }
+
+  function renderHRAdminSecurity() {
+    const perms = state.companySettings.rolePermissions || {};
+    const roles = ['branch_admin', 'sales_staff', 'warehouse_staff', 'accountant'];
+    const actions = ['view', 'add', 'edit', 'delete', 'approve', 'settings'];
+
+    roles.forEach(role => {
+      actions.forEach(action => {
+        const checkbox = document.querySelector(`.rbac-checkbox[data-role="${role}"][data-action="${action}"]`);
+        if (checkbox) {
+          checkbox.checked = perms[role] ? !!perms[role][action] : false;
+        }
+      });
+    });
+  }
+
+  function saveSecurityPermissions() {
+    if (!guardAction('settings')) return;
+    const perms = state.companySettings.rolePermissions || {};
+    const roles = ['branch_admin', 'sales_staff', 'warehouse_staff', 'accountant'];
+    const actions = ['view', 'add', 'edit', 'delete', 'approve', 'settings'];
+
+    roles.forEach(role => {
+      if (!perms[role]) perms[role] = {};
+      actions.forEach(action => {
+        const checkbox = document.querySelector(`.rbac-checkbox[data-role="${role}"][data-action="${action}"]`);
+        perms[role][action] = checkbox ? checkbox.checked : false;
+      });
+    });
+
+    state.companySettings.rolePermissions = perms;
+    saveStateToLocalStorage();
+    alert("Security RBAC Permissions Matrix saved successfully!");
+  }
+
+  function setupSecurityEventListeners() {
+    const btnSave = document.getElementById('btn-save-rbac');
+    if (btnSave) btnSave.addEventListener('click', saveSecurityPermissions);
+  }
+
+  // ==================== END HRMS UPGRADE LOGIC ====================
 
   // Bind main DOM event
   document.addEventListener('DOMContentLoaded', () => {
@@ -8977,6 +9830,10 @@ CREATE TABLE sale_items (
     setupClock();
     setupEventListeners();
     setupLoginHandler();
+    setupOrgEventListeners();
+    setupPayrollEventListeners();
+    setupKpiEventListeners();
+    setupSecurityEventListeners();
     
     translateApp();
     renderCurrentView();

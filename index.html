@@ -1247,9 +1247,13 @@
         <!-- Tab Row -->
         <div class="hr-tab-row">
           <button class="hr-tab-btn active" data-tab="hr-dashboard" data-translate="hrDashboard">HR Dashboard</button>
+          <button class="hr-tab-btn" data-tab="hr-org" data-translate="organization">Organization Setup</button>
           <button class="hr-tab-btn" data-tab="hr-employees" data-translate="employeeList">Employee Database</button>
           <button class="hr-tab-btn" data-tab="hr-attendance" data-translate="attendanceLogs">Attendance Logs</button>
           <button class="hr-tab-btn" data-tab="hr-leaves" data-translate="leaveRequests">Leave Requests</button>
+          <button class="hr-tab-btn" data-tab="hr-payroll" data-translate="payroll">Payroll Engine</button>
+          <button class="hr-tab-btn" data-tab="hr-performance" data-translate="kpi">KPI Performance</button>
+          <button class="hr-tab-btn" data-tab="hr-security" data-translate="security">Security RBAC</button>
         </div>
 
         <!-- SUB VIEW 1: HR DASHBOARD -->
@@ -1453,9 +1457,316 @@
                 </tbody>
               </table>
             </div>
+        </div>
+
+        <!-- SUB VIEW 5: ORGANIZATION STRUCTURE -->
+        <div id="hr-org" class="hr-view-panel">
+          <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+            <button class="btn btn-sm btn-outline active" id="btn-org-companies" style="min-height:auto; padding:6px 12px;">🏢 Companies</button>
+            <button class="btn btn-sm btn-outline" id="btn-org-departments" style="min-height:auto; padding:6px 12px;">📁 Departments</button>
+            <button class="btn btn-sm btn-outline" id="btn-org-teams" style="min-height:auto; padding:6px 12px;">👥 Teams</button>
+            <button class="btn btn-sm btn-outline" id="btn-org-positions" style="min-height:auto; padding:6px 12px;">💼 Positions</button>
+          </div>
+
+          <!-- Org: Companies -->
+          <div id="org-companies-panel" class="org-sub-panel">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+              <div class="glass-card" style="padding: 16px;">
+                <h4>🏢 Add Company</h4>
+                <form id="org-company-form" style="margin-top: 10px;">
+                  <div class="form-group">
+                    <label>Company Name *</label>
+                    <input type="text" class="form-control" id="company-name" required placeholder="e.g. ABC Enterprise">
+                  </div>
+                  <div class="form-group">
+                    <label>Tax ID / VAT No</label>
+                    <input type="text" class="form-control" id="company-tax-id" placeholder="e.g. VAT99999">
+                  </div>
+                  <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" class="form-control" id="company-address" placeholder="e.g. Phnom Penh">
+                  </div>
+                  <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" class="form-control" id="company-phone" placeholder="e.g. 023 999 888">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm w-100" style="margin-top:10px;">Save Company</button>
+                </form>
+              </div>
+              <div class="glass-card" style="padding: 16px;">
+                <div class="table-responsive">
+                  <table class="pos-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Tax ID</th>
+                        <th>Address</th>
+                        <th>Phone</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="org-companies-list"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Org: Departments -->
+          <div id="org-departments-panel" class="org-sub-panel" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+              <div class="glass-card" style="padding: 16px;">
+                <h4>📁 Add Department</h4>
+                <form id="org-dept-form" style="margin-top: 10px;">
+                  <div class="form-group">
+                    <label>Department Name *</label>
+                    <input type="text" class="form-control" id="dept-name" required placeholder="e.g. HR, Sales, IT">
+                  </div>
+                  <div class="form-group">
+                    <label>Company *</label>
+                    <select class="form-control" id="dept-company-id" required></select>
+                  </div>
+                  <div class="form-group">
+                    <label>Manager Name</label>
+                    <input type="text" class="form-control" id="dept-manager" placeholder="e.g. Sok Dara">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm w-100" style="margin-top:10px;">Save Department</button>
+                </form>
+              </div>
+              <div class="glass-card" style="padding: 16px;">
+                <div class="table-responsive">
+                  <table class="pos-table">
+                    <thead>
+                      <tr>
+                        <th>Department</th>
+                        <th>Company</th>
+                        <th>Manager</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="org-depts-list"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Org: Teams -->
+          <div id="org-teams-panel" class="org-sub-panel" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+              <div class="glass-card" style="padding: 16px;">
+                <h4>👥 Add Team</h4>
+                <form id="org-team-form" style="margin-top: 10px;">
+                  <div class="form-group">
+                    <label>Team Name *</label>
+                    <input type="text" class="form-control" id="team-name" required placeholder="e.g. Team A, Dev Team">
+                  </div>
+                  <div class="form-group">
+                    <label>Department *</label>
+                    <select class="form-control" id="team-dept-id" required></select>
+                  </div>
+                  <div class="form-group">
+                    <label>Team Lead</label>
+                    <input type="text" class="form-control" id="team-leader" placeholder="e.g. Keo Vanna">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm w-100" style="margin-top:10px;">Save Team</button>
+                </form>
+              </div>
+              <div class="glass-card" style="padding: 16px;">
+                <div class="table-responsive">
+                  <table class="pos-table">
+                    <thead>
+                      <tr>
+                        <th>Team Name</th>
+                        <th>Department</th>
+                        <th>Team Lead</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="org-teams-list"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Org: Positions -->
+          <div id="org-positions-panel" class="org-sub-panel" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start;">
+              <div class="glass-card" style="padding: 16px;">
+                <h4>💼 Add Position</h4>
+                <form id="org-position-form" style="margin-top: 10px;">
+                  <div class="form-group">
+                    <label>Position Title *</label>
+                    <input type="text" class="form-control" id="pos-title" required placeholder="e.g. HR Executive">
+                  </div>
+                  <div class="form-group">
+                    <label>Department *</label>
+                    <select class="form-control" id="pos-dept-id" required></select>
+                  </div>
+                  <div class="form-group">
+                    <label>Base Salary ($) *</label>
+                    <input type="number" step="any" class="form-control" id="pos-base-salary" required placeholder="e.g. 350">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm w-100" style="margin-top:10px;">Save Position</button>
+                </form>
+              </div>
+              <div class="glass-card" style="padding: 16px;">
+                <div class="table-responsive">
+                  <table class="pos-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Department</th>
+                        <th>Base Salary</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="org-positions-list"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
+        <!-- SUB VIEW 6: PAYROLL ENGINE -->
+        <div id="hr-payroll" class="hr-view-panel">
+          <div class="glass-card" style="padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+              <div class="form-group" style="margin: 0; min-width: 150px;">
+                <label style="margin-bottom: 4px; font-size: 11px;">Select Month</label>
+                <input type="month" id="payroll-month-input" class="form-control" style="padding:6px 12px; font-size:13px; min-height: 36px;">
+              </div>
+              <button class="btn btn-primary" id="btn-run-payroll">⚙️ Run Payroll Calculation</button>
+              <button class="btn btn-outline" id="btn-export-payroll-csv" style="margin-left: auto;">📤 Export CSV Summary</button>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3 data-translate="payroll">Payroll Summary Sheet</h3>
+              <div style="font-weight:bold; font-size:15px; color:var(--primary);">
+                Total Net Payout: <span id="payroll-total-net-payout">$0.00</span>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Emp ID</th>
+                    <th>Name</th>
+                    <th>Basic Salary</th>
+                    <th>Allowances</th>
+                    <th>OT Amount</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="hr-payroll-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB VIEW 7: KPI PERFORMANCE -->
+        <div id="hr-performance" class="hr-view-panel">
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="kpi">KPI Performance Evaluation</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Emp ID</th>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Current Month</th>
+                    <th>KPI Score</th>
+                    <th>Rank / Grade</th>
+                    <th>Last Evaluation</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="hr-performance-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB VIEW 8: SECURITY RBAC -->
+        <div id="hr-security" class="hr-view-panel">
+          <div class="glass-card" style="padding: 20px;">
+            <div class="table-header">
+              <h3 data-translate="rbacMatrix">RBAC Permissions Matrix</h3>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">
+              Configure access permissions for different system roles. Changes apply instantly to all active sessions.
+            </p>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th>View Modules</th>
+                    <th>Add Records</th>
+                    <th>Edit Records</th>
+                    <th>Delete Records</th>
+                    <th>Approve Requests</th>
+                    <th>System Settings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Branch Admin</strong></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="branch_admin" data-action="view"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="branch_admin" data-action="add"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="branch_admin" data-action="edit"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="branch_admin" data-action="delete"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="branch_admin" data-action="approve"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="branch_admin" data-action="settings"></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sales Staff</strong></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="sales_staff" data-action="view"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="sales_staff" data-action="add"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="sales_staff" data-action="edit"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="sales_staff" data-action="delete"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="sales_staff" data-action="approve"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="sales_staff" data-action="settings"></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Warehouse Staff</strong></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="warehouse_staff" data-action="view"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="warehouse_staff" data-action="add"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="warehouse_staff" data-action="edit"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="warehouse_staff" data-action="delete"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="warehouse_staff" data-action="approve"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="warehouse_staff" data-action="settings"></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Accountant</strong></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="accountant" data-action="view"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="accountant" data-action="add"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="accountant" data-action="edit"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="accountant" data-action="delete"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="accountant" data-action="approve"></td>
+                    <td><input type="checkbox" class="rbac-checkbox" data-role="accountant" data-action="settings"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+              <button class="btn btn-primary" id="btn-save-rbac">💾 Save Permissions Matrix</button>
+            </div>
+          </div>
+        </div>
 
       </div>
 
@@ -2005,6 +2316,94 @@
               <option value="Resigned">Resigned</option>
             </select>
           </div>
+
+          <h4 style="margin: 16px 0 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; color: var(--primary);">Contract & Allowances</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Contract Type</label>
+              <select class="form-control" id="employee-contract-type">
+                <option value="Probation">Probation</option>
+                <option value="FDC">Fixed Duration (FDC)</option>
+                <option value="UDC">Unspecified Duration (UDC)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Position Allowance ($)</label>
+              <input type="number" step="any" class="form-control" id="employee-allowance-position" placeholder="e.g. 50">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Phone Allowance ($)</label>
+              <input type="number" step="any" class="form-control" id="employee-allowance-phone" placeholder="e.g. 10">
+            </div>
+            <div class="form-group">
+              <label>Fuel Allowance ($)</label>
+              <input type="number" step="any" class="form-control" id="employee-allowance-fuel" placeholder="e.g. 20">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Meal Allowance ($)</label>
+              <input type="number" step="any" class="form-control" id="employee-allowance-meal" placeholder="e.g. 30">
+            </div>
+            <div class="form-group">
+              <label>Company</label>
+              <select class="form-control" id="employee-company-id"></select>
+            </div>
+          </div>
+
+          <h4 style="margin: 16px 0 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; color: var(--primary);">Bank & NSSF Info</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Bank Name</label>
+              <input type="text" class="form-control" id="employee-bank-name" placeholder="e.g. ABA Bank">
+            </div>
+            <div class="form-group">
+              <label>Account Name</label>
+              <input type="text" class="form-control" id="employee-bank-acc-name" placeholder="e.g. SOK DARA">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Account Number</label>
+              <input type="text" class="form-control" id="employee-bank-acc-num" placeholder="e.g. 000123456">
+            </div>
+            <div class="form-group">
+              <label>NSSF Card Number</label>
+              <input type="text" class="form-control" id="employee-nssf-num" placeholder="e.g. NSSF-999-888">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>NSSF Coverage</label>
+            <div style="display: flex; gap: 15px; margin-top: 5px;">
+              <label style="display: flex; align-items: center; gap: 5px; font-size:12px;">
+                <input type="checkbox" id="employee-nssf-health" checked> Health
+              </label>
+              <label style="display: flex; align-items: center; gap: 5px; font-size:12px;">
+                <input type="checkbox" id="employee-nssf-risk" checked> Risk
+              </label>
+              <label style="display: flex; align-items: center; gap: 5px; font-size:12px;">
+                <input type="checkbox" id="employee-nssf-pension" checked> Pension
+              </label>
+            </div>
+          </div>
+
+          <h4 style="margin: 16px 0 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; color: var(--primary);">Emergency Contact</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label>Contact Name</label>
+              <input type="text" class="form-control" id="employee-emergency-name" placeholder="e.g. Sok Paul">
+            </div>
+            <div class="form-group">
+              <label>Relationship</label>
+              <input type="text" class="form-control" id="employee-emergency-relation" placeholder="e.g. Brother">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Contact Phone</label>
+            <input type="text" class="form-control" id="employee-emergency-phone" placeholder="e.g. 012 345 678">
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" id="btn-cancel-employee" data-translate="cancel">Cancel</button>
@@ -2062,6 +2461,70 @@
           <button type="submit" class="btn btn-secondary" data-translate="save">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: KPI EVALUATION -->
+  <div class="modal-overlay" id="modal-kpi-evaluation">
+    <div class="modal-card" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3>Evaluate KPI Performance</h3>
+        <button class="qty-btn" id="btn-close-kpi-eval">×</button>
+      </div>
+      <form id="kpi-evaluation-form">
+        <div class="modal-body" style="text-align: left;">
+          <input type="hidden" id="kpi-eval-employee-id">
+          
+          <div class="form-group">
+            <label>Employee Name</label>
+            <input type="text" class="form-control" id="kpi-eval-employee-name" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
+          </div>
+          
+          <div class="form-group">
+            <label>Evaluation Month *</label>
+            <input type="month" class="form-control" id="kpi-eval-month" required>
+          </div>
+
+          <div class="form-group">
+            <label>Goal Achievement Score (0-100) *</label>
+            <input type="number" min="0" max="100" class="form-control" id="kpi-eval-goal-score" required placeholder="e.g. 90">
+          </div>
+
+          <div class="form-group">
+            <label>Core Competency Score (0-100) *</label>
+            <input type="number" min="0" max="100" class="form-control" id="kpi-eval-competency-score" required placeholder="e.g. 85">
+          </div>
+
+          <div class="form-group">
+            <label>Manager / Evaluator Comment</label>
+            <textarea class="form-control" id="kpi-eval-comment" placeholder="Provide feedback..." style="min-height: 80px;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-kpi-eval">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Evaluation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PAYSLIP DETAILS -->
+  <div class="modal-overlay" id="modal-payslip-details">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Dynamic Payslip Details</h3>
+        <button class="qty-btn" id="btn-close-payslip-details">×</button>
+      </div>
+      <div class="modal-body" style="text-align: left; max-height: 480px; overflow-y: auto;">
+        <div id="payslip-print-area" style="background: #ffffff; color: #333333; padding: 20px; border-radius: 8px; font-family: sans-serif;">
+          <!-- Payslip contents generated dynamically in JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="btn-close-payslip-modal-btn">Close</button>
+        <button type="button" class="btn btn-secondary" id="btn-print-payslip">🖨️ Print Payslip</button>
+        <button type="button" class="btn btn-primary" id="btn-send-payslip-telegram">✈️ Send to Bot</button>
+      </div>
     </div>
   </div>
 
