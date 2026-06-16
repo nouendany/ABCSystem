@@ -3918,6 +3918,50 @@
     }
   }
 
+  function getEmployeeAttendanceStatus(empId) {
+    const today = new Date().toLocaleDateString('en-CA');
+    const log = state.attendance.find(a => a.employeeId === empId && a.date === today);
+    if (log) {
+      if (log.checkIn && log.checkIn.status === 'Late') {
+        return { text: 'late', badgeClass: 'badge-late' };
+      }
+      return { text: 'present', badgeClass: 'badge-approved' };
+    }
+    
+    const leaveActive = state.leaveRequests.some(req => {
+      if (req.employeeId !== empId || req.status !== 'Approved') return false;
+      const start = new Date(req.startDate);
+      const end = new Date(req.endDate);
+      const cur = new Date(today);
+      return cur >= start && cur <= end;
+    });
+    
+    if (leaveActive) {
+      return { text: 'onLeave', badgeClass: 'badge-pending' };
+    }
+    
+    return { text: 'absent', badgeClass: 'badge-rejected' };
+  }
+
+  function populateStaffEmployeeSelect(selectedEmployeeId = '') {
+    const select = document.getElementById('staff-employee-id');
+    if (!select) return;
+    
+    select.innerHTML = `<option value="" data-translate="noLink">${window.POS_TRANSLATIONS[state.lang].noLink || 'No Link'}</option>`;
+    
+    const employees = [...state.employees].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    
+    employees.forEach(emp => {
+      const opt = document.createElement('option');
+      opt.value = emp.id;
+      opt.innerText = `${emp.fullName} (${emp.id})`;
+      if (emp.id === selectedEmployeeId) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  }
+
   // 9. STAFF PAYROLL SYSTEM RENDER
   function renderStaff() {
     const tbody = document.getElementById('staff-table-body');
@@ -3953,11 +3997,20 @@
       const br = state.branches.find(b => b.id === s.branchId);
       const brName = br ? (state.lang === 'km' ? br.nameKh : br.name) : 'HQ';
 
+      let attendanceHtml = '<span style="color:var(--text-muted); font-size:11px;">—</span>';
+      if (s.employeeId) {
+        const status = getEmployeeAttendanceStatus(s.employeeId);
+        const transKey = status.text + 'Today';
+        const transText = window.POS_TRANSLATIONS[state.lang][transKey] || status.text;
+        attendanceHtml = `<span class="badge ${status.badgeClass}" style="font-size:10px;">${transText}</span>`;
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><strong style="color:var(--secondary); font-family:monospace;">${s.id}</strong></td>
         <td><strong>${s.name}</strong>${s.fbPage ? `<br><span style="font-size:9px;color:#1877f2;font-weight:600;">🌐 ${s.fbPage}</span>` : ''}<br><span style="font-size:9px;color:var(--text-muted);">${brName}</span></td>
         <td>${s.role}</td>
+        <td>${attendanceHtml}</td>
         <td style="font-weight:750;">${window.POS_HELPERS.formatUSD(s.baseSalary)}</td>
         <td style="text-align:center;">${rate}%</td>
         <td style="font-weight:750; color:var(--secondary);">${window.POS_HELPERS.formatUSD(sales)}</td>
@@ -3987,6 +4040,8 @@
     document.getElementById('staff-salary').value = s.baseSalary;
     document.getElementById('staff-commission').value = s.commissionRate;
     document.getElementById('staff-fb-page').value = s.fbPage || "";
+    
+    populateStaffEmployeeSelect(s.employeeId || '');
 
     document.getElementById('modal-staff').classList.add('active-modal');
   }
@@ -6991,6 +7046,7 @@ CREATE TABLE sale_items (
       if (!guardAction('add')) return;
       document.getElementById('staff-form').reset();
       document.getElementById('staff-edit-id').value = '';
+      populateStaffEmployeeSelect('');
       document.getElementById('modal-staff').classList.add('active-modal');
     });
 
@@ -7502,12 +7558,14 @@ CREATE TABLE sale_items (
       const baseSalary = parseFloat(document.getElementById('staff-salary').value) || 0;
       const commissionRate = parseFloat(document.getElementById('staff-commission').value) || 0;
       const fbPage = document.getElementById('staff-fb-page').value.trim();
+      const employeeId = document.getElementById('staff-employee-id').value;
 
       if (id !== '') {
         if (!guardAction('edit')) return;
         const s = state.staff.find(st => st.id === id);
         if (s) {
           s.branchId = branchId; s.name = name; s.role = role; s.baseSalary = baseSalary; s.commissionRate = commissionRate; s.fbPage = fbPage;
+          s.employeeId = employeeId;
           s.updatedBy = state.currentUser ? state.currentUser.username : 'system';
           s.timestamp = new Date().toISOString();
         }
@@ -7515,7 +7573,7 @@ CREATE TABLE sale_items (
         if (!guardAction('add')) return;
         const newId = 'STF-' + String(state.staff.length + 1).padStart(3, '0');
         state.staff.push({
-          id: newId, name, role, baseSalary, commissionRate, branchId, fbPage,
+          id: newId, name, role, baseSalary, commissionRate, branchId, fbPage, employeeId,
           createdBy: state.currentUser ? state.currentUser.username : 'system',
           updatedBy: state.currentUser ? state.currentUser.username : 'system',
           timestamp: new Date().toISOString()
