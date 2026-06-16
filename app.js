@@ -4905,8 +4905,8 @@
 
       const startListeners = (dbInstance) => {
         const setupListener = (colName, stateKey, idKey, renderFns) => {
+          let isFirstSnapshot = true;
           dbInstance.collection(colName).onSnapshot(snapshot => {
-            // Check if metadata has pending writes to prevent local updates overriding Firestore
             if (snapshot.metadata.hasPendingWrites) return;
 
             const list = [];
@@ -4918,7 +4918,21 @@
               list.push(data);
             });
 
-            // Sync always, including empty arrays to support clean resets across browsers
+            if (isFirstSnapshot) {
+              isFirstSnapshot = false;
+              if (snapshot.empty && state[stateKey] && state[stateKey].length > 0) {
+                console.log(`Initial snapshot for ${colName} is empty. Initializing Firestore with local data...`);
+                state[stateKey].forEach(item => {
+                  const id = item[idKey];
+                  if (id) {
+                    dbInstance.collection(colName).doc(id).set(item)
+                      .catch(e => console.error(`Firestore init write error on ${colName}:`, e));
+                  }
+                });
+                return;
+              }
+            }
+
             state[stateKey] = list;
             lastSyncedState[stateKey] = JSON.parse(JSON.stringify(list));
             
@@ -4957,8 +4971,24 @@
         setupListener('kpis', 'kpis', 'id', [renderHRPerformance]);
 
         // Company settings listener
+        let isFirstSettingsSnapshot = true;
         dbInstance.collection('company_settings').doc('global').onSnapshot(doc => {
-          if (doc.exists && !doc.metadata.hasPendingWrites) {
+          if (doc.metadata.hasPendingWrites) return;
+
+          if (isFirstSettingsSnapshot) {
+            isFirstSettingsSnapshot = false;
+            const hasLocalSettings = state.companySettings && Object.keys(state.companySettings).length > 0;
+            const isDocEmpty = !doc.exists || !doc.data() || Object.keys(doc.data()).length === 0;
+
+            if (isDocEmpty && hasLocalSettings) {
+              console.log("Firestore company settings document is empty or missing. Initializing with local settings...");
+              dbInstance.collection('company_settings').doc('global').set(state.companySettings)
+                .catch(e => console.error("Error initializing company settings in Firestore:", e));
+              return;
+            }
+          }
+
+          if (doc.exists && doc.data() && Object.keys(doc.data()).length > 0) {
             const settings = doc.data();
             state.companySettings = settings;
             localStorage.setItem('abc_company_settings', JSON.stringify(settings));
@@ -4994,6 +5024,15 @@
           migrateCollection('stock_logs', state.stockLogs, 'id');
           migrateCollection('payment_logs', state.paymentLogs, 'id');
           migrateCollection('followups', state.followups, 'id');
+          migrateCollection('employees', state.employees, 'id');
+          migrateCollection('attendance', state.attendance, 'id');
+          migrateCollection('leave_requests', state.leaveRequests, 'id');
+          migrateCollection('companies', state.companies, 'id');
+          migrateCollection('departments', state.departments, 'id');
+          migrateCollection('teams', state.teams, 'id');
+          migrateCollection('positions', state.positions, 'id');
+          migrateCollection('payroll_items', state.payrollItems, 'id');
+          migrateCollection('kpis', state.kpis, 'id');
           
           const pSettings = db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
           promises.push(pSettings);
