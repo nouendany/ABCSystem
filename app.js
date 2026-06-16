@@ -9064,13 +9064,19 @@ CREATE TABLE sale_items (
       const statusBadgeClass = req.status === 'Pending' ? 'badge-pending' : req.status === 'Approved' ? 'badge-approved' : 'badge-rejected';
       const statusText = window.POS_TRANSLATIONS[state.lang][req.status.toLowerCase()] || req.status;
 
-      let actionHtml = '—';
+      let actionHtml = '';
       if (req.status === 'Pending') {
+        const approveText = window.POS_TRANSLATIONS[state.lang].approve || 'Approve';
+        const rejectText = window.POS_TRANSLATIONS[state.lang].reject || 'Reject';
         actionHtml = `
-          <button class="btn btn-secondary btn-sm btn-approve-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px; margin-right:4px;" data-translate="approve">Approve</button>
-          <button class="btn btn-danger btn-sm btn-reject-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px;" data-translate="reject">Reject</button>
+          <button class="btn btn-secondary btn-sm btn-approve-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px; margin-right:4px;" data-translate="approve">${approveText}</button>
+          <button class="btn btn-danger btn-sm btn-reject-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px; margin-right:4px;" data-translate="reject">${rejectText}</button>
         `;
       }
+      const deleteText = window.POS_TRANSLATIONS[state.lang].delete || 'Delete';
+      actionHtml += `
+        <button class="btn btn-danger btn-sm btn-delete-leave" data-id="${req.id}" style="padding:2px 8px; font-size:11px; background-color:#dc3545; border-color:#dc3545; color:#fff;" data-translate="delete">${deleteText}</button>
+      `;
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -9088,6 +9094,7 @@ CREATE TABLE sale_items (
         tr.querySelector('.btn-approve-leave').addEventListener('click', () => processLeaveRequest(req.id, 'Approved'));
         tr.querySelector('.btn-reject-leave').addEventListener('click', () => processLeaveRequest(req.id, 'Rejected'));
       }
+      tr.querySelector('.btn-delete-leave').addEventListener('click', () => deleteLeaveRequest(req.id));
 
       tbody.appendChild(tr);
     });
@@ -9118,6 +9125,23 @@ CREATE TABLE sale_items (
       }
 
       alert(`Leave request has been ${newStatus.toLowerCase()}!`);
+    }
+  }
+
+  function deleteLeaveRequest(reqId) {
+    if (!guardAction('delete')) return;
+    const confirmMsg = window.POS_TRANSLATIONS[state.lang].confirmDelete || 'Are you sure you want to delete this record?';
+    if (!confirm(confirmMsg)) return;
+
+    const idx = state.leaveRequests.findIndex(r => r.id === reqId);
+    if (idx !== -1) {
+      state.leaveRequests.splice(idx, 1);
+      saveStateToLocalStorage();
+      renderLeaveRequests();
+      renderHRDashboard();
+      
+      const successMsg = state.lang === 'km' ? 'លិខិតសុំច្បាប់ត្រូវបានលុបដោយជោគជ័យ!' : 'Leave request deleted successfully!';
+      alert(successMsg);
     }
   }
 
