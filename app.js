@@ -4236,8 +4236,9 @@
     let sumTotalCost = 0;
     let sumTotalSelling = 0;
     const filterBranch = getActiveBranchFilter();
+    const productsToExport = state.lastFilteredProducts || state.products;
 
-    state.products.forEach((p, idx) => {
+    productsToExport.forEach((p, idx) => {
       const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
       const totalCostVal = qtyVal * p.costPrice;
       const totalSellingVal = qtyVal * p.sellingPrice;
@@ -4283,16 +4284,16 @@
     document.body.removeChild(link);
   }
 
-  // Reports generators details
   function renderProductReport(container) {
-    let rowsHtml = '';
-    let sumCostPrice = 0;
-    let sumSellingPrice = 0;
-    let sumTotalCost = 0;
-    let sumTotalSelling = 0;
-    const filterBranch = getActiveBranchFilter();
     const isKhmer = state.lang === 'km';
-
+    const filterBranch = getActiveBranchFilter();
+    
+    // Initial translations & labels
+    const tSearch = window.POS_TRANSLATIONS[state.lang].searchPlaceholder || "Search by name or SKU...";
+    const tAllCats = window.POS_TRANSLATIONS[state.lang].allCategories || "All Categories";
+    const tAllProds = window.POS_TRANSLATIONS[state.lang].allProducts || "All Products";
+    const tLowStockOnly = window.POS_TRANSLATIONS[state.lang].lowStockOnly || "Low Stock Only";
+    
     const headers = isKhmer ? {
       no: "ល.រ",
       barcode: "បាកូដទំនិញ",
@@ -4325,36 +4326,11 @@
       signature: "Operation at Sen Sok, Phnom Penh, Date:..............................."
     };
 
-    state.products.forEach((p, idx) => {
-      const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
-      const totalCostVal = qtyVal * p.costPrice;
-      const totalSellingVal = qtyVal * p.sellingPrice;
-
-      sumCostPrice += p.costPrice;
-      sumSellingPrice += p.sellingPrice;
-      sumTotalCost += totalCostVal;
-      sumTotalSelling += totalSellingVal;
-
-      rowsHtml += `
-        <tr>
-          <td style="text-align:center;">${idx + 1}</td>
-          <td><strong style="font-family:monospace;">${p.sku}</strong></td>
-          <td><strong>${isKhmer ? p.nameKh : p.nameEn}</strong></td>
-          <td>${p.category}</td>
-          <td style="text-align:center; font-weight:800;">${qtyVal}</td>
-          <td style="text-align:center;">${p.minStock || 0}</td>
-          <td style="font-weight:600; text-align:right;">${p.costPrice.toFixed(2)}</td>
-          <td style="font-weight:600; text-align:right;">${p.sellingPrice.toFixed(2)}</td>
-          <td style="font-weight:750; color:var(--secondary); text-align:right;">${totalCostVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td style="font-weight:750; color:var(--primary); text-align:right;">${totalSellingVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        </tr>
-      `;
-    });
-
     const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
     const formattedToday = new Date().toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-');
 
     container.innerHTML = `
+      <!-- 1. Print & Export Action Buttons -->
       <div class="no-print" style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
         <button class="btn btn-secondary btn-sm" id="btn-print-stock-report" style="display:flex; align-items:center; gap:6px;">
           🖨️ ${isKhmer ? 'បោះពុម្ព / Save PDF' : 'Print / Save PDF'}
@@ -4364,66 +4340,133 @@
         </button>
       </div>
 
-      <div class="glass-card" style="padding: 30px; background:#fff; color:#000; border:1px solid #ddd; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-        <div style="text-align: center; margin-bottom: 25px; border-bottom:2px double #ddd; padding-bottom:15px;">
-          <h2 style="font-family: 'Khmer OS Muol Light', 'Segoe UI', sans-serif; font-size: 20px; color:#000; margin: 0 0 8px 0; font-weight:bold;">
+      <!-- 2. KPI Summary Cards Grid -->
+      <div class="kpi-grid no-print" style="margin-bottom:20px;">
+        <!-- Total Products Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(99, 102, 241, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--primary);">
+            📦
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;" data-translate="totalProducts">${window.POS_TRANSLATIONS[state.lang].totalProducts || 'Total Products'}</div>
+            <div id="kpi-total-products" style="font-size:20px; font-weight:800; color:var(--text-primary); margin-top:2px;">0</div>
+          </div>
+        </div>
+
+        <!-- Total Stock Qty Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(16, 185, 129, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--success);">
+            🔢
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;" data-translate="totalStockQty">${window.POS_TRANSLATIONS[state.lang].totalStockQty || 'Total Stock Quantity'}</div>
+            <div id="kpi-total-qty" style="font-size:20px; font-weight:800; color:var(--text-primary); margin-top:2px;">0</div>
+          </div>
+        </div>
+
+        <!-- Total Cost Value Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(245, 158, 11, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:#f59e0b;">
+            💲
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;" data-translate="totalCostVal">${window.POS_TRANSLATIONS[state.lang].totalCostVal || 'Total Stock Cost Value'}</div>
+            <div id="kpi-total-cost" style="font-size:20px; font-weight:800; color:#f59e0b; margin-top:2px;">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Total Retail Value Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(59, 130, 246, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--secondary);">
+            📈
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;" data-translate="totalRetailVal">${window.POS_TRANSLATIONS[state.lang].totalRetailVal || 'Total Stock Retail Value'}</div>
+            <div id="kpi-total-retail" style="font-size:20px; font-weight:800; color:var(--secondary); margin-top:2px;">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Low Stock Alert Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(239, 68, 68, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--danger);">
+            ⚠️
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;" data-translate="lowStockAlerts">${window.POS_TRANSLATIONS[state.lang].lowStockAlerts || 'Low Stock Alerts'}</div>
+            <div id="kpi-low-alerts" style="font-size:20px; font-weight:800; color:var(--danger); margin-top:2px;">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Interactive Search & Filters Bar -->
+      <div class="no-print glass-card" style="padding:14px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+        <!-- Search field -->
+        <div style="flex:1; min-width:200px; position:relative;">
+          <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:14px; color:var(--text-secondary);">🔍</span>
+          <input type="text" id="stock-report-search" class="form-control" style="padding-left:34px; font-size:12.5px; height:38px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff;" placeholder="${tSearch}">
+        </div>
+        
+        <!-- Category Filter -->
+        <div style="width:180px;">
+          <select id="stock-report-category" class="form-control" style="font-size:12.5px; height:38px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff; cursor:pointer;">
+            <option value="">${tAllCats}</option>
+            ${state.categories.map(c => `<option value="${c.id}">${isKhmer ? c.nameKh : c.nameEn}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div style="width:180px;">
+          <select id="stock-report-status" class="form-control" style="font-size:12.5px; height:38px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff; cursor:pointer;">
+            <option value="">${tAllProds}</option>
+            <option value="low">${tLowStockOnly}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 4. Main Report Card -->
+      <div id="report-content-area" class="glass-card" style="padding: 24px; position:relative;">
+        <div style="text-align: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px dashed var(--border-color);">
+          <h2 style="font-family: 'Khmer OS Muol Light', 'Segoe UI', sans-serif; font-size: 18px; color:var(--text-primary); margin: 0 0 8px 0; font-weight:700;">
             ${headers.title}
           </h2>
-          <span style="font-size: 13px; color: #555; font-weight:600;">
+          <span style="font-size: 12.5px; color: var(--text-secondary); font-weight:600;">
             ${headers.subtitle} ${formattedToday}
           </span>
         </div>
 
         <div class="table-responsive">
-          <table class="pos-table" style="width:100%; border-collapse:collapse; background:#fff; color:#000; font-size:12px;">
+          <table class="pos-table" style="width:100%; border-collapse:collapse; font-size:12.5px;">
             <thead>
-              <tr style="background:#f5f5f5; border-top:1px solid #ddd; border-bottom:1px solid #ddd;">
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:center;">${headers.no}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:left;">${headers.barcode}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:left;">${headers.name}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:left;">${headers.category}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:center;">${headers.qty}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:center;">${headers.alertQty}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.costPrice}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.sellingPrice}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.totalCost}</th>
-                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.totalSelling}</th>
+              <tr style="border-bottom:1px solid var(--border-color);">
+                <th style="padding:10px 6px; text-align:center; width:50px;">${headers.no}</th>
+                <th style="padding:10px 6px; text-align:left;">${headers.barcode}</th>
+                <th style="padding:10px 6px; text-align:left;">${headers.name}</th>
+                <th style="padding:10px 6px; text-align:left; width:120px;">${headers.category}</th>
+                <th style="padding:10px 6px; text-align:center; width:80px;">${headers.qty}</th>
+                <th style="padding:10px 6px; text-align:center; width:85px;">${headers.alertQty}</th>
+                <th style="padding:10px 6px; text-align:right; width:90px;">${headers.costPrice}</th>
+                <th style="padding:10px 6px; text-align:right; width:90px;">${headers.sellingPrice}</th>
+                <th style="padding:10px 6px; text-align:right; width:110px;">${headers.totalCost}</th>
+                <th style="padding:10px 6px; text-align:right; width:110px;">${headers.totalSelling}</th>
               </tr>
             </thead>
-            <tbody>
-              ${rowsHtml || `<tr><td colspan="10" style="text-align:center; padding:15px; color:#888;">${headers.total}</td></tr>`}
-              
-              <tr style="background:#f9f9f9; font-weight:bold; border-top:2px solid #ddd; border-bottom:2px solid #ddd;">
-                <td colspan="6" style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold; background:#eaeaea;">
-                  ${headers.total}
-                </td>
-                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
-                  ${sumCostPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
-                  ${sumSellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold; color:var(--secondary);">
-                  ${sumTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold; color:var(--primary);">
-                  ${sumTotalSelling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-              </tr>
+            <tbody id="stock-report-table-body">
+              <!-- Dynamically populated -->
             </tbody>
           </table>
         </div>
 
-        <div style="margin-top: 40px; display: flex; justify-content: flex-end; text-align: right; font-size: 12px; font-family: 'Khmer OS Battambang', 'Segoe UI', sans-serif;">
+        <!-- Official Signature Footer -->
+        <div style="margin-top: 40px; display: flex; justify-content: flex-end; text-align: right; font-size: 12px; font-family: 'Khmer OS Battambang', 'Segoe UI', sans-serif; color:var(--text-primary);">
           <div>
-            <p style="margin: 0 0 5px 0;">${headers.signature}</p>
+            <p style="margin: 0 0 5px 0; color:var(--text-secondary);">${headers.signature}</p>
             <p style="margin: 0; font-weight: bold; padding-right: 80px;">ហត្ថលេខា</p>
           </div>
         </div>
-
       </div>
     `;
 
+    // Hook events
     document.getElementById('btn-print-stock-report').addEventListener('click', () => {
       printReportDOM();
     });
@@ -4431,6 +4474,114 @@
     document.getElementById('btn-export-stock-excel').addEventListener('click', () => {
       exportStockReportToExcel();
     });
+
+    const searchInput = document.getElementById('stock-report-search');
+    const categoryFilter = document.getElementById('stock-report-category');
+    const statusFilter = document.getElementById('stock-report-status');
+
+    const filterAndRenderStockTable = () => {
+      const searchVal = searchInput.value.toLowerCase().trim();
+      const catVal = categoryFilter.value;
+      const statusVal = statusFilter.value;
+
+      let filtered = state.products.filter(p => {
+        const nameEn = p.nameEn ? p.nameEn.toLowerCase() : '';
+        const nameKh = p.nameKh ? p.nameKh.toLowerCase() : '';
+        const sku = p.sku ? p.sku.toLowerCase() : '';
+        const matchesSearch = sku.includes(searchVal) || nameEn.includes(searchVal) || nameKh.includes(searchVal);
+        
+        const matchesCategory = !catVal || p.category === catVal;
+        
+        const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
+        const isLow = qtyVal <= (p.minStock || 0);
+        const matchesStatus = !statusVal || (statusVal === 'low' && isLow);
+
+        return matchesSearch && matchesCategory && matchesStatus;
+      });
+
+      // Save for excel export
+      state.lastFilteredProducts = filtered;
+
+      // Render rows
+      let rowsHtml = '';
+      let sumCostPrice = 0;
+      let sumSellingPrice = 0;
+      let sumTotalCost = 0;
+      let sumTotalSelling = 0;
+      let totalStockUnits = 0;
+      let lowAlertCount = 0;
+
+      filtered.forEach((p, idx) => {
+        const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
+        const totalCostVal = qtyVal * p.costPrice;
+        const totalSellingVal = qtyVal * p.sellingPrice;
+
+        sumCostPrice += p.costPrice;
+        sumSellingPrice += p.sellingPrice;
+        sumTotalCost += totalCostVal;
+        sumTotalSelling += totalSellingVal;
+        totalStockUnits += qtyVal;
+
+        const isLow = qtyVal <= (p.minStock || 0);
+        if (isLow) lowAlertCount++;
+
+        const qtyStyle = isLow ? 'color:var(--danger); font-weight:800; background:rgba(239,68,68,0.1); border-radius:4px; padding:2px 6px; display:inline-block;' : 'font-weight:700;';
+        const lowBadge = isLow ? ` <span class="badge badge-danger" style="font-size:9px; padding:2px 4px; vertical-align:middle;">${isKhmer ? 'ខ្វះ' : 'Low'}</span>` : '';
+
+        const catObj = state.categories.find(c => c.id === p.category);
+        const catName = catObj ? (isKhmer ? catObj.nameKh : catObj.nameEn) : p.category;
+
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="text-align:center; padding:10px 6px;">${idx + 1}</td>
+            <td style="padding:10px 6px;"><strong style="font-family:monospace; color:var(--secondary);">${p.sku}</strong></td>
+            <td style="padding:10px 6px;">
+              <strong style="color:var(--text-primary);">${isKhmer ? p.nameKh : p.nameEn}</strong>
+              ${lowBadge}
+            </td>
+            <td style="padding:10px 6px; color:var(--text-secondary);">${catName}</td>
+            <td style="text-align:center; padding:10px 6px;"><span style="${qtyStyle}">${qtyVal}</span></td>
+            <td style="text-align:center; padding:10px 6px; color:var(--text-muted);">${p.minStock || 0}</td>
+            <td style="font-weight:600; text-align:right; padding:10px 6px;">$${p.costPrice.toFixed(2)}</td>
+            <td style="font-weight:600; text-align:right; padding:10px 6px;">$${p.sellingPrice.toFixed(2)}</td>
+            <td style="font-weight:700; color:#f59e0b; text-align:right; padding:10px 6px;">$${totalCostVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="font-weight:700; color:var(--secondary); text-align:right; padding:10px 6px;">$${totalSellingVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>
+        `;
+      });
+
+      const tableBody = document.getElementById('stock-report-table-body');
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-muted); font-style:italic;">${isKhmer ? 'គ្មានទិន្នន័យទំនិញស្របតាមការជ្រើសរើសទេ' : 'No matching products found.'}</td></tr>`;
+      } else {
+        tableBody.innerHTML = rowsHtml + `
+          <tr style="font-weight:bold; border-top:2px solid var(--border-color); background:rgba(255,255,255,0.02);">
+            <td colspan="6" style="padding:12px 8px; text-align:right; font-weight:800; border-right: 1px solid var(--border-color);">
+              ${headers.total}
+            </td>
+            <td style="padding:12px 8px; text-align:right; font-weight:800;">$${sumCostPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="padding:12px 8px; text-align:right; font-weight:800;">$${sumSellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="padding:12px 8px; text-align:right; font-weight:800; color:#f59e0b;">$${sumTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="padding:12px 8px; text-align:right; font-weight:800; color:var(--secondary);">$${sumTotalSelling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>
+        `;
+      }
+
+      // Update KPI widgets
+      document.getElementById('kpi-total-products').innerText = filtered.length;
+      document.getElementById('kpi-total-qty').innerText = totalStockUnits;
+      document.getElementById('kpi-total-cost').innerText = '$' + sumTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('kpi-total-retail').innerText = '$' + sumTotalSelling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('kpi-low-alerts').innerText = lowAlertCount;
+    };
+
+    // Listeners for inputs
+    searchInput.addEventListener('input', filterAndRenderStockTable);
+    categoryFilter.addEventListener('change', filterAndRenderStockTable);
+    statusFilter.addEventListener('change', filterAndRenderStockTable);
+
+    // Initial render
+    filterAndRenderStockTable();
   }
 
   function renderStockLogReport(container, start, end) {
