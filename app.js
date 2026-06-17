@@ -408,6 +408,9 @@
     if (state.companySettings.startingCapital === undefined) {
       state.companySettings.startingCapital = 10000;
     }
+    if (!state.companySettings.customExpenseCategories || !Array.isArray(state.companySettings.customExpenseCategories)) {
+      state.companySettings.customExpenseCategories = [];
+    }
     if (!state.companySettings.companyName || 
         state.companySettings.companyName === 'GEDA Distribution Co., Ltd.' || 
         state.companySettings.companyName === 'GEDA System' || 
@@ -1167,6 +1170,8 @@
     });
 
     // Toggle body fonts classes
+    populateExpenseCategories();
+
     if (kmText) {
       document.body.classList.add('lang-km');
       document.body.setAttribute('lang', 'km');
@@ -1812,6 +1817,89 @@
         tfProdSelect.innerHTML += `<option value="${p.sku}">${text}</option>`;
       });
     }
+  }
+
+  function populateExpenseCategories() {
+    const selectEl = document.getElementById('exp-category');
+    if (!selectEl) return;
+    
+    const selectedValue = selectEl.value;
+    selectEl.innerHTML = '';
+    
+    const standardCats = [
+      { value: 'rent', langKey: 'rent' },
+      { value: 'electricity', langKey: 'electricity' },
+      { value: 'water', langKey: 'water' },
+      { value: 'marketing', langKey: 'marketing' },
+      { value: 'rawMaterials', langKey: 'rawMaterials' },
+      { value: 'salaries', langKey: 'salaries' },
+      { value: 'transportation', langKey: 'transportation' },
+      { value: 'otherExpenses', langKey: 'otherExpenses' }
+    ];
+    
+    standardCats.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat.value;
+      option.setAttribute('data-translate', cat.langKey);
+      option.innerText = window.POS_TRANSLATIONS[state.lang][cat.langKey] || cat.value;
+      selectEl.appendChild(option);
+    });
+    
+    if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
+      state.companySettings.customExpenseCategories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.innerText = cat;
+        selectEl.appendChild(option);
+      });
+    }
+    
+    if (selectedValue) {
+      selectEl.value = selectedValue;
+    }
+  }
+
+  function renderCustomExpenseCategoriesList() {
+    const listEl = document.getElementById('custom-exp-cats-list');
+    if (!listEl) return;
+    
+    listEl.innerHTML = '';
+    const customCats = state.companySettings.customExpenseCategories || [];
+    
+    if (customCats.length === 0) {
+      listEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 12px;" data-translate="noData">${window.POS_TRANSLATIONS[state.lang].noData || 'No custom categories'}</div>`;
+      return;
+    }
+    
+    customCats.forEach((cat, index) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '8px 12px';
+      row.style.background = 'rgba(255, 255, 255, 0.05)';
+      row.style.border = '1px solid var(--border-color)';
+      row.style.borderRadius = 'var(--radius-sm)';
+      row.style.gap = '8px';
+      
+      row.innerHTML = `
+        <span style="font-weight: 500; font-size: 13px; color: var(--text-primary); word-break: break-all;">${cat}</span>
+        <button type="button" class="btn btn-danger btn-sm btn-delete-custom-cat" data-index="${index}" style="padding: 2px 6px; font-size: 10px;">🗑️</button>
+      `;
+      
+      row.querySelector('.btn-delete-custom-cat').addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+        const catName = customCats[idx];
+        if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDeleteCat || `Are you sure you want to delete this category?`)) {
+          state.companySettings.customExpenseCategories.splice(idx, 1);
+          saveStateToLocalStorage();
+          renderCustomExpenseCategoriesList();
+          populateExpenseCategories();
+        }
+      });
+      
+      listEl.appendChild(row);
+    });
   }
 
   function renderPOSProductGrid() {
@@ -7554,6 +7642,55 @@ CREATE TABLE sale_items (
       document.getElementById('modal-expense').classList.add('active-modal');
     });
 
+    const btnManageExpCats = document.getElementById('btn-manage-exp-cats');
+    if (btnManageExpCats) {
+      btnManageExpCats.addEventListener('click', () => {
+        const input = document.getElementById('new-exp-cat-input');
+        if (input) input.value = '';
+        renderCustomExpenseCategoriesList();
+        document.getElementById('modal-expense-cats').classList.add('active-modal');
+      });
+    }
+
+    const btnAddExpCat = document.getElementById('btn-add-exp-cat');
+    if (btnAddExpCat) {
+      btnAddExpCat.addEventListener('click', () => {
+        const input = document.getElementById('new-exp-cat-input');
+        if (!input) return;
+        const value = input.value.trim();
+        
+        if (!value) {
+          alert(window.POS_TRANSLATIONS[state.lang].pleaseEnterCategory || 'Please enter a category name!');
+          return;
+        }
+        
+        const standardCats = ['rent', 'electricity', 'water', 'marketing', 'rawMaterials', 'salaries', 'transportation', 'otherExpenses'];
+        const isStandard = standardCats.some(c => {
+          const transEn = (window.POS_TRANSLATIONS['en'][c] || '').toLowerCase();
+          const transKm = (window.POS_TRANSLATIONS['km'][c] || '').toLowerCase();
+          return c.toLowerCase() === value.toLowerCase() || 
+                 transEn === value.toLowerCase() || 
+                 transKm === value.toLowerCase();
+        });
+        
+        if (!state.companySettings.customExpenseCategories) {
+          state.companySettings.customExpenseCategories = [];
+        }
+        const isCustom = state.companySettings.customExpenseCategories.some(c => c.toLowerCase() === value.toLowerCase());
+        
+        if (isStandard || isCustom) {
+          alert(window.POS_TRANSLATIONS[state.lang].categoryExists || 'Category already exists!');
+          return;
+        }
+        
+        state.companySettings.customExpenseCategories.push(value);
+        saveStateToLocalStorage();
+        renderCustomExpenseCategoriesList();
+        populateExpenseCategories();
+        input.value = '';
+      });
+    }
+
     document.getElementById('btn-add-staff-modal').addEventListener('click', () => {
       if (!guardAction('add')) return;
       document.getElementById('staff-form').reset();
@@ -7586,6 +7723,8 @@ CREATE TABLE sale_items (
       { btn: 'btn-cancel-customer', modal: 'modal-customer' },
       { btn: 'btn-close-expense', modal: 'modal-expense' },
       { btn: 'btn-cancel-expense', modal: 'modal-expense' },
+      { btn: 'btn-close-expense-cats', modal: 'modal-expense-cats' },
+      { btn: 'btn-done-expense-cats', modal: 'modal-expense-cats' },
       { btn: 'btn-close-staff', modal: 'modal-staff' },
       { btn: 'btn-cancel-staff', modal: 'modal-staff' },
       { btn: 'btn-close-pay-debt', modal: 'modal-pay-debt' },

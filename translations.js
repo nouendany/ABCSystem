@@ -441,7 +441,14 @@ window.POS_TRANSLATIONS = {
     runPayroll: "Run Payroll Calculation",
     confirmRunPayroll: "Are you sure you want to run payroll for the selected month?",
     payrollSuccess: "Payroll calculations completed successfully!",
-    payslipSent: "Payslip sent to Telegram Bot!"
+    payslipSent: "Payslip sent to Telegram Bot!",
+    manageExpenseCats: "Manage Expense Categories",
+    addCustomCategory: "Add Custom Category",
+    customCategoriesList: "Custom Categories List",
+    done: "Done",
+    categoryExists: "Category already exists!",
+    pleaseEnterCategory: "Please enter a category name!",
+    confirmDeleteCat: "Are you sure you want to delete this category?"
   },
   km: {
     // Navigation & General
@@ -882,6 +889,13 @@ window.POS_TRANSLATIONS = {
     runPayroll: "គណនាប្រាក់ខែប្រចាំខែ",
     confirmRunPayroll: "តើអ្នកប្រាកដជាចង់គណនាប្រាក់ខែសម្រាប់ខែដែលបានជ្រើសរើសមែនទេ?",
     payrollSuccess: "ការគណនាប្រាក់ខែត្រូវបានបញ្ចប់ដោយជោគជ័យ!",
-    payslipSent: "ប័ណ្ណប្រាក់ខែត្រូវបានផ្ញើទៅកាន់ Telegram Bot រួចរាល់!"
+    payslipSent: "ប័ណ្ណប្រាក់ខែត្រូវបានផ្ញើទៅកាន់ Telegram Bot រួចរាល់!",
+    manageExpenseCats: "គ្រប់គ្រងប្រភេទនៃការចំណាយ",
+    addCustomCategory: "បន្ថែមប្រភេទចំណាយផ្ទាល់ខ្លួន",
+    customCategoriesList: "បញ្ជីប្រភេទចំណាយផ្ទាល់ខ្លួន",
+    done: "រួចរាល់",
+    categoryExists: "ប្រភេទចំណាយនេះមានរួចហើយ!",
+    pleaseEnterCategory: "សូមបញ្ចូលឈ្មោះប្រភេទចំណាយ!",
+    confirmDeleteCat: "តើអ្នកប្រាកដជាចង់លុបប្រភេទចំណាយនេះមែនទេ?"
   }
 };

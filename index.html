@@ -2255,16 +2255,19 @@
           </div>
           <div class="form-group">
             <label data-translate="expenseCategory">Expense Category</label>
-            <select class="form-control" id="exp-category" required>
-              <option value="rent" data-translate="rent">Shop Rental</option>
-              <option value="electricity" data-translate="electricity">Electricity Utility</option>
-              <option value="water" data-translate="water">Water Utility</option>
-              <option value="marketing" data-translate="marketing">Advertising & Marketing</option>
-              <option value="rawMaterials" data-translate="rawMaterials">Product Procurement</option>
-              <option value="salaries" data-translate="salaries">Staff Payroll Salaries</option>
-              <option value="transportation" data-translate="transportation">Transportation & Fuel</option>
-              <option value="otherExpenses" data-translate="otherExpenses">Miscellaneous Expenses</option>
-            </select>
+            <div style="display: flex; gap: 8px;">
+              <select class="form-control" id="exp-category" style="flex: 1;" required>
+                <option value="rent" data-translate="rent">Shop Rental</option>
+                <option value="electricity" data-translate="electricity">Electricity Utility</option>
+                <option value="water" data-translate="water">Water Utility</option>
+                <option value="marketing" data-translate="marketing">Advertising & Marketing</option>
+                <option value="rawMaterials" data-translate="rawMaterials">Product Procurement</option>
+                <option value="salaries" data-translate="salaries">Staff Payroll Salaries</option>
+                <option value="transportation" data-translate="transportation">Transportation & Fuel</option>
+                <option value="otherExpenses" data-translate="otherExpenses">Miscellaneous Expenses</option>
+              </select>
+              <button type="button" class="btn btn-outline" id="btn-manage-exp-cats" style="padding: 0 12px; height: 38px; display: flex; align-items: center; justify-content: center; min-height: unset; font-size: 14px;" title="Customize Categories">⚙️</button>
+            </div>
           </div>
           <div class="form-group">
             <label data-translate="amount">Amount ($)</label>
@@ -2280,6 +2283,33 @@
           <button type="submit" class="btn btn-danger" data-translate="save">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5B: MANAGE EXPENSE CATEGORIES MODAL (Sits on top of MODAL 5) -->
+  <div class="modal-overlay" id="modal-expense-cats" style="z-index: 1100;">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 data-translate="manageExpenseCats">Manage Expense Categories</h3>
+        <button class="qty-btn" id="btn-close-expense-cats">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label data-translate="addCustomCategory">Add Custom Category</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" class="form-control" id="new-exp-cat-input" style="flex: 1;" placeholder="e.g. Internet, Coffee...">
+            <button type="button" class="btn btn-primary" id="btn-add-exp-cat" style="min-height: unset; padding: 0 12px; height: 38px;">➕</button>
+          </div>
+        </div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">
+        <label data-translate="customCategoriesList">Custom Categories List</label>
+        <div id="custom-exp-cats-list" style="max-height: 200px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+          <!-- Custom categories with delete button will be listed here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-done-expense-cats" style="width: 100%; justify-content: center;" data-translate="done">Done</button>
+      </div>
     </div>
   </div>
 
