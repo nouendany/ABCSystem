@@ -5273,7 +5273,6 @@
 
       const startListeners = (dbInstance) => {
         const setupListener = (colName, stateKey, idKey, renderFns) => {
-          let isFirstSnapshot = true;
           dbInstance.collection(colName).onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
 
@@ -5285,21 +5284,6 @@
               }
               list.push(data);
             });
-
-            if (isFirstSnapshot) {
-              isFirstSnapshot = false;
-              if (snapshot.empty && state[stateKey] && state[stateKey].length > 0) {
-                console.log(`Initial snapshot for ${colName} is empty. Initializing Firestore with local data...`);
-                state[stateKey].forEach(item => {
-                  const id = item[idKey];
-                  if (id) {
-                    dbInstance.collection(colName).doc(id).set(item)
-                      .catch(e => console.error(`Firestore init write error on ${colName}:`, e));
-                  }
-                });
-                return;
-              }
-            }
 
             state[stateKey] = list;
             lastSyncedState[stateKey] = JSON.parse(JSON.stringify(list));
@@ -6756,6 +6740,17 @@
           state.closingLogs = [];
           state.auditLogs = [];
 
+          // Reset HR states
+          state.employees = [];
+          state.attendance = [];
+          state.leaveRequests = [];
+          state.companies = [];
+          state.departments = [];
+          state.teams = [];
+          state.positions = [];
+          state.payrollItems = [];
+          state.kpis = [];
+
           // Retain only General Customer (CST-001)
           state.customers = [
             { id: "CST-001", name: "General Customer", phone: "-", address: "-", source: "Walk-In", outstandingDebt: 0.00, status: "active", notes: "Default walking client", rank: "Bronze" }
@@ -6790,7 +6785,16 @@
               { name: 'expenses' },
               { name: 'stock_logs' },
               { name: 'payment_logs' },
-              { name: 'followups' }
+              { name: 'followups' },
+              { name: 'employees' },
+              { name: 'attendance' },
+              { name: 'leave_requests' },
+              { name: 'companies' },
+              { name: 'departments' },
+              { name: 'teams' },
+              { name: 'positions' },
+              { name: 'payroll_items' },
+              { name: 'kpis' }
             ];
 
             const deletePromises = collectionsToClean.map(async col => {
@@ -6864,6 +6868,17 @@
 
               <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Save Sync Settings</button>
             </form>
+
+            ${isSyncActive ? `
+            <hr style="border:0; border-top:1px solid var(--border-color); margin:16px 0;">
+            <div style="padding: 12px; background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--secondary); border-radius: var(--radius-sm);">
+              <h4 style="margin:0 0 6px 0; font-size:12.5px; font-weight:700; color:var(--secondary);" data-translate="manualMigrateTitle">${window.POS_TRANSLATIONS[state.lang].manualMigrateTitle || 'Push Local Data to Cloud'}</h4>
+              <p style="margin:0 0 10px 0; font-size:11px; color:var(--text-secondary); line-height:1.4;" data-translate="manualMigrateHelp">${window.POS_TRANSLATIONS[state.lang].manualMigrateHelp || 'If you have existing products, transactions, or employee records on this device and want to upload them to Firestore for the first time, click the button below.'}</p>
+              <button type="button" id="btn-migrate-local-to-cloud" class="btn btn-outline" style="width:100%; justify-content:center; padding:10px; font-weight:700; font-size:12px; border-color:var(--secondary); color:var(--secondary);">
+                📤 Upload Local Data to Cloud
+              </button>
+            </div>
+            ` : ''}
           </div>
 
           <div class="glass-card" style="padding:16px;">
@@ -6912,6 +6927,78 @@
           : 'Sync settings saved successfully! The app will now reload.');
         window.location.reload();
       });
+
+      if (isSyncActive) {
+        document.getElementById('btn-migrate-local-to-cloud').addEventListener('click', async () => {
+          if (!guardAction('edit')) return;
+          const confirmMsg = window.POS_TRANSLATIONS[state.lang].manualMigrateConfirm || "Are you sure you want to upload all local records from this browser to Firestore? This will merge/overwrite cloud records with the same IDs.";
+          if (!confirm(confirmMsg)) return;
+
+          const btn = document.getElementById('btn-migrate-local-to-cloud');
+          const originalText = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerText = state.lang === 'km' ? 'កំពុងបញ្ជូនទិន្នន័យ... សូមរង់ចាំ' : 'Uploading data... Please wait';
+
+          try {
+            const db = state.firebaseDb;
+            if (!db) throw new Error("Firebase is not initialized");
+
+            const collectionsToUpload = [
+              { name: 'users', key: 'users', idKey: 'id' },
+              { name: 'branches', key: 'branches', idKey: 'id' },
+              { name: 'customers', key: 'customers', idKey: 'id' },
+              { name: 'products', key: 'products', idKey: 'sku' },
+              { name: 'staff', key: 'staff', idKey: 'id' },
+              { name: 'transactions', key: 'transactions', idKey: 'id' },
+              { name: 'expenses', key: 'expenses', idKey: 'id' },
+              { name: 'stock_logs', key: 'stockLogs', idKey: 'id' },
+              { name: 'payment_logs', key: 'paymentLogs', idKey: 'id' },
+              { name: 'followups', key: 'followups', idKey: 'id' },
+              { name: 'employees', key: 'employees', idKey: 'id' },
+              { name: 'attendance', key: 'attendance', idKey: 'id' },
+              { name: 'leave_requests', key: 'leaveRequests', idKey: 'id' },
+              { name: 'companies', key: 'companies', idKey: 'id' },
+              { name: 'departments', key: 'departments', idKey: 'id' },
+              { name: 'teams', key: 'teams', idKey: 'id' },
+              { name: 'positions', key: 'positions', idKey: 'id' },
+              { name: 'payroll_items', key: 'payrollItems', idKey: 'id' },
+              { name: 'kpis', key: 'kpis', idKey: 'id' }
+            ];
+
+            for (const col of collectionsToUpload) {
+              const list = state[col.key];
+              if (list && list.length > 0) {
+                const chunks = [];
+                for (let i = 0; i < list.length; i += 200) {
+                  chunks.push(list.slice(i, i + 200));
+                }
+                for (const chunk of chunks) {
+                  const batch = db.batch();
+                  chunk.forEach(item => {
+                    const id = item[col.idKey];
+                    if (id) {
+                      const docRef = db.collection(col.name).doc(id);
+                      batch.set(docRef, item);
+                    }
+                  });
+                  await batch.commit();
+                }
+              }
+            }
+
+            // Also set settings
+            await db.collection('company_settings').doc('global').set(state.companySettings);
+
+            alert(window.POS_TRANSLATIONS[state.lang].manualMigrateSuccess || "Successfully uploaded all local data collections to Firestore cloud sync database!");
+            window.location.reload();
+          } catch (error) {
+            console.error("Migration error:", error);
+            alert("Upload failed: " + error.message);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
+        });
+      }
 
     } else if (tab === 'docs') {
       // 7. Developer documentation schemas HTML representation
