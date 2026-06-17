@@ -4095,6 +4095,15 @@
     const start = new Date(state.reportStartDate + 'T00:00:00Z');
     const end = new Date(state.reportEndDate + 'T23:59:59Z');
 
+    const genericButtonsWrapper = document.getElementById('btn-print-active-report')?.parentElement;
+    if (genericButtonsWrapper) {
+      if (state.activeReportTab === 'prodReport') {
+        genericButtonsWrapper.style.display = 'none';
+      } else {
+        genericButtonsWrapper.style.display = 'flex';
+      }
+    }
+
     switch(state.activeReportTab) {
       case 'prodReport':
         renderProductReport(container);
