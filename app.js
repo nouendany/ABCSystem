@@ -4136,56 +4136,301 @@
   }
 
   // Reports generators details
-  function renderProductReport(container) {
-    let rowsHtml = '';
-    let totalCost = 0;
-    let totalSelling = 0;
+  function printReportDOM() {
+    const reportArea = document.getElementById('report-content-area');
+    if (!reportArea) return;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) {
+      alert('Please allow popups to print/save reports.');
+      return;
+    }
+
+    const isKhmer = state.lang === 'km';
+    const fontStyle = isKhmer ? `font-family: 'Khmer OS Battambang', 'Segoe UI', sans-serif;` : `font-family: 'Segoe UI', sans-serif;`;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${isKhmer ? 'របាយការណ៍ទំនិញក្នុងស្តុក' : 'Inventory Stock Report'}</title>
+          <style>
+            body {
+              background: #fff !important;
+              color: #000 !important;
+              padding: 20px !important;
+              ${fontStyle}
+              margin: 0;
+            }
+            .no-print {
+              display: none !important;
+            }
+            .glass-card {
+              border: none !important;
+              box-shadow: none !important;
+              padding: 0 !important;
+              background: transparent !important;
+            }
+            .pos-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 15px;
+            }
+            .pos-table th {
+              background: #f0f0f0 !important;
+              color: #000 !important;
+              border: 1px solid #ccc !important;
+              padding: 8px 6px;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .pos-table td {
+              border: 1px solid #ccc !important;
+              padding: 8px 6px;
+              font-size: 11px;
+              color: #000 !important;
+            }
+            @media print {
+              .no-print {
+                display: none !important;
+              }
+              body {
+                padding: 0 !important;
+              }
+            }
+            @page {
+              size: A4 landscape;
+              margin: 10mm;
+            }
+          </style>
+        </head>
+        <body>
+          <div style="width: 100%;">
+            ${reportArea.innerHTML}
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  function exportStockReportToExcel() {
+    const isKhmer = state.lang === 'km';
+    const title = isKhmer ? 'របាយការណ៍ទំនិញក្នុងស្តុក' : 'Inventory Stock Report';
+    const headersList = isKhmer 
+      ? ["ល.រ", "បាកូដទំនិញ", "ឈ្មោះទំនិញ", "ប្រភេទទំនិញ", "ចំនួន", "បរិមាណត្រូវជូនដំណឹង", "តម្លៃដើម", "តម្លៃលក់ចេញ", "សរុបតម្លៃដើម", "សរុបតម្លៃលក់ចេញ"]
+      : ["No.", "Barcode/SKU", "Product Name", "Category", "Qty", "Alert Qty", "Cost Price", "Selling Price", "Total Cost", "Total Selling"];
+
+    let csvContent = '\uFEFF'; // UTF-8 BOM
+    csvContent += `"${title}"\n`;
+    csvContent += `"${isKhmer ? 'របាយការណ៍គិតត្រឹមថ្ងៃ៖' : 'Report Date:'} ${new Date().toLocaleDateString('en-GB')}"\n\n`;
+    csvContent += headersList.map(h => `"${h}"`).join(',') + '\n';
+
+    let sumCostPrice = 0;
+    let sumSellingPrice = 0;
+    let sumTotalCost = 0;
+    let sumTotalSelling = 0;
     const filterBranch = getActiveBranchFilter();
 
-    state.products.forEach(p => {
+    state.products.forEach((p, idx) => {
       const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
-      const assetVal = qtyVal * p.costPrice;
-      const salesVal = qtyVal * p.sellingPrice;
-      totalCost += assetVal;
-      totalSelling += salesVal;
+      const totalCostVal = qtyVal * p.costPrice;
+      const totalSellingVal = qtyVal * p.sellingPrice;
+
+      sumCostPrice += p.costPrice;
+      sumSellingPrice += p.sellingPrice;
+      sumTotalCost += totalCostVal;
+      sumTotalSelling += totalSellingVal;
+
+      const name = isKhmer ? p.nameKh : p.nameEn;
+
+      const row = [
+        idx + 1,
+        `"${p.sku}"`,
+        `"${name.replace(/"/g, '""')}"`,
+        `"${p.category.replace(/"/g, '""')}"`,
+        qtyVal,
+        p.minStock || 0,
+        p.costPrice.toFixed(2),
+        p.sellingPrice.toFixed(2),
+        totalCostVal.toFixed(2),
+        totalSellingVal.toFixed(2)
+      ];
+      csvContent += row.join(',') + '\n';
+    });
+
+    const summaryRow = [
+      `"${isKhmer ? 'សរុប' : 'Total'}"`,
+      "", "", "", "", "",
+      sumCostPrice.toFixed(2),
+      sumSellingPrice.toFixed(2),
+      sumTotalCost.toFixed(2),
+      sumTotalSelling.toFixed(2)
+    ];
+    csvContent += summaryRow.join(',') + '\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `ABC_Inventory_Report_${new Date().toLocaleDateString('en-CA')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Reports generators details
+  function renderProductReport(container) {
+    let rowsHtml = '';
+    let sumCostPrice = 0;
+    let sumSellingPrice = 0;
+    let sumTotalCost = 0;
+    let sumTotalSelling = 0;
+    const filterBranch = getActiveBranchFilter();
+    const isKhmer = state.lang === 'km';
+
+    const headers = isKhmer ? {
+      no: "ល.រ",
+      barcode: "បាកូដទំនិញ",
+      name: "ឈ្មោះទំនិញ",
+      category: "ប្រភេទទំនិញ",
+      qty: "ចំនួន",
+      alertQty: "បរិមាណត្រូវជូនដំណឹង",
+      costPrice: "តម្លៃដើម",
+      sellingPrice: "តម្លៃលក់ចេញ",
+      totalCost: "សរុបតម្លៃដើម",
+      totalSelling: "សរុបតម្លៃលក់ចេញ",
+      total: "សរុប",
+      subtitle: "របាយការណ៍គិតត្រឹមថ្ងៃ៖",
+      title: "របាយការណ៍ទំនិញក្នុងស្តុក",
+      signature: "ប្រតិបត្តិការនៅ សែនសុខ ភ្នំពេញ ថ្ងៃទី..........ខែ...........ឆ្នាំ ២០២...."
+    } : {
+      no: "No.",
+      barcode: "Barcode/SKU",
+      name: "Product Name",
+      category: "Category",
+      qty: "Qty",
+      alertQty: "Alert Qty",
+      costPrice: "Cost Price",
+      sellingPrice: "Selling Price",
+      totalCost: "Total Cost",
+      totalSelling: "Total Selling",
+      total: "Total",
+      subtitle: "Report as of date:",
+      title: "Inventory Stock Report",
+      signature: "Operation at Sen Sok, Phnom Penh, Date:..............................."
+    };
+
+    state.products.forEach((p, idx) => {
+      const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
+      const totalCostVal = qtyVal * p.costPrice;
+      const totalSellingVal = qtyVal * p.sellingPrice;
+
+      sumCostPrice += p.costPrice;
+      sumSellingPrice += p.sellingPrice;
+      sumTotalCost += totalCostVal;
+      sumTotalSelling += totalSellingVal;
 
       rowsHtml += `
         <tr>
+          <td style="text-align:center;">${idx + 1}</td>
           <td><strong style="font-family:monospace;">${p.sku}</strong></td>
-          <td>${state.lang === 'km' ? p.nameKh : p.nameEn}</td>
+          <td><strong>${isKhmer ? p.nameKh : p.nameEn}</strong></td>
           <td>${p.category}</td>
           <td style="text-align:center; font-weight:800;">${qtyVal}</td>
-          <td>${window.POS_HELPERS.formatUSD(p.costPrice)}</td>
-          <td>${window.POS_HELPERS.formatUSD(p.sellingPrice)}</td>
-          <td style="font-weight:750; color:var(--secondary);">${window.POS_HELPERS.formatUSD(assetVal)}</td>
-          <td style="font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(salesVal)}</td>
+          <td style="text-align:center;">${p.minStock || 0}</td>
+          <td style="font-weight:600; text-align:right;">${p.costPrice.toFixed(2)}</td>
+          <td style="font-weight:600; text-align:right;">${p.sellingPrice.toFixed(2)}</td>
+          <td style="font-weight:750; color:var(--secondary); text-align:right;">${totalCostVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td style="font-weight:750; color:var(--primary); text-align:right;">${totalSellingVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         </tr>
       `;
     });
 
+    const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
+    const formattedToday = new Date().toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-');
+
     container.innerHTML = `
-      <div style="padding: 12px; background:rgba(99,102,241,0.05); border-radius:6px; margin-bottom:12px; font-weight:800; display:flex; justify-content:space-between; font-size:12px;">
-        <span style="color:var(--secondary);">Total Cost Valuation: ${window.POS_HELPERS.formatUSD(totalCost)}</span>
-        <span style="color:var(--primary);">Total Sales Valuation: ${window.POS_HELPERS.formatUSD(totalSelling)}</span>
+      <div class="no-print" style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+        <button class="btn btn-secondary btn-sm" id="btn-print-stock-report" style="display:flex; align-items:center; gap:6px;">
+          🖨️ ${isKhmer ? 'បោះពុម្ព / Save PDF' : 'Print / Save PDF'}
+        </button>
+        <button class="btn btn-primary btn-sm" id="btn-export-stock-excel" style="display:flex; align-items:center; gap:6px;">
+          📥 ${isKhmer ? 'ទាញយកជា Excel (CSV)' : 'Export Excel (CSV)'}
+        </button>
       </div>
-      <table class="pos-table">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Product Name</th>
-            <th>Category</th>
-            <th style="text-align:center;">Stock Qty</th>
-            <th>Cost Price</th>
-            <th>Selling Price</th>
-            <th>Asset Value (Cost)</th>
-            <th>Sales Value (Retail)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml || `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
-        </tbody>
-      </table>
+
+      <div class="glass-card" style="padding: 30px; background:#fff; color:#000; border:1px solid #ddd; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+        <div style="text-align: center; margin-bottom: 25px; border-bottom:2px double #ddd; padding-bottom:15px;">
+          <h2 style="font-family: 'Khmer OS Muol Light', 'Segoe UI', sans-serif; font-size: 20px; color:#000; margin: 0 0 8px 0; font-weight:bold;">
+            ${headers.title}
+          </h2>
+          <span style="font-size: 13px; color: #555; font-weight:600;">
+            ${headers.subtitle} ${formattedToday}
+          </span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="pos-table" style="width:100%; border-collapse:collapse; background:#fff; color:#000; font-size:12px;">
+            <thead>
+              <tr style="background:#f5f5f5; border-top:1px solid #ddd; border-bottom:1px solid #ddd;">
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:center;">${headers.no}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:left;">${headers.barcode}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:left;">${headers.name}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:left;">${headers.category}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:center;">${headers.qty}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:center;">${headers.alertQty}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.costPrice}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.sellingPrice}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.totalCost}</th>
+                <th style="padding:10px 6px; border:1px solid #ddd; text-align:right;">${headers.totalSelling}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml || `<tr><td colspan="10" style="text-align:center; padding:15px; color:#888;">${headers.total}</td></tr>`}
+              
+              <tr style="background:#f9f9f9; font-weight:bold; border-top:2px solid #ddd; border-bottom:2px solid #ddd;">
+                <td colspan="6" style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold; background:#eaeaea;">
+                  ${headers.total}
+                </td>
+                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+                  ${sumCostPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+                  ${sumSellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold; color:var(--secondary);">
+                  ${sumTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td style="padding:10px 8px; border:1px solid #ddd; text-align:right; font-weight:bold; color:var(--primary);">
+                  ${sumTotalSelling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 40px; display: flex; justify-content: flex-end; text-align: right; font-size: 12px; font-family: 'Khmer OS Battambang', 'Segoe UI', sans-serif;">
+          <div>
+            <p style="margin: 0 0 5px 0;">${headers.signature}</p>
+            <p style="margin: 0; font-weight: bold; padding-right: 80px;">ហត្ថលេខា</p>
+          </div>
+        </div>
+
+      </div>
     `;
+
+    document.getElementById('btn-print-stock-report').addEventListener('click', () => {
+      printReportDOM();
+    });
+
+    document.getElementById('btn-export-stock-excel').addEventListener('click', () => {
+      exportStockReportToExcel();
+    });
   }
 
   function renderStockLogReport(container, start, end) {
