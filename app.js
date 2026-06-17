@@ -4435,11 +4435,14 @@
       <!-- 4. Main Report Card -->
       <div id="report-content-area" class="glass-card" style="padding: 24px; position:relative;">
         <div style="text-align: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px dashed var(--border-color);">
-          <h2 style="font-family: 'Khmer OS Muol Light', 'Segoe UI', sans-serif; font-size: 18px; color:var(--text-primary); margin: 0 0 8px 0; font-weight:700;">
-            ${headers.title}
+          <h2 style="font-size: 18px; color:var(--text-primary); margin: 0 0 4px 0; font-weight:700;">
+            របាយការណ៍ទំនិញក្នុងស្តុក
           </h2>
-          <span style="font-size: 12.5px; color: var(--text-secondary); font-weight:600;">
-            ${headers.subtitle} ${formattedToday}
+          <h3 style="font-size: 13.5px; color:var(--text-secondary); margin: 0 0 10px 0; font-weight:600; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px;">
+            Inventory Stock Report
+          </h3>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight:500;">
+            ${isKhmer ? 'របាយការណ៍គិតត្រឹមថ្ងៃ៖' : 'Report Date:'} ${formattedToday}
           </span>
         </div>
 
