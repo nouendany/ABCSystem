@@ -576,7 +576,7 @@ export default async function handler(req, res) {
 
         if (session.action === "waiting_selfie_checkin") {
           // Check-in status
-          const startHours = settings.hrWorkStart || "08:00";
+          const startHours = employee.workStart || settings.hrWorkStart || "08:00";
           const [startH, startM] = startHours.split(":").map(Number);
           const [currentH, currentM] = timeStr.split(":").map(Number);
           
@@ -584,6 +584,7 @@ export default async function handler(req, res) {
           if (currentH > startH || (currentH === startH && currentM > startM)) {
             checkInStatus = "Late";
           }
+
 
           const attendanceData = {
             id: attendanceId,
@@ -920,9 +921,10 @@ async function handleWebAppPhoto(req, res, body) {
     };
 
     if (action === "checkin") {
-      const startHours = settings.hrWorkStart || "08:00";
+      const startHours = employee.workStart || settings.hrWorkStart || "08:00";
       const [startH, startM] = startHours.split(":").map(Number);
       const [currentH, currentM] = timeStr.split(":").map(Number);
+
       
       let checkInStatus = "On Time";
       let statusTextTelegram = "🟢 ទាន់ម៉ោង (On Time)";

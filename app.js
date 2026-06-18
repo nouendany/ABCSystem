@@ -9363,14 +9363,17 @@ CREATE TABLE sale_items (
       // Determine if Late
       let checkInStatus = 'On Time';
       const settings = state.companySettings || {};
-      if (settings.checkInTime) {
-        const [sh, sm] = settings.checkInTime.split(':').map(Number);
+      const emp = state.employees.find(e => e.id === log.employeeId) || {};
+      const workStart = emp.workStart || settings.hrWorkStart || '08:00';
+      if (workStart) {
+        const [sh, sm] = workStart.split(':').map(Number);
         const [ih, im] = inTime.split(':').map(Number);
         if (ih > sh || (ih === sh && im > sm)) {
           checkInStatus = 'Late';
         }
       }
       log.checkIn.status = checkInStatus;
+
     } else {
       delete log.checkIn;
     }
@@ -9481,6 +9484,9 @@ CREATE TABLE sale_items (
         document.getElementById('employee-salary').value = emp.salary || '';
         document.getElementById('employee-join-date').value = emp.joinDate || '';
         document.getElementById('employee-status').value = emp.status || 'Active';
+        
+        document.getElementById('employee-work-start').value = emp.workStart || '';
+        document.getElementById('employee-work-end').value = emp.workEnd || '';
 
         document.getElementById('employee-contract-type').value = emp.contractType || 'Probation';
         document.getElementById('employee-allowance-position').value = emp.allowances?.position || emp.allowancePosition || '';
@@ -9504,11 +9510,15 @@ CREATE TABLE sale_items (
       docIdInput.value = '';
       idInput.disabled = false;
       
+      document.getElementById('employee-work-start').value = '';
+      document.getElementById('employee-work-end').value = '';
+      
       const nextIdNum = state.employees.length + 1;
       idInput.value = 'EMP' + String(nextIdNum).padStart(3, '0');
     }
     
     document.getElementById('modal-employee').classList.add('active-modal');
+
   }
 
   function saveEmployee() {
@@ -9526,6 +9536,8 @@ CREATE TABLE sale_items (
     const salary = parseFloat(document.getElementById('employee-salary').value) || 0;
     const joinDate = document.getElementById('employee-join-date').value;
     const status = document.getElementById('employee-status').value;
+    const workStart = document.getElementById('employee-work-start').value;
+    const workEnd = document.getElementById('employee-work-end').value;
 
     const contractType = document.getElementById('employee-contract-type').value;
     const allowancePosition = parseFloat(document.getElementById('employee-allowance-position').value) || 0;
@@ -9552,7 +9564,9 @@ CREATE TABLE sale_items (
     const employeeData = {
       id, fullName, gender, dob, phone, telegramId, email, address,
       department, position, salary, joinDate, status,
+      workStart, workEnd,
       contractType,
+
       allowances: {
         position: allowancePosition,
         phone: allowancePhone,
