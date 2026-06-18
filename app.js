@@ -318,7 +318,7 @@
       defaultVatRate: 0,
       invoicePrefix: "INV-2026-",
       startingCapital: 10000,
-      firebaseEnabled: false,
+      firebaseEnabled: true,
       firebaseConfig: ""
     };
 
@@ -5481,10 +5481,9 @@
       measurementId: "G-QXTYZTKC6T"
     };
 
-    // Auto-enable in production since config is hardcoded
-    let enabled = state.companySettings.firebaseEnabled !== undefined 
-      ? state.companySettings.firebaseEnabled 
-      : true; 
+    // Force enable Firebase Cloud Sync to ensure all devices/browsers are automatically synchronized
+    let enabled = true;
+    state.companySettings.firebaseEnabled = true; 
 
     let configStr = state.companySettings.firebaseConfig;
     let config;
