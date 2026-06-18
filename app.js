@@ -2303,6 +2303,7 @@
       // Build full message in HTML
       let message = `${headerText}\n\n`;
       message += `📄 <b>Invoice No:</b> <code>${invoiceNo}</code>\n`;
+      message += `📅 <b>Date:</b> ${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), state.lang)}\n`;
       message += `🏪 <b>Branch:</b> ${branchName}\n`;
       message += `👤 <b>Staff:</b> ${staffName} (${pageName})\n\n`;
 
