@@ -3982,17 +3982,118 @@
     const sortedTX = [...getFilteredTransactions()].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     if (sortedTX.length === 0) {
-      incomeBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+      incomeBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
     } else {
       sortedTX.forEach(tx => {
-        incomeBody.innerHTML += `
-          <tr>
-            <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong></td>
-            <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
-            <td>${tx.staffName}</td>
-            <td style="font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(tx.total)}</td>
-          </tr>
+        // Find customer details
+        const customer = state.customers.find(c => c.id === tx.customerId);
+        let custDisplay = `<strong>${tx.customerName || 'General Customer'}</strong>`;
+        if (customer && customer.id !== 'CST-001') {
+          custDisplay = `
+            <strong>${customer.name}</strong><br>
+            <span style="font-size:10px; color:var(--text-muted); font-family:monospace;">📞 ${customer.phone || '-'}</span>
+            ${customer.source ? `<br><span style="font-size:9px; color:#10b981; font-weight:600;">🌐 ${customer.source}</span>` : ''}
+          `;
+        }
+
+        // Calculate cost price and profit for this transaction
+        let txCost = 0;
+        tx.items.forEach(item => {
+          const p = state.products.find(prod => prod.sku === item.sku);
+          const cPrice = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
+          txCost += cPrice * item.qty;
+        });
+
+        const txSubtotal = tx.subtotal !== undefined ? tx.subtotal : tx.total;
+        const txDiscount = tx.discountFixed !== undefined ? tx.discountFixed : 
+          (tx.discountPercent ? (txSubtotal * tx.discountPercent / 100) : 0);
+        const txProfit = tx.total - txCost;
+
+        // Render main row and sub-table row
+        const trMain = document.createElement('tr');
+        trMain.style.cursor = 'pointer';
+        trMain.innerHTML = `
+          <td style="text-align:center; color:var(--primary); font-size:14px; font-weight:bold;" class="toggle-chevron">▶</td>
+          <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong></td>
+          <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
+          <td>${tx.staffName}</td>
+          <td>${custDisplay}</td>
+          <td style="text-align:right; font-weight:600;">${window.POS_HELPERS.formatUSD(txSubtotal)}</td>
+          <td style="text-align:right; color:var(--danger); font-weight:600;">${txDiscount > 0 ? '-' + window.POS_HELPERS.formatUSD(txDiscount) : '$0.00'}</td>
+          <td style="text-align:right; font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(tx.total)}</td>
+          <td style="text-align:right; color:var(--text-secondary); font-weight:600;">${window.POS_HELPERS.formatUSD(txCost)}</td>
+          <td style="text-align:right; font-weight:750; color:${txProfit < 0 ? 'var(--danger)' : '#10b981'};">${window.POS_HELPERS.formatUSD(txProfit)}</td>
         `;
+
+        const trDetail = document.createElement('tr');
+        trDetail.className = 'tx-detail-row';
+        trDetail.style.display = 'none';
+        trDetail.style.background = 'rgba(255,255,255,0.015)';
+
+        let itemRows = '';
+        tx.items.forEach(item => {
+          const p = state.products.find(prod => prod.sku === item.sku);
+          const itemCost = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
+          const itemSubtotal = item.price * item.qty;
+          const itemProfit = itemSubtotal - (itemCost * item.qty);
+          const unitObj = p ? state.units.find(u => u.name === p.unit) : null;
+          const itemUnit = unitObj ? (state.lang === 'km' ? unitObj.nameKh : unitObj.name) : (p ? (p.unit || '-') : '-');
+
+          itemRows += `
+            <tr>
+              <td><strong style="font-family:monospace; color:var(--text-secondary);">${item.sku}</strong></td>
+              <td><strong>${state.lang === 'km' ? (item.nameKh || item.nameEn) : item.nameEn}</strong></td>
+              <td style="text-align:center; font-weight:600;">${item.qty}</td>
+              <td style="text-align:center;">${itemUnit}</td>
+              <td style="text-align:right;">${window.POS_HELPERS.formatUSD(item.price)}</td>
+              <td style="text-align:right; font-weight:600; color:var(--primary);">${window.POS_HELPERS.formatUSD(itemSubtotal)}</td>
+              <td style="text-align:right; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(itemCost * item.qty)}</td>
+              <td style="text-align:right; font-weight:650; color:${itemProfit < 0 ? 'var(--danger)' : '#10b981'};">${window.POS_HELPERS.formatUSD(itemProfit)}</td>
+            </tr>
+          `;
+        });
+
+        trDetail.innerHTML = `
+          <td colspan="10" style="padding:12px 24px;">
+            <div class="glass-card" style="padding:14px; background:rgba(0,0,0,0.25); border-color:var(--border-color); box-shadow:none;">
+              <h4 style="margin:0 0 10px 0; font-weight:800; color:var(--primary); display:flex; align-items:center; gap:6px;">
+                📦 ${state.lang === 'km' ? 'ទំនិញដែលបានទិញលម្អិត' : 'Detailed Purchased Items'}
+              </h4>
+              <div class="table-responsive" style="margin:0;">
+                <table class="pos-table" style="font-size:11px; width:100%; margin:0; border:none; background:transparent;">
+                  <thead>
+                    <tr style="background:rgba(255,255,255,0.03);">
+                      <th data-translate="itemCode">Item Code</th>
+                      <th data-translate="itemName">Item Name</th>
+                      <th style="text-align:center;" data-translate="qty">Qty</th>
+                      <th style="text-align:center;" data-translate="unit">Unit</th>
+                      <th style="text-align:right;" data-translate="price">Price</th>
+                      <th style="text-align:right;" data-translate="subtotal">Subtotal</th>
+                      <th style="text-align:right;" data-translate="costPrice">Cost</th>
+                      <th style="text-align:right;" data-translate="profit">Profit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </td>
+        `;
+
+        // Add toggle expand/collapse logic
+        const toggle = () => {
+          const isCollapsed = trDetail.style.display === 'none';
+          trDetail.style.display = isCollapsed ? 'table-row' : 'none';
+          trMain.querySelector('.toggle-chevron').innerText = isCollapsed ? '▼' : '▶';
+          trMain.style.background = isCollapsed ? 'rgba(255,255,255,0.025)' : '';
+        };
+
+        trMain.addEventListener('click', toggle);
+
+        incomeBody.appendChild(trMain);
+        incomeBody.appendChild(trDetail);
       });
     }
 
