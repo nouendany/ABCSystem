@@ -391,6 +391,19 @@
     state.staff = safeParse('abc_staff', []);
     state.transactions = safeParse('abc_transactions', []);
     state.expenses = safeParse('abc_expenses', []);
+    
+    // Migration: Filter out legacy negative customer debt payment entries from expenses
+    const originalExpenseLength = state.expenses.length;
+    state.expenses = state.expenses.filter(e => {
+      const isNegativeDebtPayment = e.amount < 0 && 
+        (e.category === 'otherExpenses' || e.category === 'other') && 
+        (e.description && e.description.includes('Customer debt payment'));
+      return !isNegativeDebtPayment;
+    });
+    if (state.expenses.length !== originalExpenseLength) {
+      safeSetItem('abc_expenses', JSON.stringify(state.expenses));
+    }
+
     state.stockLogs = safeParse('abc_stock_logs', []);
     state.paymentLogs = safeParse('abc_payment_logs', []);
     state.followups = safeParse('abc_followups', []);
