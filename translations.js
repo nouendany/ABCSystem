@@ -156,10 +156,9 @@ window.POS_TRANSLATIONS = {
     customerPhone: "Phone Number",
     customerAddress: "Address",
     outstandingDebt: "Outstanding Debt ($)",
+    totalPaid: "Total Paid ($)",
     payDebt: "Record Debt Payment",
-    pay: "Pay",
     paymentAmount: "Payoff Amount ($)",
-
     debtPaidSuccess: "Debt payment logged successfully!",
     generalCustomer: "General Customer",
     onAccount: "On Account (Outstanding Debt)",
@@ -607,10 +606,9 @@ window.POS_TRANSLATIONS = {
     customerPhone: "លេខទូរស័ព្ទ",
     customerAddress: "អាសយដ្ឋាន",
     outstandingDebt: "ប្រាក់ជំពាក់សរុប ($)",
+    totalPaid: "ប្រាក់បានបង់សរុប ($)",
     payDebt: "ទូទាត់ប្រាក់ជំពាក់",
-    pay: "បង់ប្រាក់",
     paymentAmount: "ចំនួនប្រាក់បង់ ($)",
-
     debtPaidSuccess: "បានកត់ត្រាការបង់ប្រាក់ជំពាក់រួចរាល់!",
     generalCustomer: "អតិថិជនទូទៅ",
     onAccount: "កត់ត្រាជំពាក់ (Outstanding Debt)",
