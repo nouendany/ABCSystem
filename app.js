@@ -595,6 +595,10 @@
   }
 
   function saveStateToLocalStorage() {
+    state.companySettings.brands = state.brands;
+    state.companySettings.units = state.units;
+    state.companySettings.categories = state.categories;
+
     safeSetItem('abc_users', JSON.stringify(state.users));
     safeSetItem('abc_branches', JSON.stringify(state.branches));
     safeSetItem('abc_customers', JSON.stringify(state.customers));
@@ -653,9 +657,6 @@
         syncChanges('users', state.users, lastSyncedState.users, 'id');
         syncChanges('branches', state.branches, lastSyncedState.branches, 'id');
         syncChanges('customers', state.customers, lastSyncedState.customers, 'id');
-        syncChanges('brands', state.brands, lastSyncedState.brands, 'id');
-        syncChanges('units', state.units, lastSyncedState.units, 'id');
-        syncChanges('categories', state.categories, lastSyncedState.categories, 'id');
         syncChanges('products', state.products, lastSyncedState.products, 'sku');
         syncChanges('staff', state.staff, lastSyncedState.staff, 'id');
         syncChanges('transactions', state.transactions, lastSyncedState.transactions, 'id');
@@ -5650,9 +5651,6 @@
         setupListener('users', 'users', 'id', []);
         setupListener('branches', 'branches', 'id', [populatePOSSelects]);
         setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects]);
-        setupListener('brands', 'brands', 'id', [populatePOSSelects, renderSettings]);
-        setupListener('units', 'units', 'id', [populatePOSSelects, renderSettings]);
-        setupListener('categories', 'categories', 'id', [populatePOSSelects, renderSettings]);
         setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
         setupListener('staff', 'staff', 'id', [populatePOSSelects]);
         setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects]);
@@ -5692,9 +5690,25 @@
             const settings = doc.data();
             state.companySettings = settings;
             safeSetItem('abc_company_settings', JSON.stringify(settings));
+
+            // Extract synced brands, units, and categories from global config
+            if (settings.brands) {
+              state.brands = settings.brands;
+              safeSetItem('abc_brands', JSON.stringify(settings.brands));
+            }
+            if (settings.units) {
+              state.units = settings.units;
+              safeSetItem('abc_units', JSON.stringify(settings.units));
+            }
+            if (settings.categories) {
+              state.categories = settings.categories;
+              safeSetItem('abc_categories', JSON.stringify(settings.categories));
+            }
+
             updateUserCardHeader();
             updateCompanyLogoUI();
             populateExpenseCategories();
+            populatePOSSelects();
             if (state.activeView === 'view-settings') {
               renderSettings();
             }
@@ -5750,9 +5764,6 @@
           migrateCollection('users', state.users, 'id');
           migrateCollection('branches', state.branches, 'id');
           migrateCollection('customers', state.customers, 'id');
-          migrateCollection('brands', state.brands, 'id');
-          migrateCollection('units', state.units, 'id');
-          migrateCollection('categories', state.categories, 'id');
           migrateCollection('products', state.products, 'sku');
           migrateCollection('staff', state.staff, 'id');
           migrateCollection('transactions', state.transactions, 'id');
