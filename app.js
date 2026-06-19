@@ -5550,6 +5550,18 @@
               if (idKey && !data[idKey]) {
                 data[idKey] = doc.id;
               }
+              
+              // Filter out and delete legacy negative customer debt payment entries from Firebase
+              if (colName === 'expenses' && 
+                  data.amount < 0 && 
+                  (data.category === 'otherExpenses' || data.category === 'other') && 
+                  (data.description && data.description.includes('Customer debt payment'))) {
+                dbInstance.collection('expenses').doc(doc.id).delete()
+                  .then(() => console.log(`Successfully deleted legacy negative expense doc: ${doc.id}`))
+                  .catch(e => console.error("Error deleting legacy negative expense from Firebase:", e));
+                return; // Skip adding to local list
+              }
+
               list.push(data);
             });
 
