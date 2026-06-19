@@ -3019,13 +3019,16 @@
         </td>
         <td>${ordersHtml}</td>
         <td style="text-align:right; font-weight:750; color:${c.outstandingDebt > 0 ? 'var(--danger)' : 'var(--text-primary)'};">${window.POS_HELPERS.formatUSD(c.outstandingDebt || 0)}</td>
+        <td style="text-align:center;">
+          ${c.outstandingDebt > 0 ? `<button class="btn btn-secondary btn-sm btn-pay-debt" data-idx="${idx}" style="padding:2px 8px; font-size:11px; background-color:#10b981; border:none;" data-translate="pay">Pay</button>` : '—'}
+        </td>
         <td style="font-size:11px; color:var(--text-secondary); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.notes || '-'}</td>
         <td>
           <button class="btn btn-outline btn-sm btn-edit-c" data-idx="${idx}" style="padding:2px 6px;">✏️</button>
           <button class="btn btn-outline btn-sm btn-history-c" data-id="${c.id}" style="padding:2px 6px;" title="View History">📜</button>
-          ${c.outstandingDebt > 0 ? `<button class="btn btn-secondary btn-sm btn-pay-debt" data-idx="${idx}" style="padding:2px 6px;" data-translate="payDebt">Pay Debt</button>` : ''}
           <button class="btn btn-danger btn-sm btn-del-c" data-idx="${idx}" style="padding:2px 6px;">🗑️</button>
         </td>
+
       `;
 
       tr.querySelector('.btn-edit-c').addEventListener('click', () => openCustomerModal(idx));
@@ -8194,18 +8197,6 @@ CREATE TABLE sale_items (
           timestamp: new Date().toISOString()
         });
 
-        // Write payoff into Expenses ledger as negative expense (or other income)
-        state.expenses.push({
-          id: 'EXP-' + (1000 + state.expenses.length + 1),
-          date: new Date().toISOString(),
-          category: 'otherExpenses',
-          amount: -amount, // Negative expense acts as cash inflow/income
-          description: `Customer debt payment received from ${customer.name}`,
-          branchId: activeBranch,
-          createdBy: state.currentUser ? state.currentUser.username : 'system',
-          updatedBy: state.currentUser ? state.currentUser.username : 'system',
-          timestamp: new Date().toISOString()
-        });
 
         saveStateToLocalStorage();
         document.getElementById('modal-pay-debt').classList.remove('active-modal');
