@@ -5179,6 +5179,7 @@
     let rowsHtml = '';
     const sorted = transactions.sort((a,b) => new Date(b.date) - new Date(a.date));
 
+    let sumQty = 0;
     let sumCost = 0;
     let sumTotal = 0;
 
@@ -5188,14 +5189,17 @@
       const itemsText = tx.items.map(it => `${state.lang === 'km' ? it.nameKh : it.nameEn} x${it.qty}`).join(', ');
       const methodTranslate = window.POS_TRANSLATIONS[state.lang][tx.paymentMethod] || tx.paymentMethod;
 
-      // Calculate cost price for this transaction
+      // Calculate quantity and cost price for this transaction
+      let txQty = 0;
       let txCost = 0;
       tx.items.forEach(item => {
+        txQty += item.qty;
         const p = state.products.find(prod => prod.sku === item.sku);
         const costPrice = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
         txCost += costPrice * item.qty;
       });
 
+      sumQty += txQty;
       sumCost += txCost;
       sumTotal += tx.total;
 
@@ -5205,6 +5209,7 @@
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
           <td><strong>${tx.customerName}</strong><br><span style="font-size:9px;color:var(--text-muted);">Rep: ${tx.staffName}</span></td>
           <td style="font-size:10px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
+          <td style="text-align:center; font-weight:700; color:var(--text-primary);">${txQty}</td>
           <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(txCost)}</td>
           <td style="text-align:right; font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(tx.total)}</td>
           <td><span style="font-size:10px; text-transform:uppercase;">${methodTranslate}</span></td>
@@ -5219,6 +5224,7 @@
       <tfoot>
         <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
           <td colspan="4" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="text-align:center; font-weight:800; color:var(--text-primary);">${sumQty}</td>
           <td style="text-align:right; font-weight:800; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(sumCost)}</td>
           <td style="text-align:right; color:var(--primary); font-weight:800;">${window.POS_HELPERS.formatUSD(sumTotal)}</td>
           <td colspan="2"></td>
@@ -5235,6 +5241,7 @@
             <th>${state.lang === 'km' ? 'កាលបរិច្ឆេទ' : 'Date'}</th>
             <th>${state.lang === 'km' ? 'អតិថិជន / បុគ្គលិក' : 'Customer / Staff'}</th>
             <th>${state.lang === 'km' ? 'ទំនិញ' : 'Items'}</th>
+            <th style="text-align:center;">${state.lang === 'km' ? 'ចំនួនផលិតផល' : 'Qty'}</th>
             <th style="text-align:right;">${state.lang === 'km' ? 'តម្លៃដើម' : 'Cost'}</th>
             <th style="text-align:right;">${state.lang === 'km' ? 'លក់សរុប' : 'Total Due'}</th>
             <th>${state.lang === 'km' ? 'ការទូទាត់' : 'Payment'}</th>
@@ -5242,7 +5249,7 @@
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
+          ${rowsHtml || `<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
         ${footerHtml}
       </table>
