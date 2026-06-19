@@ -5548,6 +5548,25 @@
       firebaseActive = true;
       console.log("Firebase Cloud Sync successfully initialized!");
 
+      // Auto-delete legacy demo Categories, Brands, and Units from Firestore
+      try {
+        const demoBrands = ["BR-001", "BR-002", "BR-003", "BR-004", "BR-005", "BR-006"];
+        const demoUnits = ["UN-001", "UN-002", "UN-003", "UN-004"];
+        const demoCategories = ["beverages", "food", "grocery", "electronics", "clothing", "other"];
+
+        demoBrands.forEach(id => {
+          db.collection('brands').doc(id).delete().catch(() => {});
+        });
+        demoUnits.forEach(id => {
+          db.collection('units').doc(id).delete().catch(() => {});
+        });
+        demoCategories.forEach(id => {
+          db.collection('categories').doc(id).delete().catch(() => {});
+        });
+      } catch (e) {
+        console.error("Error cleaning legacy demo settings:", e);
+      }
+
       const startListeners = (dbInstance) => {
         const setupListener = (colName, stateKey, idKey, renderFns) => {
           dbInstance.collection(colName).onSnapshot(snapshot => {
