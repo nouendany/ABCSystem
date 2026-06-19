@@ -3978,12 +3978,21 @@
 
     // Income ledger
     const incomeBody = document.getElementById('fin-sales-ledger');
+    const incomeFoot = document.getElementById('fin-sales-ledger-foot');
     incomeBody.innerHTML = '';
+    if (incomeFoot) incomeFoot.innerHTML = '';
+
     const sortedTX = [...getFilteredTransactions()].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     if (sortedTX.length === 0) {
       incomeBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
     } else {
+      let sumSubtotal = 0;
+      let sumDiscount = 0;
+      let sumTotal = 0;
+      let sumCost = 0;
+      let sumProfit = 0;
+
       sortedTX.forEach(tx => {
         // Find customer details
         const customer = state.customers.find(c => c.id === tx.customerId);
@@ -4008,6 +4017,13 @@
         const txDiscount = tx.discountFixed !== undefined ? tx.discountFixed : 
           (tx.discountPercent ? (txSubtotal * tx.discountPercent / 100) : 0);
         const txProfit = tx.total - txCost;
+
+        // Accumulate totals for footer
+        sumSubtotal += txSubtotal;
+        sumDiscount += txDiscount;
+        sumTotal += tx.total;
+        sumCost += txCost;
+        sumProfit += txProfit;
 
         // Render main row and sub-table row
         const trMain = document.createElement('tr');
@@ -4095,6 +4111,20 @@
         incomeBody.appendChild(trMain);
         incomeBody.appendChild(trDetail);
       });
+
+      // Render footer totals row
+      if (incomeFoot) {
+        incomeFoot.innerHTML = `
+          <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+            <td colspan="5" style="text-align:left; font-size:12px;">📈 ${state.lang === 'km' ? 'សរុបសរុប (Total)' : 'Total'}</td>
+            <td style="text-align:right; font-weight:800;">${window.POS_HELPERS.formatUSD(sumSubtotal)}</td>
+            <td style="text-align:right; color:var(--danger); font-weight:800;">${sumDiscount > 0 ? '-' + window.POS_HELPERS.formatUSD(sumDiscount) : '$0.00'}</td>
+            <td style="text-align:right; color:var(--primary); font-weight:800;">${window.POS_HELPERS.formatUSD(sumTotal)}</td>
+            <td style="text-align:right; color:var(--text-secondary); font-weight:800;">${window.POS_HELPERS.formatUSD(sumCost)}</td>
+            <td style="text-align:right; font-weight:800; color:${sumProfit < 0 ? 'var(--danger)' : '#10b981'};">${window.POS_HELPERS.formatUSD(sumProfit)}</td>
+          </tr>
+        `;
+      }
     }
 
     // Expense ledger
