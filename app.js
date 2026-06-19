@@ -138,6 +138,9 @@
     users: [],
     branches: [],
     customers: [],
+    brands: [],
+    units: [],
+    categories: [],
     products: [],
     staff: [],
     transactions: [],
@@ -459,6 +462,9 @@
       users: JSON.parse(JSON.stringify(state.users)),
       branches: JSON.parse(JSON.stringify(state.branches)),
       customers: JSON.parse(JSON.stringify(state.customers)),
+      brands: JSON.parse(JSON.stringify(state.brands)),
+      units: JSON.parse(JSON.stringify(state.units)),
+      categories: JSON.parse(JSON.stringify(state.categories)),
       products: JSON.parse(JSON.stringify(state.products)),
       staff: JSON.parse(JSON.stringify(state.staff)),
       transactions: JSON.parse(JSON.stringify(state.transactions)),
@@ -647,6 +653,9 @@
         syncChanges('users', state.users, lastSyncedState.users, 'id');
         syncChanges('branches', state.branches, lastSyncedState.branches, 'id');
         syncChanges('customers', state.customers, lastSyncedState.customers, 'id');
+        syncChanges('brands', state.brands, lastSyncedState.brands, 'id');
+        syncChanges('units', state.units, lastSyncedState.units, 'id');
+        syncChanges('categories', state.categories, lastSyncedState.categories, 'id');
         syncChanges('products', state.products, lastSyncedState.products, 'sku');
         syncChanges('staff', state.staff, lastSyncedState.staff, 'id');
         syncChanges('transactions', state.transactions, lastSyncedState.transactions, 'id');
@@ -5589,6 +5598,9 @@
         setupListener('users', 'users', 'id', []);
         setupListener('branches', 'branches', 'id', [populatePOSSelects]);
         setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects]);
+        setupListener('brands', 'brands', 'id', [populatePOSSelects, renderSettings]);
+        setupListener('units', 'units', 'id', [populatePOSSelects, renderSettings]);
+        setupListener('categories', 'categories', 'id', [populatePOSSelects, renderSettings]);
         setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
         setupListener('staff', 'staff', 'id', [populatePOSSelects]);
         setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects]);
@@ -5686,6 +5698,9 @@
           migrateCollection('users', state.users, 'id');
           migrateCollection('branches', state.branches, 'id');
           migrateCollection('customers', state.customers, 'id');
+          migrateCollection('brands', state.brands, 'id');
+          migrateCollection('units', state.units, 'id');
+          migrateCollection('categories', state.categories, 'id');
           migrateCollection('products', state.products, 'sku');
           migrateCollection('staff', state.staff, 'id');
           migrateCollection('transactions', state.transactions, 'id');
@@ -7052,6 +7067,8 @@
           state.staff = [];
           state.products = [];
           state.brands = [];
+          state.units = [];
+          state.categories = [];
           state.voidedTransactions = [];
           state.closingLogs = [];
           state.auditLogs = [];
@@ -7095,6 +7112,9 @@
               { name: 'users', keepId: 'USR-001' },
               { name: 'branches', keepId: 'BR-001' },
               { name: 'customers', keepId: 'CST-001' },
+              { name: 'brands' },
+              { name: 'units' },
+              { name: 'categories' },
               { name: 'products' },
               { name: 'staff' },
               { name: 'transactions' },
