@@ -2908,15 +2908,13 @@
       <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
         
         <!-- Customer Info Summary Card (Beautiful UX/UI Profile card) -->
-        <div class="customer-profile-header-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:16px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px;">
-          <div style="display:flex; align-items:center; gap:16px;">
+        <div class="customer-profile-card">
+          <div style="display:flex; align-items:center; gap:20px; flex-wrap: wrap;">
             <!-- Avatar Circle -->
-            <div id="cust-profile-avatar" style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--secondary)); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:white; text-shadow:0 2px 4px rgba(0,0,0,0.2); box-shadow:0 0 15px rgba(6,182,212,0.2);">
-              C
-            </div>
+            <div id="cust-profile-avatar" class="profile-avatar-glow">C</div>
             <!-- Name and Rank -->
-            <div style="display:flex; flex-direction:column; gap:4px;">
-              <h3 id="cust-profile-name" style="margin:0; font-size:18px; font-weight:800; color:var(--text-primary);">Customer Name</h3>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <h3 id="cust-profile-name" style="margin:0; font-size:22px; font-weight:850; color:var(--text-primary); letter-spacing:0.5px;">Customer Name</h3>
               <div id="cust-profile-rank-container">
                 <span id="cust-profile-rank" class="badge">Tier</span>
               </div>
@@ -2924,27 +2922,31 @@
           </div>
           
           <!-- Metadata grid -->
-          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; background:rgba(0,0,0,0.15); border-radius:10px; padding:12px; font-size:12px;">
-            <div>
-              <span style="color:var(--text-muted);">📞 Phone:</span>
-              <strong id="cust-profile-phone" style="color:var(--text-primary); margin-left:4px;">-</strong>
+          <div class="profile-meta-grid">
+            <div class="profile-meta-item">
+              <span>📞</span>
+              <span data-translate="customerPhone">Phone:</span>
+              <strong id="cust-profile-phone">-</strong>
             </div>
-            <div>
-              <span style="color:var(--text-muted);">🌐 Source:</span>
-              <strong id="cust-profile-source" style="color:var(--text-primary); margin-left:4px;">-</strong>
+            <div class="profile-meta-item">
+              <span>🌐</span>
+              <span data-translate="customerSource">Source:</span>
+              <strong id="cust-profile-source">-</strong>
             </div>
-            <div>
-              <span style="color:var(--text-muted);">👤 Assigned Staff:</span>
-              <strong id="cust-profile-staff" style="color:var(--text-primary); margin-left:4px;">-</strong>
+            <div class="profile-meta-item">
+              <span>👤</span>
+              <span data-translate="assignedStaff">Assigned Staff:</span>
+              <strong id="cust-profile-staff">-</strong>
             </div>
-            <div>
-              <span style="color:var(--text-muted);">💰 Outstanding Debt:</span>
-              <strong id="cust-profile-debt" style="color:var(--text-primary); margin-left:4px;">-</strong>
+            <div class="profile-meta-item">
+              <span>💰</span>
+              <span data-translate="outstandingDebt">Outstanding Debt:</span>
+              <strong id="cust-profile-debt">-</strong>
             </div>
           </div>
           
           <!-- Notes box -->
-          <div id="cust-profile-notes-box" style="background:rgba(255,255,255,0.01); border-left:3px solid var(--primary); padding:8px 12px; border-radius:4px; font-size:12px; font-style:italic; color:var(--text-secondary);">
+          <div id="cust-profile-notes-box" class="profile-notes-box">
             📝 Notes: -
           </div>
         </div>

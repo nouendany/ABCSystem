@@ -3177,21 +3177,38 @@
       tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
     } else {
       orderDates.forEach(o => {
-        let itemsDesc = '';
+        let itemsDesc = '<div style="display:flex; flex-wrap:wrap; gap:4px;">';
         o.items.forEach(item => {
-          const name = state.lang === 'km' ? item.nameKh : item.nameEn;
-          itemsDesc += `• ${name} x ${item.qty}<br>`;
+          const name = state.lang === 'km' ? (item.nameKh || item.nameEn) : item.nameEn;
+          itemsDesc += `
+            <span style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:2px 6px; font-size:9.5px; font-weight:600; color:var(--text-primary); white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+              📦 ${name} <strong style="color:var(--primary); font-size:10px;">x${item.qty}</strong>
+            </span>
+          `;
         });
+        itemsDesc += '</div>';
+        
+        let methodStyle = 'background:rgba(255,255,255,0.05); color:var(--text-secondary); border:1px solid rgba(255,255,255,0.1);';
+        if (o.paymentMethod === 'cash') {
+          methodStyle = 'background:rgba(245,158,11,0.1); color:#f59e0b; border:1px solid rgba(245,158,11,0.2);';
+        } else if (o.paymentMethod === 'khqr') {
+          methodStyle = 'background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2);';
+        } else if (o.paymentMethod === 'bank') {
+          methodStyle = 'background:rgba(6,182,212,0.1); color:#06b6d4; border:1px solid rgba(6,182,212,0.2);';
+        } else if (o.paymentMethod === 'card') {
+          methodStyle = 'background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2);';
+        }
         
         const methodTranslate = window.POS_TRANSLATIONS[state.lang][o.paymentMethod] || o.paymentMethod;
+        const methodBadge = `<span class="badge" style="text-transform:none; font-weight:700; ${methodStyle}">${methodTranslate}</span>`;
 
         tbody.innerHTML += `
           <tr>
             <td style="font-size:10px;">${window.POS_HELPERS.formatDate(o.date, state.lang)}</td>
             <td><strong style="color:var(--secondary); font-family:monospace;">${o.invoiceNo}</strong></td>
             <td style="text-align:right; font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(o.total)}</td>
-            <td><span class="badge badge-warning" style="text-transform:none;">${methodTranslate}</span></td>
-            <td style="font-size:10px; line-height: 1.3;">${itemsDesc}</td>
+            <td>${methodBadge}</td>
+            <td>${itemsDesc}</td>
           </tr>
         `;
       });
