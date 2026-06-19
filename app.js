@@ -652,6 +652,8 @@
         syncChanges('kpis', state.kpis, lastSyncedState.kpis, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
+        db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error("Firebase commission rules save error:", e));
+
 
         // Update baseline sync cache to reflect current state
         lastSyncedState = {
@@ -5607,7 +5609,36 @@
             }
           }
         });
+
+        // Commission rules listener
+        let isFirstCommSnapshot = true;
+        dbInstance.collection('company_settings').doc('commission_rules').onSnapshot(doc => {
+          if (doc.metadata.hasPendingWrites) return;
+
+          if (isFirstCommSnapshot) {
+            isFirstCommSnapshot = false;
+            const hasLocalRules = state.commissionRules && Object.keys(state.commissionRules).length > 0;
+            const isDocEmpty = !doc.exists || !doc.data() || Object.keys(doc.data()).length === 0;
+
+            if (isDocEmpty && hasLocalRules) {
+              console.log("Firestore commission rules document is empty or missing. Initializing with local rules...");
+              dbInstance.collection('company_settings').doc('commission_rules').set(state.commissionRules)
+                .catch(e => console.error("Error initializing commission rules in Firestore:", e));
+              return;
+            }
+          }
+
+          if (doc.exists && doc.data() && Object.keys(doc.data()).length > 0) {
+            const rules = doc.data();
+            state.commissionRules = rules;
+            safeSetItem('abc_commission_rules', JSON.stringify(rules));
+            if (state.activeView === 'view-settings') {
+              renderPerformance();
+            }
+          }
+        });
       };
+
 
       // 1. One-time Migration check
       db.collection('users').limit(1).get().then(snap => {
@@ -5647,6 +5678,9 @@
           
           const pSettings = db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
           promises.push(pSettings);
+          const pCommRules = db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error(e));
+          promises.push(pCommRules);
+
 
           Promise.all(promises).then(() => {
             console.log("Initial migration complete. Starting listeners...");
@@ -6904,6 +6938,9 @@
             
             const pSettings = db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
             uploadPromises.push(pSettings);
+            const pCommRules = db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error(e));
+            uploadPromises.push(pCommRules);
+
 
             await Promise.all(uploadPromises);
           }
@@ -7240,6 +7277,8 @@
 
             // Also set settings
             await db.collection('company_settings').doc('global').set(state.companySettings);
+            await db.collection('company_settings').doc('commission_rules').set(state.commissionRules);
+
 
             alert(window.POS_TRANSLATIONS[state.lang].manualMigrateSuccess || "Successfully uploaded all local data collections to Firestore cloud sync database!");
             window.location.reload();
