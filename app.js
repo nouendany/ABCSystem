@@ -5548,20 +5548,53 @@
       firebaseActive = true;
       console.log("Firebase Cloud Sync successfully initialized!");
 
-      // Auto-delete legacy demo Categories, Brands, and Units from Firestore
+      // Auto-delete legacy demo Categories, Brands, and Units from Firestore if they match the exact demo names
       try {
-        const demoBrands = ["BR-001", "BR-002", "BR-003", "BR-004", "BR-005", "BR-006"];
-        const demoUnits = ["UN-001", "UN-002", "UN-003", "UN-004"];
-        const demoCategories = ["beverages", "food", "grocery", "electronics", "clothing", "other"];
+        const demoBrands = {
+          "BR-001": "Coca-Cola",
+          "BR-002": "Angkor",
+          "BR-003": "Mama",
+          "BR-004": "Anker",
+          "BR-005": "Lays",
+          "BR-006": "Other"
+        };
+        const demoUnits = {
+          "UN-001": "Can",
+          "UN-002": "Bottle",
+          "UN-003": "Pack",
+          "UN-004": "Pcs"
+        };
+        const demoCategories = {
+          "beverages": "Beverages",
+          "food": "Food & Snacks",
+          "grocery": "Grocery",
+          "electronics": "Electronics",
+          "clothing": "Clothing",
+          "other": "Other"
+        };
 
-        demoBrands.forEach(id => {
-          db.collection('brands').doc(id).delete().catch(() => {});
+        Object.keys(demoBrands).forEach(id => {
+          db.collection('brands').doc(id).get().then(doc => {
+            if (doc.exists && doc.data().name === demoBrands[id]) {
+              doc.ref.delete().catch(() => {});
+            }
+          }).catch(() => {});
         });
-        demoUnits.forEach(id => {
-          db.collection('units').doc(id).delete().catch(() => {});
+
+        Object.keys(demoUnits).forEach(id => {
+          db.collection('units').doc(id).get().then(doc => {
+            if (doc.exists && doc.data().name === demoUnits[id]) {
+              doc.ref.delete().catch(() => {});
+            }
+          }).catch(() => {});
         });
-        demoCategories.forEach(id => {
-          db.collection('categories').doc(id).delete().catch(() => {});
+
+        Object.keys(demoCategories).forEach(id => {
+          db.collection('categories').doc(id).get().then(doc => {
+            if (doc.exists && doc.data().nameEn === demoCategories[id]) {
+              doc.ref.delete().catch(() => {});
+            }
+          }).catch(() => {});
         });
       } catch (e) {
         console.error("Error cleaning legacy demo settings:", e);
