@@ -3123,10 +3123,46 @@
     // Sort orderDates (newest first)
     orderDates.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Load customer profile header elements
+    const initial = customer.name ? customer.name.trim().charAt(0).toUpperCase() : 'C';
+    document.getElementById('cust-profile-avatar').innerText = initial;
+    document.getElementById('cust-profile-name').innerText = customer.name || (state.lang === 'km' ? 'អតិថិជនទូទៅ' : 'General Customer');
+    
+    // Rank badge class and text
+    const rankBadge = document.getElementById('cust-profile-rank');
+    if (rankBadge) {
+      rankBadge.innerText = customer.rank || 'Bronze';
+      let badgeColor = 'badge-info';
+      if (customer.rank === 'Gold VIP' || customer.rank === 'VIP') badgeColor = 'badge-success';
+      else if (customer.rank === 'Silver') badgeColor = 'badge-warning';
+      else if (customer.rank === 'Bronze') badgeColor = 'badge-danger';
+      else if (customer.rank === 'Platinum VIP' || customer.isVip) badgeColor = 'badge-secondary';
+      rankBadge.className = `badge ${badgeColor}`;
+    }
+
+    // Metadata
+    document.getElementById('cust-profile-phone').innerText = customer.phone || '-';
+    document.getElementById('cust-profile-source').innerText = customer.source || '-';
+    
+    const staff = state.staff.find(s => s.id === customer.staffId);
+    document.getElementById('cust-profile-staff').innerText = staff ? staff.name : (state.lang === 'km' ? 'មិនទាន់ចាត់តាំង' : 'Unassigned');
+    
+    const debtEl = document.getElementById('cust-profile-debt');
+    if (debtEl) {
+      debtEl.innerText = window.POS_HELPERS.formatUSD(customer.outstandingDebt || 0);
+      debtEl.style.color = (customer.outstandingDebt || 0) > 0 ? 'var(--danger)' : 'var(--text-primary)';
+    }
+
+    // Notes
+    const notesBox = document.getElementById('cust-profile-notes-box');
+    if (notesBox) {
+      notesBox.innerHTML = `📝 <strong>${state.lang === 'km' ? 'កំណត់សម្គាល់' : 'Notes'}:</strong> ${customer.notes || '-'}`;
+    }
+
     // Load elements
     document.getElementById('cust-hist-title').innerText = state.lang === 'km' 
-      ? `ប្រវត្តិទិញទំនិញ - ${customer.name}` 
-      : `Purchase History - ${customer.name}`;
+      ? `ព័ត៌មានលម្អិតអតិថិជន & ប្រវត្តិទិញ` 
+      : `Customer Profile & Purchase History`;
       
     document.getElementById('cust-hist-total-orders').innerText = state.lang === 'km'
       ? `${orderDates.length} ដង`
@@ -3913,10 +3949,54 @@
 
   // 8. FINANCIAL LEDGER RENDER
   function renderFinance() {
+    const dateFilterVal = document.getElementById('finance-date-filter')?.value || 'all';
+    const startDateVal = document.getElementById('finance-start-date')?.value || '';
+    const endDateVal = document.getElementById('finance-end-date')?.value || '';
+
+    // Date filtering helper
+    const filterByDateRange = (dateStr) => {
+      if (dateFilterVal === 'all') return true;
+      const tDate = new Date(dateStr);
+      const now = new Date();
+      
+      // Set hours to 0 to compare dates only
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const itemDate = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+      
+      if (dateFilterVal === 'today') {
+        return itemDate.getTime() === today.getTime();
+      }
+      if (dateFilterVal === 'yesterday') {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return itemDate.getTime() === yesterday.getTime();
+      }
+      if (dateFilterVal === 'this_week') {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        return itemDate >= startOfWeek && itemDate <= today;
+      }
+      if (dateFilterVal === 'this_month') {
+        return tDate.getFullYear() === now.getFullYear() && tDate.getMonth() === now.getMonth();
+      }
+      if (dateFilterVal === 'custom') {
+        if (!startDateVal) return true;
+        const start = new Date(startDateVal);
+        start.setHours(0,0,0,0);
+        const end = endDateVal ? new Date(endDateVal) : new Date(today);
+        end.setHours(23,59,59,999);
+        return tDate >= start && tDate <= end;
+      }
+      return true;
+    };
+
+    const txList = getFilteredTransactions().filter(t => filterByDateRange(t.date));
+    const expenseList = getFilteredExpenses().filter(e => filterByDateRange(e.date));
+
     let totalRevenue = 0;
     let totalCOGS = 0;
     
-    getFilteredTransactions().forEach(t => {
+    txList.forEach(t => {
       totalRevenue += t.total;
       t.items.forEach(item => {
         const p = state.products.find(prod => prod.sku === item.sku);
@@ -3926,7 +4006,7 @@
     });
 
     let totalExpenses = 0;
-    getFilteredExpenses().forEach(e => totalExpenses += e.amount);
+    expenseList.forEach(e => totalExpenses += e.amount);
 
     const totalDeducted = totalCOGS + totalExpenses;
     const actualProfit = totalRevenue - totalDeducted;
@@ -3982,7 +4062,7 @@
     incomeBody.innerHTML = '';
     if (incomeFoot) incomeFoot.innerHTML = '';
 
-    const sortedTX = [...getFilteredTransactions()].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const sortedTX = [...txList].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     if (sortedTX.length === 0) {
       incomeBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
@@ -4130,7 +4210,7 @@
     // Expense ledger
     const expenseBody = document.getElementById('fin-expense-ledger');
     expenseBody.innerHTML = '';
-    const sortedExp = [...getFilteredExpenses()].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const sortedExp = [...expenseList].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     if (sortedExp.length === 0) {
       expenseBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
@@ -8818,6 +8898,35 @@ CREATE TABLE sale_items (
       perfEndInput.addEventListener('change', () => {
         state.perfFilterEnd = perfEndInput.value;
         renderPerformance();
+      });
+    }
+
+    // Finance Date Filter Event Listeners
+    const finDateFilter = document.getElementById('finance-date-filter');
+    const finCustomInputs = document.getElementById('finance-custom-date-inputs');
+    const finStartDate = document.getElementById('finance-start-date');
+    const finEndDate = document.getElementById('finance-end-date');
+
+    if (finDateFilter) {
+      finDateFilter.addEventListener('change', () => {
+        if (finDateFilter.value === 'custom') {
+          if (finCustomInputs) finCustomInputs.style.display = 'flex';
+        } else {
+          if (finCustomInputs) finCustomInputs.style.display = 'none';
+        }
+        renderFinance();
+      });
+    }
+
+    if (finStartDate) {
+      finStartDate.addEventListener('change', () => {
+        renderFinance();
+      });
+    }
+
+    if (finEndDate) {
+      finEndDate.addEventListener('change', () => {
+        renderFinance();
       });
     }
 
