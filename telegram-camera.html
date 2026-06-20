@@ -108,10 +108,14 @@
       height: 100%;
       object-fit: cover;
       transform: scaleX(-1); /* Mirror view for front camera */
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     video.back-camera {
       transform: scaleX(1); /* Normal view for back camera */
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     #photo-preview {
@@ -237,7 +241,7 @@
 
     <div class="camera-frame">
       <div class="camera-viewport">
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline muted></video>
         <img id="photo-preview" alt="Selfie Preview">
       </div>
     </div>
@@ -258,8 +262,8 @@
     </button>
   </div>
 
-  <!-- Native Camera Fallback Input (No capture constraint to prevent device/browser lock issues) -->
-  <input type="file" id="native-camera-input" accept="image/*" style="display: none;">
+  <!-- Native Camera Fallback Input with default capture="user" to open selfie camera directly -->
+  <input type="file" id="native-camera-input" accept="image/*" capture="user" style="display: none;">
 
   <!-- Fullscreen Loading/Success Overlay -->
   <div class="overlay" id="overlay">
@@ -348,6 +352,13 @@
       useFacingMode = useFacingMode === "user" ? "environment" : "user";
       toggleCameraBtn.innerText = useFacingMode === "user" ? "Use Back Camera" : "Use Front Camera";
       
+      // Update native camera capture attribute
+      if (useFacingMode === "user") {
+        nativeCameraInput.setAttribute('capture', 'user');
+      } else {
+        nativeCameraInput.setAttribute('capture', 'environment');
+      }
+      
       // Reset capture state
       photoPreview.style.display = 'none';
       video.style.display = 'block';
@@ -388,6 +399,27 @@
         
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         capturedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+        // Detect if the captured frame is solid black
+        let isSolidBlack = true;
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const pixels = imgData.data;
+          // Check a sample of pixels to see if any are non-black (e.g. RGB value > 8)
+          for (let i = 0; i < pixels.length; i += 40) {
+            if (pixels[i] > 8 || pixels[i+1] > 8 || pixels[i+2] > 8) {
+              isSolidBlack = false;
+              break;
+            }
+          }
+        } catch (e) {
+          isSolidBlack = false;
+        }
+
+        if (isSolidBlack) {
+          showError("រូបថតដែលថតបានគឺខ្មៅសុទ្ធ (រូបភាពមិនដើរនៅលើទូរស័ព្ទនេះទេ)។ សូមប្រើប្រាស់កាមេរ៉ាទូរស័ព្ទធម្មតាវិញ។", true);
+          return;
+        }
 
         // Show photo preview
         photoPreview.src = capturedBase64;
