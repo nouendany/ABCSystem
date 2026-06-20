@@ -4971,6 +4971,14 @@
       `;
     });
 
+    const footerHtml = filtered.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="6" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? 'សរុបចំនួនជួរ៖' : 'Total Rows:'} ${filtered.length}</td>
+        </tr>
+      </tfoot>
+    ` : '';
+
     container.innerHTML = `
       <table class="pos-table">
         <thead>
@@ -4986,6 +4994,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
@@ -5015,6 +5024,16 @@
       `;
     });
 
+    const footerHtml = days.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${days.length} ថ្ងៃ)` : `Total (${days.length} Days)`}</td>
+          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(grandTotal)}</td>
+          <td>${window.POS_HELPERS.formatKHR(grandTotal)}</td>
+        </tr>
+      </tfoot>
+    ` : '';
+
     container.innerHTML = `
       <div style="padding: 12px; background:rgba(16,185,129,0.05); border-radius:6px; margin-bottom:12px; font-weight:800; font-size:12px; color:var(--primary);">
         Total Period Sales Volume: ${window.POS_HELPERS.formatUSD(grandTotal)} (${window.POS_HELPERS.formatKHR(grandTotal)})
@@ -5030,6 +5049,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
@@ -5083,9 +5103,16 @@
     });
 
     let rowsHtml = '';
-    Object.keys(prodSales).forEach(sku => {
+    let sumUnits = 0;
+    let sumRevenue = 0;
+    const skus = Object.keys(prodSales);
+
+    skus.forEach(sku => {
       const p = state.products.find(pr => pr.sku === sku);
       const name = p ? (state.lang === 'km' ? p.nameKh : p.nameEn) : 'Deleted Product';
+      
+      sumUnits += prodSales[sku];
+      sumRevenue += prodRevenue[sku];
       
       rowsHtml += `
         <tr>
@@ -5096,6 +5123,16 @@
         </tr>
       `;
     });
+
+    const footerHtml = skus.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="2" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${skus.length} មុខ)` : `Total (${skus.length} Items)`}</td>
+          <td style="text-align:center; font-weight:800; color:var(--secondary);">${sumUnits}</td>
+          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumRevenue)}</td>
+        </tr>
+      </tfoot>
+    ` : '';
 
     container.innerHTML = `
       ${filterRowHtml}
@@ -5111,6 +5148,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
 
@@ -5344,12 +5382,14 @@
 
   function renderCustomerPaymentsReport(container, start, end) {
     let rowsHtml = '';
+    let sumAmount = 0;
     const filtered = getFilteredPaymentLogs().filter(p => {
       const d = new Date(p.date);
       return d >= start && d <= end;
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
     filtered.forEach(log => {
+      sumAmount += log.amount;
       const methodTranslate = window.POS_TRANSLATIONS[state.lang][log.paymentMethod] || log.paymentMethod;
       rowsHtml += `
         <tr>
@@ -5361,6 +5401,16 @@
         </tr>
       `;
     });
+
+    const footerHtml = filtered.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="2" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${filtered.length} លើក)` : `Total (${filtered.length} Payments)`}</td>
+          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumAmount)}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    ` : '';
 
     container.innerHTML = `
       <table class="pos-table">
@@ -5376,12 +5426,16 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
 
   function renderStaffCommissionReport(container) {
     let rowsHtml = '';
+    let sumUnits = 0;
+    let sumSales = 0;
+    let sumComm = 0;
     
     // Calculates
     const salesVolume = {};
@@ -5393,7 +5447,8 @@
       unitsVolume[t.staffId] = (unitsVolume[t.staffId] || 0) + units;
     });
 
-    getFilteredStaff().forEach(s => {
+    const staffList = getFilteredStaff();
+    staffList.forEach(s => {
       const units = unitsVolume[s.id] || 0;
       const sales = salesVolume[s.id] || 0;
 
@@ -5404,6 +5459,10 @@
         }
       });
       const commAmount = sales * (rate / 100);
+
+      sumUnits += units;
+      sumSales += sales;
+      sumComm += commAmount;
 
       rowsHtml += `
         <tr>
@@ -5416,6 +5475,18 @@
         </tr>
       `;
     });
+
+    const footerHtml = staffList.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="2" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${staffList.length} នាក់)` : `Total (${staffList.length} Staff)`}</td>
+          <td style="text-align:center; font-weight:800; color:var(--secondary);">${sumUnits}</td>
+          <td style="font-weight:800;">${window.POS_HELPERS.formatUSD(sumSales)}</td>
+          <td></td>
+          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumComm)}</td>
+        </tr>
+      </tfoot>
+    ` : '';
 
     container.innerHTML = `
       <table class="pos-table">
@@ -5432,6 +5503,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
@@ -5439,10 +5511,12 @@
   function renderCustomerDebtReport(container) {
     let rowsHtml = '';
     let totalDebt = 0;
+    let debtCount = 0;
 
     getFilteredCustomers().forEach(c => {
       if (c.outstandingDebt > 0) {
         totalDebt += c.outstandingDebt;
+        debtCount++;
         rowsHtml += `
           <tr>
             <td><strong style="color:var(--secondary); font-family:monospace;">${c.id}</strong></td>
@@ -5454,6 +5528,15 @@
         `;
       }
     });
+
+    const footerHtml = debtCount > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="4" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${debtCount} នាក់)` : `Total (${debtCount} Customers)`}</td>
+          <td style="font-weight:800; color:var(--danger); text-align:right;">${window.POS_HELPERS.formatUSD(totalDebt)}</td>
+        </tr>
+      </tfoot>
+    ` : '';
 
     container.innerHTML = `
       <div style="padding: 12px; background:rgba(239,68,68,0.05); border-radius:6px; margin-bottom:12px; font-weight:800; font-size:12px; color:var(--danger); display:flex; justify-content:space-between;">
@@ -5473,6 +5556,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
@@ -5502,6 +5586,15 @@
       `;
     });
 
+    const footerHtml = filtered.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="3" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${filtered.length} ប្រតិបត្តិការ)` : `Total (${filtered.length} Transactions)`}</td>
+          <td style="font-weight:750; color:var(--danger);">${window.POS_HELPERS.formatUSD(totalAmount)}</td>
+        </tr>
+      </tfoot>
+    ` : '';
+
     container.innerHTML = `
       <div style="padding: 12px; background:rgba(239,68,68,0.05); border-radius:6px; margin-bottom:12px; font-weight:800; font-size:12px; color:var(--danger);">
         Total Period Expenses: ${window.POS_HELPERS.formatUSD(totalAmount)}
@@ -5518,6 +5611,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
@@ -5672,6 +5766,14 @@
       `;
     });
 
+    const footerHtml = filtered.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="4" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុបចំនួនជួរ៖` : `Total Rows:`} ${filtered.length}</td>
+        </tr>
+      </tfoot>
+    ` : '';
+
     container.innerHTML = `
       <table class="pos-table">
         <thead>
@@ -5685,18 +5787,21 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
 
   function renderVoidReport(container, start, end) {
     let rowsHtml = '';
+    let sumRefunded = 0;
     const filtered = getFilteredVoidedTransactions().filter(v => {
       const d = new Date(v.voidedAt);
       return d >= start && d <= end;
     }).sort((a,b) => new Date(b.voidedAt) - new Date(a.voidedAt));
 
     filtered.forEach(log => {
+      sumRefunded += log.total;
       rowsHtml += `
         <tr>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(log.voidedAt, state.lang)}</td>
@@ -5708,6 +5813,16 @@
         </tr>
       `;
     });
+
+    const footerHtml = filtered.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+          <td colspan="3" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${filtered.length} វិក្កយបត្រ)` : `Total (${filtered.length} Invoices)`}</td>
+          <td style="font-weight:750; color:var(--danger);">${window.POS_HELPERS.formatUSD(sumRefunded)}</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    ` : '';
 
     container.innerHTML = `
       <table class="pos-table">
@@ -5724,6 +5839,7 @@
         <tbody>
           ${rowsHtml || `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
+        ${footerHtml}
       </table>
     `;
   }
