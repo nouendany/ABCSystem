@@ -4943,12 +4943,14 @@
 
   function renderStockLogReport(container, start, end) {
     let rowsHtml = '';
+    let sumQtyShift = 0;
     const filtered = getFilteredStockLogs().filter(l => {
       const d = new Date(l.date);
       return d >= start && d <= end;
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
     filtered.forEach(log => {
+      sumQtyShift += log.qty;
       const p = state.products.find(prod => prod.sku === log.sku);
       const name = p ? (state.lang === 'km' ? p.nameKh : p.nameEn) : 'Deleted Product';
       const br = state.branches.find(b => b.id === log.warehouseId);
@@ -4973,8 +4975,12 @@
 
     const footerHtml = filtered.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="6" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? 'សរុបចំនួនជួរ៖' : 'Total Rows:'} ${filtered.length}</td>
+        <tr style="background:rgba(245,158,11,0.06); font-weight:800; border-top: 2px solid #f59e0b; font-size:13px;">
+          <td colspan="4" style="text-align:left; padding:12px 8px; color:#f59e0b;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="text-align:center; padding:12px 8px; font-weight:800; color:${sumQtyShift >= 0 ? '#10b981' : '#ef4444'};">
+            ${sumQtyShift >= 0 ? '+' + sumQtyShift : sumQtyShift}
+          </td>
+          <td></td>
         </tr>
       </tfoot>
     ` : '';
@@ -5026,10 +5032,10 @@
 
     const footerHtml = days.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${days.length} ថ្ងៃ)` : `Total (${days.length} Days)`}</td>
-          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(grandTotal)}</td>
-          <td>${window.POS_HELPERS.formatKHR(grandTotal)}</td>
+        <tr style="background:rgba(16,185,129,0.06); font-weight:800; border-top: 2.5px solid #10b981; font-size:13px;">
+          <td style="text-align:left; padding:12px 8px; color:#10b981;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="font-weight:800; color:#10b981; padding:12px 8px;">${window.POS_HELPERS.formatUSD(grandTotal)}</td>
+          <td style="font-weight:800; color:#3b82f6; padding:12px 8px;">${window.POS_HELPERS.formatKHR(grandTotal)}</td>
         </tr>
       </tfoot>
     ` : '';
@@ -5126,10 +5132,10 @@
 
     const footerHtml = skus.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="2" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${skus.length} មុខ)` : `Total (${skus.length} Items)`}</td>
-          <td style="text-align:center; font-weight:800; color:var(--secondary);">${sumUnits}</td>
-          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumRevenue)}</td>
+        <tr style="background:rgba(16,185,129,0.06); font-weight:800; border-top: 2.5px solid #10b981; font-size:13px;">
+          <td colspan="2" style="text-align:left; padding:12px 8px; color:#10b981;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="text-align:center; font-weight:800; color:#f59e0b; padding:12px 8px;">${sumUnits}</td>
+          <td style="font-weight:800; color:#10b981; padding:12px 8px;">${window.POS_HELPERS.formatUSD(sumRevenue)}</td>
         </tr>
       </tfoot>
     ` : '';
@@ -5404,9 +5410,9 @@
 
     const footerHtml = filtered.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="2" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${filtered.length} លើក)` : `Total (${filtered.length} Payments)`}</td>
-          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumAmount)}</td>
+        <tr style="background:rgba(16,185,129,0.06); font-weight:800; border-top: 2.5px solid #10b981; font-size:13px;">
+          <td colspan="2" style="text-align:left; padding:12px 8px; color:#10b981;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="font-weight:800; color:#10b981; padding:12px 8px;">${window.POS_HELPERS.formatUSD(sumAmount)}</td>
           <td colspan="2"></td>
         </tr>
       </tfoot>
@@ -5478,12 +5484,12 @@
 
     const footerHtml = staffList.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="2" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${staffList.length} នាក់)` : `Total (${staffList.length} Staff)`}</td>
-          <td style="text-align:center; font-weight:800; color:var(--secondary);">${sumUnits}</td>
-          <td style="font-weight:800;">${window.POS_HELPERS.formatUSD(sumSales)}</td>
+        <tr style="background:rgba(16,185,129,0.06); font-weight:800; border-top: 2.5px solid #10b981; font-size:13px;">
+          <td colspan="2" style="text-align:left; padding:12px 8px; color:#10b981;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="text-align:center; font-weight:800; color:#f59e0b; padding:12px 8px;">${sumUnits}</td>
+          <td style="font-weight:800; color:#3b82f6; padding:12px 8px;">${window.POS_HELPERS.formatUSD(sumSales)}</td>
           <td></td>
-          <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumComm)}</td>
+          <td style="font-weight:800; color:#10b981; padding:12px 8px;">${window.POS_HELPERS.formatUSD(sumComm)}</td>
         </tr>
       </tfoot>
     ` : '';
@@ -5531,9 +5537,9 @@
 
     const footerHtml = debtCount > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="4" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${debtCount} នាក់)` : `Total (${debtCount} Customers)`}</td>
-          <td style="font-weight:800; color:var(--danger); text-align:right;">${window.POS_HELPERS.formatUSD(totalDebt)}</td>
+        <tr style="background:rgba(239,68,68,0.06); font-weight:800; border-top: 2.5px solid #ef4444; font-size:13px;">
+          <td colspan="4" style="text-align:left; padding:12px 8px; color:#ef4444;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="font-weight:800; color:#ef4444; text-align:right; padding:12px 8px;">${window.POS_HELPERS.formatUSD(totalDebt)}</td>
         </tr>
       </tfoot>
     ` : '';
@@ -5588,9 +5594,9 @@
 
     const footerHtml = filtered.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="3" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${filtered.length} ប្រតិបត្តិការ)` : `Total (${filtered.length} Transactions)`}</td>
-          <td style="font-weight:750; color:var(--danger);">${window.POS_HELPERS.formatUSD(totalAmount)}</td>
+        <tr style="background:rgba(239,68,68,0.06); font-weight:800; border-top: 2.5px solid #ef4444; font-size:13px;">
+          <td colspan="3" style="text-align:left; padding:12px 8px; color:#ef4444;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="font-weight:800; color:#ef4444; padding:12px 8px;">${window.POS_HELPERS.formatUSD(totalAmount)}</td>
         </tr>
       </tfoot>
     ` : '';
@@ -5755,7 +5761,15 @@
       return d >= start && d <= end;
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
+    let cCount = 0;
+    let sCount = 0;
+    let uCount = 0;
+
     filtered.forEach(log => {
+      if (log.type === 'Customer') cCount++;
+      else if (log.type === 'Employee Staff') sCount++;
+      else if (log.type === 'User Login') uCount++;
+
       rowsHtml += `
         <tr>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(log.date, state.lang)}</td>
@@ -5768,8 +5782,13 @@
 
     const footerHtml = filtered.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="4" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុបចំនួនជួរ៖` : `Total Rows:`} ${filtered.length}</td>
+        <tr style="background:rgba(59,130,246,0.06); font-weight:800; border-top: 2.5px solid #3b82f6; font-size:13px;">
+          <td colspan="4" style="text-align:left; padding:12px 8px; color:#3b82f6;">
+            📊 ${state.lang === 'km' ? 'សរុប (Total)៖' : 'Total:'} 
+            <span style="color:var(--text-primary); margin-left:12px;">👤 ${state.lang === 'km' ? 'អតិថិជន' : 'Customers'}: ${cCount}</span>
+            <span style="color:var(--text-primary); margin-left:12px;">💼 ${state.lang === 'km' ? 'បុគ្គលិក' : 'Staff'}: ${sCount}</span>
+            <span style="color:var(--text-primary); margin-left:12px;">🔑 ${state.lang === 'km' ? 'គណនី' : 'Users'}: ${uCount}</span>
+          </td>
         </tr>
       </tfoot>
     ` : '';
@@ -5816,9 +5835,9 @@
 
     const footerHtml = filtered.length > 0 ? `
       <tfoot>
-        <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
-          <td colspan="3" style="text-align:left; font-size:12px;">📊 ${state.lang === 'km' ? `សរុប (${filtered.length} វិក្កយបត្រ)` : `Total (${filtered.length} Invoices)`}</td>
-          <td style="font-weight:750; color:var(--danger);">${window.POS_HELPERS.formatUSD(sumRefunded)}</td>
+        <tr style="background:rgba(239,68,68,0.06); font-weight:800; border-top: 2.5px solid #ef4444; font-size:13px;">
+          <td colspan="3" style="text-align:left; padding:12px 8px; color:#ef4444;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="font-weight:800; color:#ef4444; padding:12px 8px;">${window.POS_HELPERS.formatUSD(sumRefunded)}</td>
           <td colspan="2"></td>
         </tr>
       </tfoot>
