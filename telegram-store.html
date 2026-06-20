@@ -912,6 +912,7 @@
 
     // Application state
     let employeeData = null;
+    let companySettings = {};
     let productsList = [];
     let categoriesList = [];
     let branchesList = [];
@@ -1018,6 +1019,10 @@
       showOverlay("Loading configurations...");
 
       try {
+        // 0. Fetch Company Settings
+        const settingsSnap = await db.collection('company_settings').doc('global').get();
+        companySettings = settingsSnap.exists ? settingsSnap.data() : {};
+
         // 1. Fetch Branches
         const branchSnap = await db.collection('branches').get();
         branchesList = [];
@@ -1235,10 +1240,12 @@
       const discAmount = parseFloat((subtotal * (discPercent / 100)).toFixed(2));
       const shipping = parseFloat(shippingFee.value) || 0;
 
-      // Vat Rate 10%
-      const taxRate = 10;
+      // VAT Management Settings integration
+      const vatEnabled = companySettings && companySettings.vatEnabled !== false;
+      const vatRate = vatEnabled ? (companySettings.defaultVatRate !== undefined ? parseFloat(companySettings.defaultVatRate) : 10) : 0;
+      
       const taxableAmount = Math.max(0, subtotal - discAmount);
-      const taxAmount = parseFloat((taxableAmount * (taxRate / 100)).toFixed(2));
+      const taxAmount = parseFloat((taxableAmount * (vatRate / 100)).toFixed(2));
       const grandTotal = parseFloat((taxableAmount + taxAmount + shipping).toFixed(2));
 
       // Update previews
