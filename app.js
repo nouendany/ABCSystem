@@ -2752,6 +2752,7 @@
         <td><strong>${p.nameEn}</strong></td>
         <td>${p.nameKh}</td>
         <td><span class="badge badge-warning" style="text-transform:none;">${p.category}</span></td>
+        <td style="font-weight:750; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(p.costPrice)}</td>
         <td style="font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</td>
         <td style="text-align:center; font-weight:800; color:${branchQty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${branchQty}</td>
         <td>${statusBadge}</td>
