@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FutureTech Sales Ordering</title>
+  
+  <!-- Google Fonts: Outfit & Koh Santepheap for Khmer -->
+  <link href="https://fonts.googleapis.com/css2?family=Koh+Santepheap:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <!-- Firebase Compat SDK from CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: rgba(37, 99, 235, 0.08);
+      --success: #10b981;
+      --success-light: rgba(16, 185, 129, 0.1);
+      --danger: #ef4444;
+      --border: #e2e8f0;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', 'Koh Santepheap', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header Styling */
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #ffffff;
+      padding: 16px 20px 20px 20px;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: linear-gradient(to right, #60a5fa, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .employee-tag {
+      font-size: 12px;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .branch-select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .branch-select-wrapper select {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .branch-select-wrapper select:focus {
+      border-color: #60a5fa;
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .branch-select-wrapper::after {
+      content: '▼';
+      font-size: 9px;
+      color: #94a3b8;
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    /* Controls (Search & Filter Bar) */
+    .controls-container {
+      padding: 16px 16px 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-box input {
+      width: 100%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 12px 16px 12px 42px;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      color: var(--text-main);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.1);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
+
+    /* Category Navigation */
+    .categories-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none; /* Hide scrollbar for Firefox */
+    }
+
+    .categories-bar::-webkit-scrollbar {
+      display: none; /* Hide scrollbar for Chrome/Safari */
+    }
+
+    .category-tab {
+      padding: 8px 16px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .category-tab.active {
+      background-color: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    /* Products Grid */
+    .products-container {
+      flex: 1;
+      padding: 0 16px 90px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .product-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+      transition: var(--transition);
+    }
+
+    .product-card:active {
+      transform: scale(0.97);
+    }
+
+    .product-card.out-of-stock {
+      opacity: 0.65;
+    }
+
+    .product-card-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: var(--danger);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    .product-image-fallback {
+      width: 100%;
+      aspect-ratio: 1.2/1;
+      background-color: #f8fafc;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #cbd5e1;
+    }
+
+    .product-image-fallback svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .product-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.3;
+      height: 34px;
+    }
+
+    .product-sku {
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--text-muted);
+      background-color: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      width: fit-content;
+    }
+
+    .product-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 4px;
+    }
+
+    .product-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .product-stock {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .product-stock strong {
+      color: var(--text-main);
+    }
+
+    .add-to-cart-btn {
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .add-to-cart-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .add-to-cart-btn:disabled {
+      background-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    /* Cart Action Bar (Bottom Bar) */
+    .cart-action-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+      z-index: 9;
+    }
+
+    .cart-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cart-summary-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .cart-total-amount {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .view-cart-btn {
+      background-color: var(--primary);
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 6px rgba(37, 99, 235, 0.15);
+      transition: var(--transition);
+    }
+
+    .view-cart-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .view-cart-btn:disabled {
+      background-color: #cbd5e1;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Cart Drawer / Bottom Sheet */
+    .cart-drawer-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(15, 23, 42, 0.65);
+      z-index: 100;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .cart-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: var(--card-bg);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      z-index: 101;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .cart-drawer-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-drawer-title {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .close-drawer-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+    }
+
+    .cart-drawer-content {
+      overflow-y: auto;
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Cart Item Row */
+    .cart-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .cart-item-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      padding-right: 12px;
+    }
+
+    .cart-item-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .cart-item-price {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .cart-qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 6px;
+    }
+
+    .qty-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .qty-btn:hover {
+      background-color: var(--bg-color);
+    }
+
+    .qty-value {
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    /* Checkout Forms */
+    .checkout-section-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+      border-left: 3px solid var(--primary);
+      padding-left: 8px;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      color: var(--text-main);
+      transition: var(--transition);
+    }
+
+    .form-group input:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+
+    /* Autosuggest for Customers */
+    .autosuggest-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #ffffff;
+      border: 1px solid var(--border);
+      border-bottom-left-radius: var(--radius-sm);
+      border-bottom-right-radius: var(--radius-sm);
+      z-index: 10;
+      max-height: 150px;
+      overflow-y: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      display: none;
+    }
+
+    .autosuggest-item {
+      padding: 10px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .autosuggest-item:hover {
+      background-color: #f8fafc;
+    }
+
+    .autosuggest-item span.phone {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    /* Bill Calculation Card */
+    .bill-summary-card {
+      background-color: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .bill-row.label-muted {
+      color: var(--text-muted);
+    }
+
+    .bill-row.total-row {
+      font-size: 16px;
+      font-weight: 800;
+      border-top: 1.5px dashed var(--border);
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .checkout-drawer-btn {
+      width: 100%;
+      padding: 14px;
+      background-color: var(--primary);
+      color: white;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+      transition: var(--transition);
+    }
+
+    .checkout-drawer-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    /* Screen Overlay states */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.96);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status-msg {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    .success-checkmark {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: var(--success-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--success);
+      font-size: 40px;
+      margin-bottom: 8px;
+    }
+
+    .receipt-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #ffffff;
+      padding: 16px;
+      width: 85%;
+      max-width: 320px;
+      font-size: 12px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .receipt-divider {
+      border-bottom: 1.5px dashed var(--border);
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header>
+    <div class="header-top">
+      <div class="brand-title">FutureTech POS</div>
+      <div class="employee-tag" id="employee-display">
+        👤 Loading...
+      </div>
+    </div>
+    
+    <div class="branch-select-wrapper">
+      <select id="branch-select">
+        <!-- Load dynamically -->
+      </select>
+    </div>
+  </header>
+
+  <!-- Controls (Search + Categories) -->
+  <div class="controls-container">
+    <div class="search-box">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+      <input type="text" id="search-input" placeholder="ស្វែងរកទំនិញ (Search product/SKU)...">
+    </div>
+
+    <div class="categories-bar" id="categories-tabs">
+      <span class="category-tab active" data-category="all">ទាំងអស់ (All)</span>
+      <!-- Categories loaded dynamically -->
+    </div>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-container" id="products-grid">
+    <!-- Loaded dynamically -->
+  </div>
+
+  <!-- Cart Bottom Action Bar -->
+  <div class="cart-action-bar">
+    <div class="cart-info">
+      <div class="cart-summary-text" id="cart-item-count">0 items</div>
+      <div class="cart-total-amount" id="cart-total-preview">$0.00</div>
+    </div>
+    <button class="view-cart-btn" id="btn-view-cart" disabled>
+      🛒 View Cart
+    </button>
+  </div>
+
+  <!-- Cart Drawer Sheet -->
+  <div class="cart-drawer-backdrop" id="cart-backdrop"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-drawer-header">
+      <div class="cart-drawer-title">🛒 សម្រង់ទំនិញកម្មង់ (Order Cart)</div>
+      <button class="close-drawer-btn" id="btn-close-drawer">✕</button>
+    </div>
+    
+    <div class="cart-drawer-content">
+      <!-- Cart Items List -->
+      <div id="cart-items-list">
+        <!-- Loaded dynamically -->
+      </div>
+
+      <!-- Customer Panel -->
+      <div class="checkout-section-title">👤 ព័ត៌មានអតិថិជន (Customer Information)</div>
+      
+      <!-- Customer Search input -->
+      <div class="form-group">
+        <label for="customer-search">ស្វែងរកអតិថិជនដែលមានស្រាប់ (Search Existing Customer)</label>
+        <input type="text" id="customer-search" placeholder="វាយលេខទូរស័ព្ទ ឬឈ្មោះ..." autocomplete="off">
+        <div class="autosuggest-list" id="autosuggest-customers">
+          <!-- Loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- New/Editable customer fields -->
+      <div class="form-group">
+        <label for="customer-name">ឈ្មោះអតិថិជន (Customer Name) *</label>
+        <input type="text" id="customer-name" placeholder="ឈ្មោះអតិថិជន...">
+      </div>
+
+      <div class="form-group">
+        <label for="customer-phone">លេខទូរស័ព្ទ (Customer Phone) *</label>
+        <input type="tel" id="customer-phone" placeholder="លេខទូរស័ព្ទ...">
+      </div>
+
+      <div class="form-group">
+        <label for="customer-address">ទីតាំងប្រគល់ទំនិញ (Delivery Location) *</label>
+        <textarea id="customer-address" rows="2" placeholder="អាសយដ្ឋាន ឬទីតាំងលម្អិតរបស់អតិថិជន..."></textarea>
+      </div>
+
+      <!-- Pricing Adjustments -->
+      <div class="checkout-section-title">💵 ការបញ្ចុះតម្លៃ \ ដឹកជញ្ជូន (Adjustments)</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label for="discount-percent">បញ្ចុះតម្លៃ (%) (Discount %)</label>
+          <input type="number" id="discount-percent" value="0" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label for="shipping-fee">ថ្លៃដឹកជញ្ជូន ($) (Shipping Fee)</label>
+          <input type="number" id="shipping-fee" value="0" min="0" step="0.5">
+        </div>
+      </div>
+
+      <!-- Pricing summaries -->
+      <div class="bill-summary-card">
+        <div class="bill-row label-muted">
+          <span>តម្លៃសរុប (Subtotal):</span>
+          <span id="bill-subtotal">$0.00</span>
+        </div>
+        <div class="bill-row label-muted">
+          <span>បញ្ចុះតម្លៃ (Discount):</span>
+          <span id="bill-discount">-$0.00</span>
+        </div>
+        <div class="bill-row label-muted">
+          <span>ថ្លៃដឹក (Shipping):</span>
+          <span id="bill-shipping">+$0.00</span>
+        </div>
+        <div class="bill-row label-muted">
+          <span>ពន្ធ (Tax 10%):</span>
+          <span id="bill-tax">+$0.00</span>
+        </div>
+        <div class="bill-row total-row">
+          <span>តម្លៃត្រូវបង់សរុប (Grand Total):</span>
+          <span id="bill-grand-total">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Place order button -->
+      <button class="checkout-drawer-btn" id="btn-submit-order">
+        Confirm & Place Order
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading / Result Screens -->
+  <div class="overlay" id="overlay">
+    <div class="spinner" id="overlay-spinner"></div>
+    <div class="success-checkmark" id="overlay-success" style="display: none;">✓</div>
+    <div class="status-msg" id="overlay-msg">Connecting to Firebase...</div>
+    
+    <!-- Receipt summary shown on success -->
+    <div class="receipt-box" id="overlay-receipt" style="display: none;">
+      <!-- Loaded dynamically -->
+    </div>
+    
+    <button class="view-cart-btn" id="btn-overlay-close" style="display: none; width: auto; margin-top: 8px;">
+      Done
+    </button>
+  </div>
+
+  <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    // Firebase Configurations
+    const firebaseConfig = {
+      apiKey: "AIzaSyCGVfZo-Hpc-wdQv21he4Js0K3RuyZ3VQ",
+      authDomain: "abc-system-2c0e4.firebaseapp.com",
+      projectId: "abc-system-2c0e4",
+      storageBucket: "abc-system-2c0e4.firebasestorage.app",
+      messagingSenderId: "1078178677076",
+      appId: "1:1078178677076:web:b2953a455bd930460848c1",
+      measurementId: "G-QXTYZTKC6T"
+    };
+
+    // Initialize Firebase Compat
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Parse queries
+    const urlParams = new URLSearchParams(window.location.search);
+    const employeeId = urlParams.get('employeeId') || '';
+    const chatId = urlParams.get('chatId') || '';
+
+    // Application state
+    let employeeData = null;
+    let productsList = [];
+    let categoriesList = [];
+    let branchesList = [];
+    let customersList = [];
+    let activeBranchId = 'BR-001';
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let cart = [];
+
+    // UI Elements
+    const employeeDisplay = document.getElementById('employee-display');
+    const branchSelect = document.getElementById('branch-select');
+    const categoriesTabs = document.getElementById('categories-tabs');
+    const productsGrid = document.getElementById('products-grid');
+    const cartItemCount = document.getElementById('cart-item-count');
+    const cartTotalPreview = document.getElementById('cart-total-preview');
+    const btnViewCart = document.getElementById('btn-view-cart');
+    const cartDrawer = document.getElementById('cart-drawer');
+    const cartBackdrop = document.getElementById('cart-backdrop');
+    const btnCloseDrawer = document.getElementById('btn-close-drawer');
+    const cartItemsList = document.getElementById('cart-items-list');
+    const customerSearch = document.getElementById('customer-search');
+    const autosuggestCustomers = document.getElementById('autosuggest-customers');
+    
+    // Form fields
+    const customerName = document.getElementById('customer-name');
+    const customerPhone = document.getElementById('customer-phone');
+    const customerAddress = document.getElementById('customer-address');
+    const discountPercent = document.getElementById('discount-percent');
+    const shippingFee = document.getElementById('shipping-fee');
+    
+    // Summaries
+    const billSubtotal = document.getElementById('bill-subtotal');
+    const billDiscount = document.getElementById('bill-discount');
+    const billShipping = document.getElementById('bill-shipping');
+    const billTax = document.getElementById('bill-tax');
+    const billGrandTotal = document.getElementById('bill-grand-total');
+    
+    const btnSubmitOrder = document.getElementById('btn-submit-order');
+    const searchInput = document.getElementById('search-input');
+    const overlay = document.getElementById('overlay');
+    const overlaySpinner = document.getElementById('overlay-spinner');
+    const overlaySuccess = document.getElementById('overlay-success');
+    const overlayMsg = document.getElementById('overlay-msg');
+    const overlayReceipt = document.getElementById('overlay-receipt');
+    const btnOverlayClose = document.getElementById('btn-overlay-close');
+
+    // Loading overlay controls
+    function showOverlay(msg) {
+      overlay.style.display = 'flex';
+      overlaySpinner.style.display = 'block';
+      overlaySuccess.style.display = 'none';
+      overlayReceipt.style.display = 'none';
+      btnOverlayClose.style.display = 'none';
+      overlayMsg.innerText = msg;
+    }
+
+    function hideOverlay() {
+      overlay.style.display = 'none';
+    }
+
+    function showOrderSuccess(invoiceNo, total, custName, custPhone, itemsCount) {
+      overlaySpinner.style.display = 'none';
+      overlaySuccess.style.display = 'flex';
+      overlayMsg.innerHTML = `<span style="color:var(--success); font-size:18px;">Order Placed Successfully!</span>`;
+      
+      // Build receipt layout
+      overlayReceipt.innerHTML = `
+        <div style="text-align:center; font-weight:800; font-size:14px; margin-bottom:4px;">FutureTech Invoice</div>
+        <div style="text-align:center; color:var(--text-muted); margin-bottom:8px;">INV: ${invoiceNo}</div>
+        <div class="receipt-divider"></div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>អតិថិជន (Customer):</span>
+          <strong>${custName}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>លេខទូរស័ព្ទ (Phone):</span>
+          <span>${custPhone}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>ចំនួនទំនិញ (Items Count):</span>
+          <span>${itemsCount} products</span>
+        </div>
+        <div class="receipt-divider"></div>
+        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800;">
+          <span>តម្លៃសរុប (Total Paid):</span>
+          <span style="color:var(--primary);">$${total}</span>
+        </div>
+      `;
+      overlayReceipt.style.display = 'flex';
+      btnOverlayClose.style.display = 'block';
+    }
+
+    function showOverlayError(err) {
+      overlaySpinner.style.display = 'none';
+      overlaySuccess.style.display = 'none';
+      overlayMsg.innerHTML = `<span style="color:var(--danger);">⚠️ Error: ${err}</span>`;
+      btnOverlayClose.style.display = 'block';
+      btnOverlayClose.innerText = 'Close';
+    }
+
+    // Fetch master data on load
+    async function loadData() {
+      showOverlay("Loading configurations...");
+
+      try {
+        // 1. Fetch Branches
+        const branchSnap = await db.collection('branches').get();
+        branchesList = [];
+        branchSnap.forEach(doc => branchesList.push({ id: doc.id, ...doc.data() }));
+
+        // Load active branch from localStorage if set
+        const cachedBranch = localStorage.getItem('abc_active_branch');
+        if (cachedBranch && branchesList.find(b => b.id === cachedBranch)) {
+          activeBranchId = cachedBranch;
+        } else if (branchesList.length > 0) {
+          activeBranchId = branchesList[0].id;
+        }
+
+        // Render Branch select
+        branchSelect.innerHTML = branchesList.map(b => 
+          `<option value="${b.id}" ${b.id === activeBranchId ? 'selected' : ''}>${b.nameKh || b.name} (${b.code})</option>`
+        ).join('');
+
+        // 2. Fetch Categories
+        const catSnap = await db.collection('categories').get();
+        categoriesList = [];
+        catSnap.forEach(doc => categoriesList.push({ id: doc.id, ...doc.data() }));
+
+        // Render Category Tabs
+        const catHtml = categoriesList.map(c => 
+          `<span class="category-tab" data-category="${c.id}">${c.nameKh || c.name}</span>`
+        ).join('');
+        categoriesTabs.innerHTML = `<span class="category-tab active" data-category="all">ទាំងអស់ (All)</span>` + catHtml;
+
+        // Add Tab Listeners
+        document.querySelectorAll('.category-tab').forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            activeCategory = tab.getAttribute('data-category');
+            renderProducts();
+          });
+        });
+
+        // 3. Fetch Customers for autosuggest
+        const custSnap = await db.collection('customers').get();
+        customersList = [];
+        custSnap.forEach(doc => customersList.push({ id: doc.id, ...doc.data() }));
+
+        // 4. Fetch Products and setup live listener
+        db.collection('products').onSnapshot(snapshot => {
+          productsList = [];
+          snapshot.forEach(doc => productsList.push({ sku: doc.id, ...doc.data() }));
+          renderProducts();
+          updateCartUI();
+        });
+
+        // 5. Fetch Employee Details
+        if (employeeId) {
+          const empSnap = await db.collection('employees').doc(employeeId).get();
+          if (empSnap.exists) {
+            employeeData = empSnap.data();
+            employeeDisplay.innerText = `👤 ${employeeData.fullName}`;
+          } else {
+            // Check by id property
+            const empQ = await db.collection('employees').where('id', '==', employeeId).get();
+            if (!empQ.empty) {
+              employeeData = empQ.docs[0].data();
+              employeeDisplay.innerText = `👤 ${employeeData.fullName}`;
+            } else {
+              employeeDisplay.innerText = `👤 ID: ${employeeId}`;
+            }
+          }
+        } else {
+          employeeDisplay.innerText = `👤 Guest Seller`;
+        }
+
+        hideOverlay();
+      } catch (err) {
+        console.error("Fetch data error:", err);
+        showOverlayError("Failed to fetch database records: " + err.message);
+      }
+    }
+
+    // Render Products Grid
+    function renderProducts() {
+      productsGrid.innerHTML = '';
+      
+      const filtered = productsList.filter(p => {
+        // Search Filter
+        const queryText = searchQuery.toLowerCase().trim();
+        const matchesQuery = !queryText || 
+                            p.sku.toLowerCase().includes(queryText) || 
+                            (p.nameEn && p.nameEn.toLowerCase().includes(queryText)) ||
+                            (p.nameKh && p.nameKh.toLowerCase().includes(queryText));
+
+        // Category Filter
+        const matchesCategory = activeCategory === 'all' || p.categoryId === activeCategory;
+
+        return matchesQuery && matchesCategory;
+      });
+
+      if (filtered.length === 0) {
+        productsGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:32px 0; color:var(--text-muted); font-size:13px;">មិនមានទំនិញឡើយ (No products found)</div>`;
+        return;
+      }
+
+      filtered.forEach(p => {
+        const stockQty = p.warehouseStock ? (p.warehouseStock[activeBranchId] || 0) : 0;
+        const isOutOfStock = stockQty <= 0;
+        
+        const card = document.createElement('div');
+        card.className = `product-card ${isOutOfStock ? 'out-of-stock' : ''}`;
+        
+        card.innerHTML = `
+          ${isOutOfStock ? `<span class="product-card-badge">អស់ស្តុក</span>` : ''}
+          <div class="product-image-fallback">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+          </div>
+          <div class="product-name">${p.nameKh || p.nameEn || p.sku}</div>
+          <div class="product-sku">${p.sku}</div>
+          <div class="product-footer">
+            <div>
+              <div class="product-price">$${p.sellingPrice.toFixed(2)}</div>
+              <div class="product-stock">ស្តុក: <strong>${stockQty}</strong></div>
+            </div>
+            <button class="add-to-cart-btn" data-sku="${p.sku}" ${isOutOfStock ? 'disabled' : ''}>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:18px; height:18px; stroke-width:2.5;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+              </svg>
+            </button>
+          </div>
+        `;
+
+        // Add to cart click event
+        card.querySelector('.add-to-cart-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          addToCart(p);
+        });
+
+        productsGrid.appendChild(card);
+      });
+    }
+
+    // Add product to cart
+    function addToCart(product) {
+      const stockLimit = product.warehouseStock ? (product.warehouseStock[activeBranchId] || 0) : 0;
+      const existing = cart.find(item => item.sku === product.sku);
+
+      if (existing) {
+        if (existing.qty >= stockLimit) {
+          alert(`មិនអាចបញ្ជាទិញលើសស្តុកបានទេ! ស្តុកទំនិញនេះគឺ៖ ${stockLimit}`);
+          return;
+        }
+        existing.qty++;
+      } else {
+        if (stockLimit <= 0) {
+          alert("ទំនិញនេះអស់ពីស្តុកហើយ!");
+          return;
+        }
+        cart.push({
+          sku: product.sku,
+          nameEn: product.nameEn,
+          nameKh: product.nameKh || product.nameEn,
+          price: product.sellingPrice,
+          qty: 1,
+          stockLimit: stockLimit
+        });
+      }
+
+      updateCartUI();
+    }
+
+    // Remove or decrement item in cart
+    function decrementCartItem(sku) {
+      const existing = cart.find(item => item.sku === sku);
+      if (existing) {
+        existing.qty--;
+        if (existing.qty <= 0) {
+          cart = cart.filter(item => item.sku !== sku);
+        }
+      }
+      updateCartUI();
+    }
+
+    // Increment item inside cart drawer
+    function incrementCartItem(sku) {
+      const existing = cart.find(item => item.sku === sku);
+      if (existing) {
+        if (existing.qty >= existing.stockLimit) {
+          alert(`មិនអាចលក់លើសស្តុកបានទេ! ស្តុកគឺ៖ ${existing.stockLimit}`);
+          return;
+        }
+        existing.qty++;
+      }
+      updateCartUI();
+    }
+
+    // Calculate cart pricing and update UI labels
+    function updateCartPricing() {
+      let subtotal = 0;
+      cart.forEach(item => {
+        // Re-read current price from productsList to ensure accuracy
+        const p = productsList.find(x => x.sku === item.sku);
+        if (p) {
+          item.price = p.sellingPrice;
+          item.stockLimit = p.warehouseStock ? (p.warehouseStock[activeBranchId] || 0) : 0;
+        }
+        subtotal += item.price * item.qty;
+      });
+
+      // Fetch adjustments
+      const discPercent = parseFloat(discountPercent.value) || 0;
+      const discAmount = parseFloat((subtotal * (discPercent / 100)).toFixed(2));
+      const shipping = parseFloat(shippingFee.value) || 0;
+
+      // Vat Rate 10%
+      const taxRate = 10;
+      const taxableAmount = Math.max(0, subtotal - discAmount);
+      const taxAmount = parseFloat((taxableAmount * (taxRate / 100)).toFixed(2));
+      const grandTotal = parseFloat((taxableAmount + taxAmount + shipping).toFixed(2));
+
+      // Update previews
+      cartTotalPreview.innerText = `$${grandTotal.toFixed(2)}`;
+      billSubtotal.innerText = `$${subtotal.toFixed(2)}`;
+      billDiscount.innerText = `-$${discAmount.toFixed(2)}`;
+      billShipping.innerText = `+$${shipping.toFixed(2)}`;
+      billTax.innerText = `+$${taxAmount.toFixed(2)}`;
+      billGrandTotal.innerText = `$${grandTotal.toFixed(2)}`;
+      
+      return { subtotal, grandTotal };
+    }
+
+    // Update bottom bar counts and drawer lists
+    function updateCartUI() {
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      cartItemCount.innerText = `${totalQty} products`;
+      
+      const { grandTotal } = updateCartPricing();
+
+      if (totalQty > 0) {
+        btnViewCart.disabled = false;
+      } else {
+        btnViewCart.disabled = true;
+        closeCartDrawer();
+      }
+
+      // Render Drawer items
+      cartItemsList.innerHTML = '';
+      if (cart.length === 0) {
+        cartItemsList.innerHTML = `<div style="text-align:center; padding:16px 0; color:var(--text-muted); font-size:12px;">គ្មានទំនិញក្នុងកន្ត្រកឡើយ</div>`;
+        return;
+      }
+
+      cart.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'cart-item-row';
+        row.innerHTML = `
+          <div class="cart-item-details">
+            <div class="cart-item-name">${item.nameKh || item.nameEn}</div>
+            <div class="cart-item-price">$${item.price.toFixed(2)} x ${item.qty} = <strong>$${(item.price * item.qty).toFixed(2)}</strong></div>
+          </div>
+          <div class="cart-qty-controls">
+            <button class="qty-btn btn-minus" data-sku="${item.sku}">−</button>
+            <span class="qty-value">${item.qty}</span>
+            <button class="qty-btn btn-plus" data-sku="${item.sku}">+</button>
+          </div>
+        `;
+
+        row.querySelector('.btn-minus').addEventListener('click', () => decrementCartItem(item.sku));
+        row.querySelector('.btn-plus').addEventListener('click', () => incrementCartItem(item.sku));
+
+        cartItemsList.appendChild(row);
+      });
+    }
+
+    // Open/Close Drawer sheets
+    function openCartDrawer() {
+      cartBackdrop.style.display = 'block';
+      cartDrawer.style.display = 'flex';
+      setTimeout(() => {
+        cartBackdrop.style.opacity = '1';
+        cartDrawer.style.transform = 'translateY(0)';
+      }, 50);
+    }
+
+    function closeCartDrawer() {
+      cartBackdrop.style.opacity = '0';
+      cartDrawer.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        cartBackdrop.style.display = 'none';
+        cartDrawer.style.display = 'none';
+      }, 350);
+    }
+
+    // Setup Branch Select change
+    branchSelect.addEventListener('change', (e) => {
+      activeBranchId = e.target.value;
+      localStorage.setItem('abc_active_branch', activeBranchId);
+      
+      // Reset cart to prevent cross-branch inventory mismatch
+      cart = [];
+      updateCartUI();
+      renderProducts();
+    });
+
+    // Search input typing
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderProducts();
+    });
+
+    // Customer Autosuggest Logic
+    customerSearch.addEventListener('input', (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      autosuggestCustomers.innerHTML = '';
+      
+      if (!val) {
+        autosuggestCustomers.style.display = 'none';
+        return;
+      }
+
+      const matches = customersList.filter(c => 
+        c.name.toLowerCase().includes(val) || 
+        c.phone.includes(val)
+      ).slice(0, 5);
+
+      if (matches.length === 0) {
+        autosuggestCustomers.innerHTML = `<div class="autosuggest-item" style="color:var(--text-muted); font-style:italic;">No customer found. Will create new.</div>`;
+      } else {
+        matches.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'autosuggest-item';
+          item.innerHTML = `<span>${c.name}</span> <span class="phone">${c.phone}</span>`;
+          
+          item.addEventListener('click', () => {
+            customerName.value = c.name;
+            customerPhone.value = c.phone;
+            customerAddress.value = c.address || '';
+            
+            autosuggestCustomers.style.display = 'none';
+            customerSearch.value = '';
+          });
+          autosuggestCustomers.appendChild(item);
+        });
+      }
+      
+      autosuggestCustomers.style.display = 'block';
+    });
+
+    // Close suggest list on click outside
+    document.addEventListener('click', (e) => {
+      if (e.target !== customerSearch) {
+        autosuggestCustomers.style.display = 'none';
+      }
+    });
+
+    // Discount/Shipping adjustments listeners
+    discountPercent.addEventListener('input', updateCartPricing);
+    shippingFee.addEventListener('input', updateCartPricing);
+
+    btnViewCart.addEventListener('click', openCartDrawer);
+    btnCloseDrawer.addEventListener('click', closeCartDrawer);
+    cartBackdrop.addEventListener('click', closeCartDrawer);
+
+    // Checkout Submit
+    btnSubmitOrder.addEventListener('click', async () => {
+      if (cart.length === 0) {
+        alert("កន្ត្រកទំនិញទទេស្អាត!");
+        return;
+      }
+
+      const cName = customerName.value.trim();
+      const cPhone = customerPhone.value.trim();
+      const cAddress = customerAddress.value.trim();
+
+      if (!cName || !cPhone || !cAddress) {
+        alert("សូមបំពេញ ឈ្មោះ លេខទូរស័ព្ទ និងទីតាំងអតិថិជនឱ្យបានគ្រប់គ្រាន់!");
+        return;
+      }
+
+      showOverlay("Submitting order to POS...");
+
+      const payload = {
+        webAppOrder: true,
+        employeeId: employeeId,
+        chatId: chatId,
+        branchId: activeBranchId,
+        cart: cart.map(item => ({ sku: item.sku, qty: item.qty })),
+        customerName: cName,
+        customerPhone: cPhone,
+        customerAddress: cAddress,
+        discountPercent: parseFloat(discountPercent.value) || 0,
+        shippingFee: parseFloat(shippingFee.value) || 0
+      };
+
+      try {
+        const response = await fetch('/api/bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const resData = await response.json();
+
+        if (response.ok && resData.ok) {
+          const totalPaid = billGrandTotal.innerText.replace('$', '');
+          
+          showOrderSuccess(
+            resData.invoiceNo, 
+            totalPaid, 
+            cName, 
+            cPhone, 
+            cart.reduce((sum, x) => sum + x.qty, 0)
+          );
+          
+          // Clear Cart
+          cart = [];
+          updateCartUI();
+        } else {
+          showOverlayError(resData.error || "Submission failed. Check stock levels.");
+        }
+      } catch (err) {
+        console.error("Submit error:", err);
+        showOverlayError("Network error: " + err.message);
+      }
+    });
+
+    // Close Overlay
+    btnOverlayClose.addEventListener('click', () => {
+      hideOverlay();
+      if (overlayMsg.innerHTML.includes('Placed Successfully')) {
+        if (tg) {
+          tg.close();
+        } else {
+          window.close();
+        }
+      }
+    });
+
+    // Load configurations on page load
+    window.addEventListener('load', loadData);
+  </script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getFirestore, doc, getDoc, setDoc, updateDoc, 
-  collection, query, where, getDocs, addDoc, orderBy, limit 
+  collection, query, where, getDocs, addDoc, orderBy, limit,
+  getCountFromServer
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -60,6 +61,283 @@ async function downloadTelegramFileAsBase64(token, fileId) {
   }
 }
 
+function getMenuMarkup(req, empId, chatId) {
+  const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const storeAppUrl = `${protocol}://${host}/telegram-store.html?employeeId=${empId || ""}&chatId=${chatId}`;
+  return {
+    keyboard: [
+      [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
+      [{ text: "🛍️ ដាក់ការបញ្ជាទិញ (Order)", web_app: { url: storeAppUrl } }],
+      [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "🕒 សុំម៉ោងបន្ថែម (OT)" }],
+      [{ text: "📄 ប័ណ្ណបើកប្រាក់ខែ" }, { text: "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)" }],
+      [{ text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }, { text: "📅 ប្រវត្តិវត្តមាន" }],
+      [{ text: "📢 សេចក្ដីជូនដំណឹង" }, { text: "☎️ ទាក់ទង Admin" }]
+    ],
+    resize_keyboard: true
+  };
+}
+
+async function handleWebAppOrder(req, res, body) {
+  const { employeeId, chatId, branchId, cart, customerName, customerPhone, customerAddress, discountPercent, shippingFee } = body;
+
+  try {
+    const db = getFirestore(app);
+
+    // Load settings
+    const settingsSnap = await getDoc(doc(db, "company_settings", "global"));
+    const settings = settingsSnap.exists() ? settingsSnap.data() : {};
+    const token = settings.hrTelegramBotToken || settings.telegramToken;
+
+    if (!token) {
+      return res.status(400).json({ error: "Missing Telegram Bot token configuration." });
+    }
+
+    // Load employee details
+    const employeesRef = collection(db, "employees");
+    const empQuery = query(employeesRef, where("id", "==", employeeId));
+    const empSnap = await getDocs(empQuery);
+    let employee = null;
+    empSnap.forEach(d => {
+      employee = { docId: d.id, ...d.data() };
+    });
+
+    if (!employee) {
+      return res.status(400).json({ error: "Employee profile not found in system." });
+    }
+
+    // Determine customer
+    let customerId = "CST-001";
+    let customerNameStr = "General Customer";
+    
+    if (customerPhone && customerPhone !== "-") {
+      const customersRef = collection(db, "customers");
+      const custQuery = query(customersRef, where("phone", "==", customerPhone));
+      const custSnap = await getDocs(custQuery);
+      
+      let existingCust = null;
+      custSnap.forEach(d => {
+        existingCust = { docId: d.id, ...d.data() };
+      });
+      
+      if (existingCust) {
+        customerId = existingCust.id;
+        customerNameStr = existingCust.name;
+        
+        // Update purchase count
+        const newCount = (existingCust.purchaseCount || 0) + 1;
+        const timeline = existingCust.timeline || [];
+        timeline.push({
+          date: new Date().toISOString(),
+          status: 'Purchase',
+          staffName: employee.fullName,
+          feedback: 'Purchase placed via Telegram bot',
+          notes: `Ordered via Telegram WebApp`
+        });
+        
+        await updateDoc(doc(db, "customers", existingCust.docId), {
+          purchaseCount: newCount,
+          timeline: timeline
+        });
+      } else {
+        // Create new customer
+        const custCountSnap = await getCountFromServer(customersRef);
+        const nextCustNum = 1000 + custCountSnap.data().count + 1;
+        customerId = "CST-" + nextCustNum;
+        customerNameStr = customerName || "New Customer";
+        
+        const newCustData = {
+          id: customerId,
+          name: customerNameStr,
+          phone: customerPhone,
+          address: customerAddress || "-",
+          source: "Telegram Bot",
+          outstandingDebt: 0,
+          status: "active",
+          notes: "Registered via Telegram bot sales ordering",
+          rank: "Bronze",
+          purchaseCount: 1,
+          timeline: [
+            {
+              date: new Date().toISOString(),
+              status: 'Register & Purchase',
+              staffName: employee.fullName,
+              feedback: 'Registered and ordered via Telegram Bot',
+              notes: `Registered via Telegram WebApp`
+            }
+          ]
+        };
+        
+        await setDoc(doc(db, "customers", customerId), newCustData);
+      }
+    }
+
+    // Fetch all products in cart and prepare lines
+    const txCountSnap = await getCountFromServer(collection(db, "transactions"));
+    const nextTxNum = 1000 + txCountSnap.data().count + 1;
+    const txId = "TX-" + nextTxNum;
+    const invoiceNo = (settings.invoicePrefix || "INV-2026-") + nextTxNum;
+
+    let subtotal = 0;
+    const items = [];
+    const stockUpdates = [];
+
+    for (const item of cart) {
+      const prodRef = doc(db, "products", item.sku);
+      const prodSnap = await getDoc(prodRef);
+      if (!prodSnap.exists()) {
+        return res.status(400).json({ error: `Product SKU ${item.sku} not found.` });
+      }
+
+      const p = prodSnap.data();
+      const currentBranchQty = p.warehouseStock ? (p.warehouseStock[branchId] || 0) : 0;
+      if (currentBranchQty < item.qty) {
+        return res.status(400).json({ error: `Product "${p.nameKh || p.nameEn}" is out of stock in selected branch.` });
+      }
+
+      const itemTotal = p.sellingPrice * item.qty;
+      subtotal += itemTotal;
+
+      items.push({
+        sku: item.sku,
+        nameEn: p.nameEn,
+        nameKh: p.nameKh || p.nameEn,
+        price: p.sellingPrice,
+        costPrice: p.costPrice || 0,
+        qty: item.qty,
+        total: itemTotal
+      });
+
+      // Deduct warehouse stock
+      const updatedWarehouseStock = { ...p.warehouseStock };
+      updatedWarehouseStock[branchId] = Math.max(0, currentBranchQty - item.qty);
+      
+      let sumQty = 0;
+      for (const b in updatedWarehouseStock) {
+        sumQty += parseInt(updatedWarehouseStock[b]) || 0;
+      }
+
+      stockUpdates.push({
+        sku: item.sku,
+        warehouseStock: updatedWarehouseStock,
+        stockQty: sumQty
+      });
+    }
+
+    // Calculate totals
+    const discPercent = parseFloat(discountPercent) || 0;
+    const discAmount = parseFloat((subtotal * (discPercent / 100)).toFixed(2));
+    const shipping = parseFloat(shippingFee) || 0;
+    
+    // Tax calculation
+    const vatRate = settings.vatEnabled ? (parseFloat(settings.defaultVatRate) || 0) : 0;
+    const afterDiscount = subtotal - discAmount;
+    const tax = parseFloat((afterDiscount * (vatRate / 100)).toFixed(2));
+    const total = parseFloat((afterDiscount + tax + shipping).toFixed(2));
+
+    // Update Product Stocks and Log Movements
+    const stockLogColl = collection(db, "stock_logs");
+    const stockLogCountSnap = await getCountFromServer(stockLogColl);
+    let nextStockLogNum = 1000 + stockLogCountSnap.data().count + 1;
+
+    for (let i = 0; i < stockUpdates.length; i++) {
+      const update = stockUpdates[i];
+      const cartItem = cart[i];
+      
+      // Update Firestore Product
+      await updateDoc(doc(db, "products", update.sku), {
+        warehouseStock: update.warehouseStock,
+        stockQty: update.stockQty
+      });
+
+      // Log Stock Movement
+      const logId = "SLG-" + nextStockLogNum;
+      nextStockLogNum++;
+      
+      await setDoc(doc(db, "stock_logs", logId), {
+        id: logId,
+        date: new Date().toISOString(),
+        sku: update.sku,
+        type: 'sale',
+        qty: -cartItem.qty,
+        warehouseId: branchId,
+        description: `Sold via Telegram WebApp Invoice ${invoiceNo}`,
+        branchId: branchId,
+        createdBy: employee.fullName,
+        updatedBy: employee.fullName,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Write Transaction Record
+    const newTX = {
+      id: txId,
+      invoiceNo: invoiceNo,
+      date: new Date().toISOString(),
+      staffId: employee.id,
+      staffName: employee.fullName,
+      pageName: "Telegram Store",
+      pageId: "TG-STORE",
+      customerId: customerId,
+      customerName: customerNameStr,
+      branchId: branchId,
+      items: items,
+      subtotal: subtotal,
+      discountPercent: discPercent,
+      discountFixed: discAmount,
+      shippingFee: shipping,
+      taxRate: vatRate,
+      taxAmount: tax,
+      total: total,
+      paymentMethod: "COD (Cash on Delivery)",
+      cashReceived: total,
+      changeDue: 0,
+      outstandingDebt: 0,
+      status: "completed",
+      createdBy: employee.fullName,
+      updatedBy: employee.fullName,
+      timestamp: new Date().toISOString()
+    };
+
+    await setDoc(doc(db, "transactions", txId), newTX);
+
+    // Send Telegram Group Notification
+    if (settings.hrTelegramGroupId) {
+      const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
+      const orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n\n` + 
+                              `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
+                              `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
+                              `🏢 សាខា៖ **${branchId === "BR-001" ? "Phnom Penh HQ" : branchId === "BR-002" ? "Siem Reap" : "Sihanoukville"}**\n` +
+                              `------------------------\n` +
+                              `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}\n` +
+                              `------------------------\n` +
+                              `💵 សរុប៖ **$${total}** (បញ្ចុះតម្លៃ ${discPercent}%)\n\n` +
+                              `👤 **អតិថិជន៖**\n` +
+                              `📛 ឈ្មោះ៖ ${customerNameStr}\n` +
+                              `📞 លេខទូរស័ព្ទ៖ ${customerPhone}\n` +
+                              `📍 ទីតាំង៖ ${customerAddress || "-"}`;
+
+      await sendTelegram(token, "sendMessage", {
+        chat_id: settings.hrTelegramGroupId,
+        text: orderNotifyText
+      });
+    }
+
+    // Send direct notification to employee
+    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n👤 អតិថិជន៖ **${customerNameStr}** (${customerPhone})`;
+    await sendTelegram(token, "sendMessage", {
+      chat_id: chatId,
+      text: directText
+    });
+
+    return res.status(200).json({ ok: true, invoiceNo: invoiceNo });
+
+  } catch (error) {
+    console.error("WebApp Order error:", error);
+    return res.status(500).json({ error: `Internal Server Error: ${error.message}` });
+  }
+}
+
 // Main Vercel serverless request handler
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -72,6 +350,11 @@ export default async function handler(req, res) {
     // Route Web App photo posts
     if (body && body.webAppPhoto) {
       return await handleWebAppPhoto(req, res, body);
+    }
+
+    // Route Web App order posts
+    if (body && body.webAppOrder) {
+      return await handleWebAppOrder(req, res, body);
     }
 
     const { message, callback_query } = body || {};
@@ -105,16 +388,7 @@ export default async function handler(req, res) {
       employee = { docId: doc.id, ...doc.data() };
     });
 
-    const menuMarkup = {
-      keyboard: [
-        [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
-        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "🕒 សុំម៉ោងបន្ថែម (OT)" }],
-        [{ text: "📄 ប័ណ្ណបើកប្រាក់ខែ" }, { text: "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)" }],
-        [{ text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }, { text: "📅 ប្រវត្តិវត្តមាន" }],
-        [{ text: "📢 សេចក្ដីជូនដំណឹង" }, { text: "☎️ ទាក់ទង Admin" }]
-      ],
-      resize_keyboard: true
-    };
+    const menuMarkup = getMenuMarkup(req, employee ? employee.id : '', chatId);
 
     // User is not registered
     if (!employee) {
@@ -146,7 +420,7 @@ export default async function handler(req, res) {
             await sendTelegram(token, "sendMessage", {
               chat_id: chatId,
               text: `🎉 ការចុះឈ្មោះជោគជ័យ!\n\nគណនី Telegram របស់អ្នកត្រូវបានភ្ជាប់ជាមួយ៖\n👤 ឈ្មោះ៖ ${foundEmp.fullName}\n🆔 អត្តលេខ៖ ${foundEmp.id}\n🏢 ផ្នែក៖ ${foundEmp.department || 'N/A'}\n\nសូមប្រើប្រាស់ Menu ខាងក្រោមដើម្បីប្រើប្រាស់ប្រព័ន្ធ៖`,
-              reply_markup: menuMarkup
+              reply_markup: getMenuMarkup(req, foundEmp.id, chatId)
             });
           }
         } else {
@@ -910,16 +1184,7 @@ async function handleWebAppPhoto(req, res, body) {
     const attendanceId = `attendance_${employee.id}_${dateStr}`;
     const docRef = doc(db, "attendance", attendanceId);
 
-    const menuMarkup = {
-      keyboard: [
-        [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
-        [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "🕒 សុំម៉ោងបន្ថែម (OT)" }],
-        [{ text: "📄 ប័ណ្ណបើកប្រាក់ខែ" }, { text: "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)" }],
-        [{ text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }, { text: "📅 ប្រវត្តិវត្តមាន" }],
-        [{ text: "📢 សេចក្ដីជូនដំណឹង" }, { text: "☎️ ទាក់ទង Admin" }]
-      ],
-      resize_keyboard: true
-    };
+    const menuMarkup = getMenuMarkup(req, employeeId, chatId);
 
     if (action === "checkin") {
       const startHours = employee.workStart || settings.hrWorkStart || "08:00";
