@@ -402,7 +402,8 @@ export default async function handler(req, res) {
             [{ text: "Annual Leave (ច្បាប់សម្រាកឆ្នាំ)", callback_data: "leave_Annual Leave" }],
             [{ text: "Personal Leave (ច្បាប់ផ្ទាល់ខ្លួន)", callback_data: "leave_Personal Leave" }],
             [{ text: "Mission (បេសកកម្ម)", callback_data: "leave_Mission" }],
-            [{ text: "Emergency (ច្បាប់បន្ទាន់)", callback_data: "leave_Emergency" }]
+            [{ text: "Emergency (ច្បាប់បន្ទាន់)", callback_data: "leave_Emergency" }],
+            [{ text: "Day Off (ថ្ងៃសម្រាក)", callback_data: "leave_Day Off" }]
           ]
         }
       });
