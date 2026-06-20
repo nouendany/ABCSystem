@@ -468,7 +468,10 @@ window.POS_TRANSLATIONS = {
     recalculateProfitTitle: "Recalculate Transaction Profit",
     recalculateProfitDesc: "If you edited product cost prices to correct supplier errors, click here to retroactively apply the corrected cost prices to all past sales transactions, immediately updating your Actual Net Profit.",
     recalculateProfitBtn: "Update Cost Prices & Profit",
-    recalculateSuccess: "Cost prices and profits updated successfully for all historical transactions!"
+    recalculateSuccess: "Cost prices and profits updated successfully for all historical transactions!",
+    stickyNotesTitle: "Sticky Notes",
+    chooseNoteColor: "Choose Note Color:",
+    addNewNote: "Add New Note"
   },
   km: {
     // Navigation & General
@@ -936,6 +939,9 @@ window.POS_TRANSLATIONS = {
     recalculateProfitTitle: "ធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងប្រាក់ចំណេញ",
     recalculateProfitDesc: "ប្រសិនបើលោកអ្នកបានកែប្រែតម្លៃដើមទំនិញ ដើម្បីកែតម្រូវថ្លៃដើមពីអ្នកផ្គត់ផ្គង់ សូមចុចទីនេះ ដើម្បីអនុវត្តតម្លៃដើមថ្មីនេះ ទៅលើរាល់វិក្កយបត្រលក់ពីមុនៗទាំងអស់ភ្លាមៗ និងធ្វើបច្ចុប្បន្នភាពប្រាក់ចំណេញសុទ្ធជាក់ស្តែង។",
     recalculateProfitBtn: "ធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងចំណេញ",
-    recalculateSuccess: "ការធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងប្រាក់ចំណេញលើវិក្កយបត្រទាំងអស់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!"
+    recalculateSuccess: "ការធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងប្រាក់ចំណេញលើវិក្កយបត្រទាំងអស់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!",
+    stickyNotesTitle: "កត់ចំណាំ (Sticky Notes)",
+    chooseNoteColor: "ជ្រើសរើសពណ៌កត់ចំណាំ៖",
+    addNewNote: "បន្ថែមចំណាំថ្មី"
   }
 };

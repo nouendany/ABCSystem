@@ -427,6 +427,9 @@
     if (!state.companySettings.customExpenseCategories || !Array.isArray(state.companySettings.customExpenseCategories)) {
       state.companySettings.customExpenseCategories = [];
     }
+    if (!state.companySettings.stickyNotes || !Array.isArray(state.companySettings.stickyNotes)) {
+      state.companySettings.stickyNotes = [];
+    }
     if (!state.companySettings.companyName || 
         state.companySettings.companyName === 'GEDA Distribution Co., Ltd.' || 
         state.companySettings.companyName === 'GEDA System' || 
@@ -6108,6 +6111,7 @@
             updateCompanyLogoUI();
             populateExpenseCategories();
             populatePOSSelects();
+            renderStickyNotes();
             if (state.activeView === 'view-settings') {
               renderSettings();
             }
@@ -11521,6 +11525,212 @@ CREATE TABLE sale_items (
     if (btnSave) btnSave.addEventListener('click', saveSecurityPermissions);
   }
 
+  // ==================== STICKY NOTES UPGRADE LOGIC ====================
+  function renderStickyNotes() {
+    if (document.activeElement && document.activeElement.classList.contains('sticky-note-textarea')) {
+      return;
+    }
+
+    const container = document.getElementById('notes-list-container');
+    if (!container) return;
+
+    const notes = state.companySettings.stickyNotes || [];
+    
+    // Update badge count
+    const badge = document.getElementById('notes-badge-count');
+    if (badge) {
+      if (notes.length > 0) {
+        badge.textContent = notes.length;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (notes.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding: 40px 10px; color: var(--text-muted); font-size:12.5px;">
+          <div style="font-size:24px; margin-bottom:8px;">📝</div>
+          <div>${state.lang === 'km' ? 'គ្មានកំណត់ត្រាទុកទេ' : 'No notes written yet.'}</div>
+          <div style="font-size:11px; margin-top:4px; opacity:0.7;">
+            ${state.lang === 'km' ? 'ចុចប៊ូតុងខាងក្រោមដើម្បីបង្កើតចំណាំថ្មី' : 'Click the button below to add a new note.'}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const colorStyles = {
+      yellow: {
+        bg: 'linear-gradient(135deg, rgba(253, 224, 71, 0.15), rgba(234, 179, 8, 0.05))',
+        border: '1px solid rgba(234, 179, 8, 0.3)'
+      },
+      green: {
+        bg: 'linear-gradient(135deg, rgba(187, 247, 208, 0.15), rgba(34, 197, 94, 0.05))',
+        border: '1px solid rgba(34, 197, 94, 0.3)'
+      },
+      pink: {
+        bg: 'linear-gradient(135deg, rgba(251, 207, 232, 0.15), rgba(236, 72, 153, 0.05))',
+        border: '1px solid rgba(236, 72, 153, 0.3)'
+      },
+      blue: {
+        bg: 'linear-gradient(135deg, rgba(191, 219, 254, 0.15), rgba(59, 130, 246, 0.05))',
+        border: '1px solid rgba(59, 130, 246, 0.3)'
+      }
+    };
+
+    container.innerHTML = notes.map((note, index) => {
+      const theme = colorStyles[note.color] || colorStyles.yellow;
+      const dateText = window.POS_HELPERS.formatDate(note.updatedAt, state.lang);
+      
+      return `
+        <div class="sticky-note-card" style="background: ${theme.bg}; border: ${theme.border};">
+          <div class="sticky-note-header">
+            <span class="sticky-note-date" style="color:var(--text-secondary);">${dateText}</span>
+            <button class="sticky-note-delete" onclick="deleteStickyNote(${index})" title="${state.lang === 'km' ? 'លុបចំណាំ' : 'Delete Note'}">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>
+          </div>
+          <textarea class="sticky-note-textarea" 
+                    placeholder="${state.lang === 'km' ? 'សរសេរកំណត់ចំណាំទីនេះ...' : 'Write your note here...'}"
+                    onchange="updateStickyNoteText(${index}, this.value)"
+                    oninput="autoGrowTextarea(this)">${note.text || ''}</textarea>
+        </div>
+      `;
+    }).join('');
+
+    // Trigger autogrow on all textareas to correct high heights
+    setTimeout(() => {
+      document.querySelectorAll('.sticky-note-textarea').forEach(el => {
+        el.style.height = "auto";
+        el.style.height = (el.scrollHeight) + "px";
+      });
+    }, 50);
+  }
+
+  function saveStickyNotes(silent = false) {
+    safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
+    
+    if (window.db) {
+      window.db.collection('company_settings').doc('global')
+        .set(state.companySettings)
+        .catch(e => console.error("Firebase config sync error:", e));
+    }
+
+    if (!silent) {
+      renderStickyNotes();
+    } else {
+      const notes = state.companySettings.stickyNotes || [];
+      const badge = document.getElementById('notes-badge-count');
+      if (badge) {
+        if (notes.length > 0) {
+          badge.textContent = notes.length;
+          badge.style.display = 'block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  window.deleteStickyNote = function(index) {
+    if (!state.companySettings.stickyNotes) return;
+    const check = confirm(state.lang === 'km' ? 'តើអ្នកប្រាកដជាចង់លុបកំណត់ចំណាំនេះមែនទេ?' : 'Are you sure you want to delete this note?');
+    if (check) {
+      state.companySettings.stickyNotes.splice(index, 1);
+      saveStickyNotes();
+    }
+  };
+
+  window.updateStickyNoteText = function(index, val) {
+    if (!state.companySettings.stickyNotes || !state.companySettings.stickyNotes[index]) return;
+    state.companySettings.stickyNotes[index].text = val;
+    state.companySettings.stickyNotes[index].updatedAt = new Date().toISOString();
+    saveStickyNotes(true);
+  };
+
+  window.autoGrowTextarea = function(el) {
+    el.style.height = "auto";
+    el.style.height = (el.scrollHeight) + "px";
+  };
+
+  function setupStickyNotes() {
+    const notesDrawer = document.getElementById('sticky-notes-drawer');
+    const btnNotes = document.getElementById('btn-sticky-notes');
+    const btnCloseNotes = document.getElementById('btn-close-notes');
+    const btnAddNote = document.getElementById('btn-add-new-note');
+
+    if (!notesDrawer || !btnNotes) return;
+
+    btnNotes.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notesDrawer.classList.toggle('open');
+      if (notesDrawer.classList.contains('open')) {
+        renderStickyNotes();
+      }
+    });
+
+    if (btnCloseNotes) {
+      btnCloseNotes.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notesDrawer.classList.remove('open');
+      });
+    }
+
+    // Close drawer when clicking outside
+    document.addEventListener('click', (e) => {
+      if (notesDrawer.classList.contains('open') && 
+          !notesDrawer.contains(e.target) && 
+          !btnNotes.contains(e.target)) {
+        notesDrawer.classList.remove('open');
+      }
+    });
+
+    // Make drawer non-closable when clicking inside
+    notesDrawer.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    if (btnAddNote) {
+      btnAddNote.addEventListener('click', () => {
+        if (!state.companySettings.stickyNotes) {
+          state.companySettings.stickyNotes = [];
+        }
+
+        const activeColorDot = document.querySelector('#note-color-picker .color-dot.active');
+        const color = activeColorDot ? activeColorDot.getAttribute('data-color') : 'yellow';
+
+        const newNote = {
+          id: 'note_' + Date.now(),
+          text: '',
+          color: color,
+          updatedAt: new Date().toISOString()
+        };
+
+        state.companySettings.stickyNotes.unshift(newNote);
+        saveStickyNotes();
+
+        setTimeout(() => {
+          const textareas = document.querySelectorAll('.sticky-note-textarea');
+          if (textareas.length > 0) {
+            textareas[0].focus();
+          }
+        }, 100);
+      });
+    }
+
+    // Color picker toggles
+    document.querySelectorAll('#note-color-picker .color-dot').forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        document.querySelectorAll('#note-color-picker .color-dot').forEach(d => d.classList.remove('active'));
+        e.target.classList.add('active');
+      });
+    });
+
+    // Render initially to show the badge count if there are existing notes
+    renderStickyNotes();
+  }
+
   // ==================== END HRMS UPGRADE LOGIC ====================
 
   // Bind main DOM event
@@ -11541,6 +11751,7 @@ CREATE TABLE sale_items (
     setupPayrollEventListeners();
     setupKpiEventListeners();
     setupSecurityEventListeners();
+    setupStickyNotes();
     
     translateApp();
     renderCurrentView();

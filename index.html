@@ -318,6 +318,12 @@
             <span id="clock-display">--:--:--</span>
           </div>
           
+          <!-- Sticky Notes Button -->
+          <div class="alert-badge" id="btn-sticky-notes" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;" title="Sticky Notes (កត់ចំណាំ)">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span class="badge-count" id="notes-badge-count" style="background: #f59e0b; display: none;">0</span>
+          </div>
+
           <div class="alert-badge" id="btn-alert-trigger">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             <span class="badge-count" id="alert-badge-count">0</span>
@@ -3020,6 +3026,41 @@
     </div>
     <div class="noti-body" id="crm-notifications-list">
       <!-- Dynamically populated -->
+    </div>
+  </div>
+
+  <!-- Sticky Notes Drawer -->
+  <div class="notes-drawer" id="sticky-notes-drawer">
+    <div class="notes-drawer-header">
+      <div class="notes-drawer-title">
+        <span>📝</span>
+        <span data-translate="stickyNotesTitle">Sticky Notes (កត់ចំណាំ)</span>
+      </div>
+      <button class="notes-drawer-close" id="btn-close-notes">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Active Note list -->
+    <div class="notes-list-container" id="notes-list-container">
+      <!-- Dynamically populated sticky note cards -->
+    </div>
+
+    <!-- Note Creator Form -->
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top:12px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; color:var(--text-secondary);" data-translate="chooseNoteColor">Choose Note Color:</span>
+        <div class="note-color-picker" id="note-color-picker">
+          <div class="color-dot active" data-color="yellow" style="background:#fef08a;" title="Yellow"></div>
+          <div class="color-dot" data-color="green" style="background:#bbf7d0;" title="Green"></div>
+          <div class="color-dot" data-color="pink" style="background:#fbcfe8;" title="Pink"></div>
+          <div class="color-dot" data-color="blue" style="background:#bfdbfe;" title="Blue"></div>
+        </div>
+      </div>
+      <button class="btn-add-note" id="btn-add-new-note">
+        <span>➕</span>
+        <span data-translate="addNewNote">Add New Note (បន្ថែមចំណាំ)</span>
+      </button>
     </div>
   </div>
 
