@@ -11596,8 +11596,7 @@ CREATE TABLE sale_items (
           </div>
           <textarea class="sticky-note-textarea" 
                     placeholder="${state.lang === 'km' ? 'សរសេរកំណត់ចំណាំទីនេះ...' : 'Write your note here...'}"
-                    onchange="updateStickyNoteText(${index}, this.value)"
-                    oninput="autoGrowTextarea(this)">${note.text || ''}</textarea>
+                    oninput="updateStickyNoteTextSilent(${index}, this.value); autoGrowTextarea(this)">${note.text || ''}</textarea>
         </div>
       `;
     }).join('');
@@ -11645,11 +11644,42 @@ CREATE TABLE sale_items (
     }
   };
 
-  window.updateStickyNoteText = function(index, val) {
+  let cloudSyncTimeout = null;
+  function debounceCloudSync() {
+    if (cloudSyncTimeout) {
+      clearTimeout(cloudSyncTimeout);
+    }
+    cloudSyncTimeout = setTimeout(() => {
+      if (state.firebaseDb) {
+        state.firebaseDb.collection('company_settings').doc('global')
+          .set(state.companySettings)
+          .then(() => console.log("Debounced sticky notes synced to cloud."))
+          .catch(e => console.error("Firebase config sync error:", e));
+      }
+    }, 1500);
+  }
+
+  window.updateStickyNoteTextSilent = function(index, val) {
     if (!state.companySettings.stickyNotes || !state.companySettings.stickyNotes[index]) return;
     state.companySettings.stickyNotes[index].text = val;
     state.companySettings.stickyNotes[index].updatedAt = new Date().toISOString();
-    saveStickyNotes(true);
+    
+    // Save to localStorage immediately so a refresh NEVER loses it
+    safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
+
+    // Update badge count
+    const badge = document.getElementById('notes-badge-count');
+    if (badge) {
+      const notes = state.companySettings.stickyNotes || [];
+      if (notes.length > 0) {
+        badge.textContent = notes.length;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    debounceCloudSync();
   };
 
   window.autoGrowTextarea = function(el) {
