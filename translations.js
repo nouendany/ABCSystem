@@ -464,7 +464,11 @@ window.POS_TRANSLATIONS = {
     done: "Done",
     categoryExists: "Category already exists!",
     pleaseEnterCategory: "Please enter a category name!",
-    confirmDeleteCat: "Are you sure you want to delete this category?"
+    confirmDeleteCat: "Are you sure you want to delete this category?",
+    recalculateProfitTitle: "Recalculate Transaction Profit",
+    recalculateProfitDesc: "If you edited product cost prices to correct supplier errors, click here to retroactively apply the corrected cost prices to all past sales transactions, immediately updating your Actual Net Profit.",
+    recalculateProfitBtn: "Update Cost Prices & Profit",
+    recalculateSuccess: "Cost prices and profits updated successfully for all historical transactions!"
   },
   km: {
     // Navigation & General
@@ -928,6 +932,10 @@ window.POS_TRANSLATIONS = {
     done: "រួចរាល់",
     categoryExists: "ប្រភេទចំណាយនេះមានរួចហើយ!",
     pleaseEnterCategory: "សូមបញ្ចូលឈ្មោះប្រភេទចំណាយ!",
-    confirmDeleteCat: "តើអ្នកប្រាកដជាចង់លុបប្រភេទចំណាយនេះមែនទេ?"
+    confirmDeleteCat: "តើអ្នកប្រាកដជាចង់លុបប្រភេទចំណាយនេះមែនទេ?",
+    recalculateProfitTitle: "ធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងប្រាក់ចំណេញ",
+    recalculateProfitDesc: "ប្រសិនបើលោកអ្នកបានកែប្រែតម្លៃដើមទំនិញ ដើម្បីកែតម្រូវថ្លៃដើមពីអ្នកផ្គត់ផ្គង់ សូមចុចទីនេះ ដើម្បីអនុវត្តតម្លៃដើមថ្មីនេះ ទៅលើរាល់វិក្កយបត្រលក់ពីមុនៗទាំងអស់ភ្លាមៗ និងធ្វើបច្ចុប្បន្នភាពប្រាក់ចំណេញសុទ្ធជាក់ស្តែង។",
+    recalculateProfitBtn: "ធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងចំណេញ",
+    recalculateSuccess: "ការធ្វើបច្ចុប្បន្នភាពថ្លៃដើម និងប្រាក់ចំណេញលើវិក្កយបត្រទាំងអស់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!"
   }
 };

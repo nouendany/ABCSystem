@@ -7129,6 +7129,18 @@
               Load Demo & HR Data
             </button>
           </div>
+          
+          <div class="glass-card" style="padding:16px; border: 1px solid rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.02);">
+            <div class="table-header" style="padding:0 0 14px 0; margin-bottom:14px; border-bottom:1px solid rgba(245, 158, 11, 0.15);">
+              <h3 style="color: #f59e0b;" data-translate="recalculateProfitTitle">Recalculate Transaction Profit</h3>
+            </div>
+            <p style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-bottom:20px;" data-translate="recalculateProfitDesc">
+              If you edited product cost prices to correct supplier errors, click here to retroactively apply the corrected cost prices to all past sales transactions, immediately updating your Actual Net Profit.
+            </p>
+            <button class="btn btn-outline" id="btn-recalculate-past-profits" style="width:100%; justify-content:center; padding:12px; font-weight:700; border-color: #f59e0b; color: #f59e0b; background: transparent; transition: all 0.2s ease;">
+              <span data-translate="recalculateProfitBtn">Update Cost Prices & Profit</span>
+            </button>
+          </div>
 
           <div class="glass-card" style="padding:16px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02);">
             <div class="table-header" style="padding:0 0 14px 0; margin-bottom:14px; border-bottom:1px solid rgba(239, 68, 68, 0.15);">
@@ -7369,6 +7381,34 @@
           reader.readAsText(file);
         }
       });
+
+      const btnRecalculate = document.getElementById('btn-recalculate-past-profits');
+      if (btnRecalculate) {
+        btnRecalculate.addEventListener('click', () => {
+          if (!guardAction('edit')) return;
+          
+          let updatedCount = 0;
+          state.transactions.forEach(t => {
+            let txModified = false;
+            t.items.forEach(item => {
+              const p = state.products.find(prod => prod.sku === item.sku);
+              if (p && item.costPrice !== p.costPrice) {
+                item.costPrice = p.costPrice;
+                txModified = true;
+              }
+            });
+            if (txModified) {
+              updatedCount++;
+            }
+          });
+          
+          if (updatedCount > 0) {
+            saveStateToLocalStorage();
+          }
+          
+          alert(window.POS_TRANSLATIONS[state.lang].recalculateSuccess || 'Cost prices and profits updated successfully for all historical transactions!');
+        });
+      }
 
       document.getElementById('btn-reset-prod').addEventListener('click', async () => {
         if (!guardAction('delete')) return;
@@ -8356,6 +8396,21 @@ CREATE TABLE sale_items (
 
       if (idx !== '') {
         if (!guardAction('edit')) return;
+        
+        // Update all historical transaction items' costPrice for this product SKU if costPrice changed
+        const oldCostPrice = state.products[idx].costPrice;
+        if (oldCostPrice !== costPrice) {
+          state.transactions.forEach(t => {
+            let txModified = false;
+            t.items.forEach(item => {
+              if (item.sku === sku) {
+                item.costPrice = costPrice;
+                txModified = true;
+              }
+            });
+          });
+        }
+
         newProduct.warehouseStock = state.products[idx].warehouseStock;
         newProduct.status = state.products[idx].status;
         newProduct.stockQty = state.products[idx].stockQty;
