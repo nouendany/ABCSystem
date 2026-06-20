@@ -248,6 +248,15 @@
       z-index: 1;
     }
 
+    .product-image {
+      width: 100%;
+      aspect-ratio: 1.2/1;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      background-color: #f8fafc;
+      border: 1px solid var(--border);
+    }
+
     .product-image-fallback {
       width: 100%;
       aspect-ratio: 1.2/1;
@@ -262,6 +271,14 @@
     .product-image-fallback svg {
       width: 36px;
       height: 36px;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .bounce-animation {
+      animation: bounce 0.3s ease-in-out;
     }
 
     .product-name {
@@ -1110,13 +1127,17 @@
         const card = document.createElement('div');
         card.className = `product-card ${isOutOfStock ? 'out-of-stock' : ''}`;
         
+        const imgHtml = p.image 
+          ? `<img src="${p.image}" class="product-image" alt="${p.nameEn || p.sku}">`
+          : `<div class="product-image-fallback">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+             </div>`;
+
         card.innerHTML = `
           ${isOutOfStock ? `<span class="product-card-badge">អស់ស្តុក</span>` : ''}
-          <div class="product-image-fallback">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-            </svg>
-          </div>
+          ${imgHtml}
           <div class="product-name">${p.nameKh || p.nameEn || p.sku}</div>
           <div class="product-sku">${p.sku}</div>
           <div class="product-footer">
@@ -1240,6 +1261,14 @@
 
       if (totalQty > 0) {
         btnViewCart.disabled = false;
+        
+        // Add subtle bounce effect to bottom cart bar
+        const bottomBar = document.querySelector('.cart-action-bar');
+        if (bottomBar) {
+          bottomBar.classList.remove('bounce-animation');
+          void bottomBar.offsetWidth; // Trigger reflow to restart animation
+          bottomBar.classList.add('bounce-animation');
+        }
       } else {
         btnViewCart.disabled = true;
         closeCartDrawer();
