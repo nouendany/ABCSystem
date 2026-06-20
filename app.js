@@ -6090,6 +6090,9 @@
 
           if (doc.exists && doc.data() && Object.keys(doc.data()).length > 0) {
             const settings = doc.data();
+            if (settings.stickyNotes === undefined && state.companySettings && state.companySettings.stickyNotes) {
+              settings.stickyNotes = state.companySettings.stickyNotes;
+            }
             state.companySettings = settings;
             safeSetItem('abc_company_settings', JSON.stringify(settings));
 
@@ -11611,8 +11614,8 @@ CREATE TABLE sale_items (
   function saveStickyNotes(silent = false) {
     safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
     
-    if (window.db) {
-      window.db.collection('company_settings').doc('global')
+    if (state.firebaseDb) {
+      state.firebaseDb.collection('company_settings').doc('global')
         .set(state.companySettings)
         .catch(e => console.error("Firebase config sync error:", e));
     }
