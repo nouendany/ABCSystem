@@ -131,8 +131,17 @@
     revenueChart: null,
     branchChart: null,
     employeeChart: null,
-    pageChart: null
   };
+
+  function getNextId(prefix, list, idKey = 'id', padDigits = 3) {
+    let maxId = 0;
+    (list || []).forEach(item => {
+      const val = item[idKey] || '';
+      const num = parseInt(val.replace(prefix, '')) || 0;
+      if (num > maxId) maxId = num;
+    });
+    return prefix + String(maxId + 1).padStart(padDigits, '0');
+  }
 
   let lastSyncedState = {
     users: [],
@@ -512,6 +521,7 @@
     document.getElementById('report-start-date').value = firstDay;
     document.getElementById('report-end-date').value = today;
     migrateCRMData();
+    repairDuplicateCustomerIds();
     updateCompanyLogoUI();
   }
 
@@ -595,6 +605,48 @@
     safeSetItem('abc_followups', JSON.stringify(state.followups));
     safeSetItem('abc_customers', JSON.stringify(state.customers));
     try { cleanupOldSelfies(); } catch(e) {}
+  }
+
+  function repairDuplicateCustomerIds() {
+    const uniqueCusts = [];
+    const seenCustIds = new Set();
+    let modified = false;
+
+    state.customers.forEach(c => {
+      if (!c.id) return;
+      if (seenCustIds.has(c.id)) {
+        const oldId = c.id;
+        const newId = getNextId('CST-', uniqueCusts);
+        c.id = newId;
+        modified = true;
+        console.log(`Data Repair: Resolved duplicate customer ID ${oldId} by assigning new ID ${newId} to ${c.name}`);
+
+        state.transactions.forEach(tx => {
+          if (tx.customerId === oldId && tx.customerName === c.name) {
+            tx.customerId = newId;
+          }
+        });
+
+        state.followups.forEach(f => {
+          if (f.customerId === oldId && f.customerName === c.name) {
+            f.customerId = newId;
+          }
+        });
+
+        state.paymentLogs.forEach(p => {
+          if (p.customerId === oldId && p.customerName === c.name) {
+            p.customerId = newId;
+          }
+        });
+      }
+      seenCustIds.add(c.id);
+      uniqueCusts.push(c);
+    });
+
+    if (modified) {
+      state.customers = uniqueCusts;
+      saveStateToLocalStorage();
+    }
   }
 
   function saveStateToLocalStorage() {
@@ -3346,7 +3398,7 @@
       document.getElementById('customer-edit-index').value = '';
       
       // Pre-calculate next Customer ID
-      const nextId = 'CST-' + String(state.customers.length + 1).padStart(3, '0');
+      const nextId = getNextId('CST-', state.customers);
       document.getElementById('cust-id').value = nextId;
       document.getElementById('cust-facebook').value = '';
       document.getElementById('cust-birthday').value = '';
@@ -8740,7 +8792,7 @@ CREATE TABLE sale_items (
         });
       } else {
         if (!guardAction('add')) return;
-        const newId = 'CST-' + String(state.customers.length + 1).padStart(3, '0');
+        const newId = getNextId('CST-', state.customers);
         const prodSku = document.getElementById('cust-product-purchased').value;
         const qty = parseInt(document.getElementById('cust-qty').value) || 1;
         const purchaseDate = document.getElementById('cust-purchase-date').value || new Date().toISOString().split('T')[0];
