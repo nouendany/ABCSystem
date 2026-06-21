@@ -4446,6 +4446,7 @@
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         state.activeReportTab = tab.getAttribute('data-report');
+        state.reportSearchQuery = ''; // Reset search on tab switch
         triggerReportRender();
       });
     });
@@ -5230,11 +5231,12 @@
     });
 
     const filterRowHtml = `
-      <div class="inner-report-filters" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:6px; align-items:center;">
+      <div class="inner-report-filters" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:6px; align-items:center; width: 100%;">
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">Filter Report:</span>
-        <select id="rep-filter-branch" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
-        <select id="rep-filter-staff" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${staffOpts}</select>
-        <select id="rep-filter-category" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
+        <select id="rep-filter-branch" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
+        <select id="rep-filter-staff" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${staffOpts}</select>
+        <select id="rep-filter-category" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
+        <input type="text" id="rep-filter-search" class="form-control" placeholder="${state.lang === 'km' ? 'ស្វែងរកលេខវិក្កយបត្រ / អតិថិជន...' : 'Search Invoice / Customer...'}" value="${state.reportSearchQuery || ''}" style="width:220px; padding:4px 8px; font-size:11px; height:auto; margin-left:auto; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px;">
       </div>
     `;
 
@@ -5255,6 +5257,17 @@
           const p = state.products.find(prod => prod.sku === item.sku);
           return p && p.category === fCategory;
         });
+      });
+    }
+
+    const searchQuery = (state.reportSearchQuery || '').trim().toLowerCase();
+    if (searchQuery) {
+      transactions = transactions.filter(t => {
+        const invNo = (t.invoiceNo || t.id || '').toLowerCase();
+        const custName = (t.customerName || '').toLowerCase();
+        const staffName = (t.staffName || '').toLowerCase();
+        const itemsText = t.items.map(it => `${it.nameKh || ''} ${it.nameEn || ''}`).join(' ').toLowerCase();
+        return invNo.includes(searchQuery) || custName.includes(searchQuery) || staffName.includes(searchQuery) || itemsText.includes(searchQuery);
       });
     }
 
@@ -5349,6 +5362,20 @@
       state.reportFilterCategory = e.target.value;
       triggerReportRender();
     });
+
+    const searchInput = document.getElementById('rep-filter-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        state.reportSearchQuery = e.target.value;
+        triggerReportRender();
+        const newSearchInput = document.getElementById('rep-filter-search');
+        if (newSearchInput) {
+          newSearchInput.focus();
+          const valLen = newSearchInput.value.length;
+          newSearchInput.setSelectionRange(valLen, valLen);
+        }
+      });
+    }
 
     container.querySelectorAll('.btn-void-tx').forEach(btn => {
       btn.addEventListener('click', () => {
