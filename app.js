@@ -6461,6 +6461,11 @@
               <input type="text" class="form-control" id="hr-settings-group-id-master" placeholder="e.g. -100123456789" value="${state.companySettings.hrTelegramGroupId || ''}">
               <small style="color: var(--text-muted); font-size: 11px;" data-translate="groupIdHelp">Add Bot as Admin to the group, get Chat ID starting with minus (-), e.g. -100123456789</small>
             </div>
+            <div class="form-group">
+              <label data-translate="salesTelegramGroupId">Telegram Group/Channel ID (for Sales Orders)</label>
+              <input type="text" class="form-control" id="hr-settings-sales-group-id-master" placeholder="e.g. -100123456789" value="${state.companySettings.salesTelegramGroupId || ''}">
+              <small style="color: var(--text-muted); font-size: 11px;" data-translate="salesGroupIdHelp">For sales order reports. If empty, falls back to Admin Reports group.</small>
+            </div>
             
             <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
               <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
@@ -6522,6 +6527,7 @@
         const token = document.getElementById('hr-settings-token-master').value.trim();
         const username = document.getElementById('hr-settings-username-master').value.trim();
         const groupId = document.getElementById('hr-settings-group-id-master').value.trim();
+        const salesGroupId = document.getElementById('hr-settings-sales-group-id-master').value.trim();
         const locationCheckEnabled = document.getElementById('hr-settings-location-check-master').checked;
         const lat = parseFloat(document.getElementById('hr-settings-lat-master').value) || 0;
         const lng = parseFloat(document.getElementById('hr-settings-lng-master').value) || 0;
@@ -6532,6 +6538,7 @@
         state.companySettings.hrTelegramBotToken = token;
         state.companySettings.hrTelegramBotUsername = username;
         state.companySettings.hrTelegramGroupId = groupId;
+        state.companySettings.salesTelegramGroupId = salesGroupId;
         state.companySettings.hrLocationCheckEnabled = locationCheckEnabled;
         state.companySettings.hrOfficeLatitude = lat;
         state.companySettings.hrOfficeLongitude = lng;
@@ -10617,6 +10624,8 @@ CREATE TABLE sale_items (
     document.getElementById('hr-settings-username').value = settings.hrTelegramBotUsername || '';
     const grpIdEl = document.getElementById('hr-settings-group-id');
     if (grpIdEl) grpIdEl.value = settings.hrTelegramGroupId || '';
+    const salesGrpIdEl = document.getElementById('hr-settings-sales-group-id');
+    if (salesGrpIdEl) salesGrpIdEl.value = settings.salesTelegramGroupId || '';
     document.getElementById('hr-settings-lat').value = settings.hrOfficeLatitude || '';
     document.getElementById('hr-settings-lng').value = settings.hrOfficeLongitude || '';
     document.getElementById('hr-settings-radius').value = settings.hrOfficeRadius || '100';
@@ -10635,6 +10644,8 @@ CREATE TABLE sale_items (
     const username = document.getElementById('hr-settings-username').value.trim();
     const grpIdEl = document.getElementById('hr-settings-group-id');
     const groupId = grpIdEl ? grpIdEl.value.trim() : '';
+    const salesGrpIdEl = document.getElementById('hr-settings-sales-group-id');
+    const salesGroupId = salesGrpIdEl ? salesGrpIdEl.value.trim() : '';
     const lat = parseFloat(document.getElementById('hr-settings-lat').value) || 0;
     const lng = parseFloat(document.getElementById('hr-settings-lng').value) || 0;
     const radius = parseInt(document.getElementById('hr-settings-radius').value) || 100;
@@ -10644,6 +10655,7 @@ CREATE TABLE sale_items (
     state.companySettings.hrTelegramBotToken = token;
     state.companySettings.hrTelegramBotUsername = username;
     state.companySettings.hrTelegramGroupId = groupId;
+    state.companySettings.salesTelegramGroupId = salesGroupId;
     state.companySettings.hrOfficeLatitude = lat;
     state.companySettings.hrOfficeLongitude = lng;
     state.companySettings.hrOfficeRadius = radius;

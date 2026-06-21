@@ -302,7 +302,8 @@ async function handleWebAppOrder(req, res, body) {
     await setDoc(doc(db, "transactions", txId), newTX);
 
     // Send Telegram Group Notification
-    if (settings.hrTelegramGroupId) {
+    const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
+    if (salesGroup) {
       const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
       const orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n\n` + 
                               `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
@@ -318,7 +319,7 @@ async function handleWebAppOrder(req, res, body) {
                               `📍 ទីតាំង៖ ${customerAddress || "-"}`;
 
       await sendTelegram(token, "sendMessage", {
-        chat_id: settings.hrTelegramGroupId,
+        chat_id: salesGroup,
         text: orderNotifyText
       });
     }
