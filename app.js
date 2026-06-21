@@ -612,6 +612,39 @@
     const seenCustIds = new Set();
     let modified = false;
 
+    // 1. Detect if CST-041 is currently "ម៉ាក់ ស្រីពេជ្យ" but is hijacked
+    const c41 = state.customers.find(c => c.id === 'CST-041');
+    if (c41 && c41.name && c41.name.includes('ស្រីពេជ្យ')) {
+      console.log("Data Repair: CST-041 hijack detected! Restoring ឈៀង​ ម៉ៃ​ លក្ខ័ and creating new profile for ម៉ាក់ ស្រីពេជ្យ.");
+      
+      let maxId = 0;
+      state.customers.forEach(c => {
+        const num = parseInt(c.id.replace('CST-', '')) || 0;
+        if (num > maxId) maxId = num;
+      });
+      const newId = 'CST-' + String(maxId + 1).padStart(3, '0');
+      
+      const newPich = {
+        ...c41,
+        id: newId,
+        orders: [],
+        timeline: []
+      };
+
+      // Restore c41 to ឈៀង ម៉ៃ លក្ខ័
+      c41.name = "ឈៀង​ ម៉ៃ​ លក្ខ័";
+      c41.phone = "0717010672";
+      c41.notes = "មុនមានជាំ និង ក្រហម";
+      c41.rank = "Bronze";
+      c41.source = "Facebook Page";
+      c41.staffId = "STF-003"; // Srey lin
+
+      state.customers.push(newPich);
+      modified = true;
+      localStorage.setItem('abc_pending_repair', 'true');
+    }
+
+    // 2. Perform general duplicate ID check
     state.customers.forEach(c => {
       if (!c.id) return;
       if (seenCustIds.has(c.id)) {
@@ -619,6 +652,7 @@
         const newId = getNextId('CST-', uniqueCusts);
         c.id = newId;
         modified = true;
+        localStorage.setItem('abc_pending_repair', 'true');
         console.log(`Data Repair: Resolved duplicate customer ID ${oldId} by assigning new ID ${newId} to ${c.name}`);
 
         state.transactions.forEach(tx => {
@@ -6121,6 +6155,23 @@
       }
 
       const startListeners = (dbInstance) => {
+        if (localStorage.getItem('abc_pending_repair') === 'true') {
+          console.log("Firebase: Syncing locally repaired duplicate customer profiles to server...");
+          state.customers.forEach(c => {
+            dbInstance.collection('customers').doc(c.id).set(c).catch(e => console.error(e));
+          });
+          state.transactions.forEach(t => {
+            dbInstance.collection('transactions').doc(t.id).set(t).catch(e => console.error(e));
+          });
+          state.followups.forEach(f => {
+            dbInstance.collection('followups').doc(f.id).set(f).catch(e => console.error(e));
+          });
+          state.paymentLogs.forEach(p => {
+            dbInstance.collection('payment_logs').doc(p.id).set(p).catch(e => console.error(e));
+          });
+          localStorage.removeItem('abc_pending_repair');
+        }
+
         const setupListener = (colName, stateKey, idKey, renderFns) => {
           dbInstance.collection(colName).onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
