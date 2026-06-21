@@ -2188,6 +2188,10 @@
     // Set standard method
     switchCheckoutMethod('cash', total);
 
+    // Reset custom date input
+    const dateInput = document.getElementById('checkout-date-input');
+    if (dateInput) dateInput.value = '';
+
     document.getElementById('modal-checkout').classList.add('active-modal');
   }
 
@@ -2380,6 +2384,15 @@
     const branchId = document.getElementById('cart-branch-select').value || "BR-001";
     const staffId = document.getElementById('cart-staff-select').value;
     const customerId = document.getElementById('cart-customer-select').value;
+
+    const customDateVal = document.getElementById('checkout-date-input')?.value;
+    let txDate = new Date().toISOString();
+    if (customDateVal) {
+      const parsedDate = new Date(customDateVal);
+      if (!isNaN(parsedDate.getTime())) {
+        txDate = parsedDate.toISOString();
+      }
+    }
     
     const staff = state.staff.find(s => s.id === staffId) || { name: 'Unknown', id: 'STF-001' };
     const customer = state.customers.find(c => c.id === customerId);
@@ -2435,7 +2448,7 @@
     if (totalQty >= 5 && customer && customer.id !== 'CST-001') {
       if (!customer.isVip) {
         customer.isVip = true;
-        customer.vipDate = new Date().toISOString().split('T')[0];
+        customer.vipDate = txDate.split('T')[0];
         customer.rank = 'Platinum VIP';
         logAuditEvent('customerEdit', `Customer ${customer.name} automatically upgraded to VIP due to purchasing ${totalQty} units`);
       }
@@ -2457,7 +2470,7 @@
         // Log Stock Movement
         state.stockLogs.push({
           id: 'SLG-' + (1000 + state.stockLogs.length + 1),
-          date: new Date().toISOString(),
+          date: txDate,
           sku: product.sku,
           type: 'sale',
           qty: -item.qty,
@@ -2491,7 +2504,7 @@
 
       if (!customer.orders) customer.orders = [];
       customer.orders.push({
-        date: new Date().toISOString(),
+        date: txDate,
         product: itemsDesc,
         qty: totalQty,
         staffName: staff.name
@@ -2500,7 +2513,7 @@
       // 2. Add purchase timeline item
       if (!customer.timeline) customer.timeline = [];
       customer.timeline.push({
-        date: new Date().toISOString(),
+        date: txDate,
         status: 'Purchase',
         staffName: staff.name,
         feedback: 'Repeat purchase recorded',
@@ -2513,7 +2526,7 @@
       const types = ['satisfaction', 'feedback', 'satisfaction', 'promo', 'engagement', 'engagement', 'engagement', 'promo', 'engagement'];
       
       followUpDays.forEach((day, idx) => {
-        const d = new Date();
+        const d = new Date(txDate);
         d.setDate(d.getDate() + day);
         schedules.push({
           day: day,
@@ -2557,7 +2570,7 @@
     const newTX = {
       id: 'TX-' + (1000 + state.transactions.length + 1),
       invoiceNo: invoiceNo,
-      date: new Date().toISOString(),
+      date: txDate,
       staffId: staff.id,
       staffName: staff.name,
       pageName: pageName,
@@ -8768,9 +8781,11 @@ CREATE TABLE sale_items (
             });
           });
 
+          const saleTxId = 'TX-' + (1000 + state.transactions.length + 1);
+
           state.followups.push({
             id: flpId,
-            saleId: 'MANUAL',
+            saleId: saleTxId,
             customerId: newId,
             customerName: name,
             salesStaffId: staffId,
@@ -8778,6 +8793,85 @@ CREATE TABLE sale_items (
             branchId: state.currentUser ? state.currentUser.branchId : 'BR-001',
             schedules: schedules
           });
+
+          // Generate Transaction
+          const prefix = state.companySettings.invoicePrefix || 'INV-2026-';
+          const invoiceNo = prefix + String(1000 + state.transactions.length + 1);
+          const activeBranch = state.currentUser?.branchId === 'all' ? 'BR-001' : (state.currentUser?.branchId || 'BR-001');
+
+          const staffUser = state.users.find(u => u.name === staffName || u.id === staffId || u.username === staffId);
+          const pageName = staffUser ? (staffUser.pageName || "Direct Sales") : "Direct Sales";
+          const pageId = staffUser ? (staffUser.pageId || null) : null;
+
+          const itemTotal = (productObj ? productObj.sellingPrice : 0) * qty;
+          const parsedPurchaseDate = new Date(purchaseDate);
+          const txIsoDate = !isNaN(parsedPurchaseDate.getTime()) ? parsedPurchaseDate.toISOString() : new Date().toISOString();
+
+          const newTX = {
+            id: saleTxId,
+            invoiceNo: invoiceNo,
+            date: txIsoDate,
+            staffId: staffId,
+            staffName: staffName,
+            pageName: pageName,
+            pageId: pageId,
+            customerId: newId,
+            customerName: name,
+            branchId: activeBranch,
+            items: [{
+              sku: prodSku,
+              nameEn: productObj ? productObj.nameEn : prodSku,
+              nameKh: productObj ? productObj.nameKh : prodSku,
+              price: productObj ? productObj.sellingPrice : 0,
+              costPrice: productObj ? (productObj.costPrice !== undefined ? productObj.costPrice : 0) : 0,
+              qty: qty,
+              total: itemTotal
+            }],
+            subtotal: itemTotal,
+            discountPercent: 0,
+            discountFixed: 0,
+            shippingFee: 0,
+            taxRate: 0,
+            taxAmount: 0,
+            total: itemTotal,
+            paymentMethod: "cash",
+            cashReceived: itemTotal,
+            changeDue: 0,
+            outstandingDebt: 0,
+            status: "completed",
+            createdBy: state.currentUser ? state.currentUser.username : 'system',
+            updatedBy: state.currentUser ? state.currentUser.username : 'system',
+            timestamp: new Date().toISOString()
+          };
+
+          state.transactions.push(newTX);
+
+          // Deduct stock and log
+          if (productObj) {
+            const branchStock = productObj.warehouseStock[activeBranch] || 0;
+            productObj.warehouseStock[activeBranch] = Math.max(0, branchStock - qty);
+            
+            let sum = 0;
+            for (const b in productObj.warehouseStock) {
+              sum += parseInt(productObj.warehouseStock[b]) || 0;
+            }
+            productObj.stockQty = sum;
+
+            // Log Stock Movement
+            state.stockLogs.push({
+              id: 'SLG-' + (1000 + state.stockLogs.length + 1),
+              date: txIsoDate,
+              sku: prodSku,
+              type: 'sale',
+              qty: -qty,
+              warehouseId: activeBranch,
+              description: `Initial Purchase via CRM Customer Registration`,
+              branchId: activeBranch,
+              createdBy: state.currentUser ? state.currentUser.username : 'system',
+              updatedBy: state.currentUser ? state.currentUser.username : 'system',
+              timestamp: new Date().toISOString()
+            });
+          }
         }
       }
 
