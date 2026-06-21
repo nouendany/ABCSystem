@@ -4118,6 +4118,15 @@
           `;
         }
 
+        // Determine staff display name (fallback to transaction processor if no customer assigned staff)
+        let staffNameDisplay = tx.staffName;
+        if (customer && customer.id !== 'CST-001' && customer.staffId) {
+          const assignedStaff = state.staff.find(s => s.id === customer.staffId);
+          if (assignedStaff) {
+            staffNameDisplay = assignedStaff.name;
+          }
+        }
+
         // Calculate cost price and profit for this transaction
         let txCost = 0;
         tx.items.forEach(item => {
@@ -4145,7 +4154,7 @@
           <td style="text-align:center; color:var(--primary); font-size:14px; font-weight:bold;" class="toggle-chevron">▶</td>
           <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong></td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
-          <td>${tx.staffName}</td>
+          <td>${staffNameDisplay}</td>
           <td>${custDisplay}</td>
           <td style="text-align:right; font-weight:600;">${window.POS_HELPERS.formatUSD(txSubtotal)}</td>
           <td style="text-align:right; color:var(--danger); font-weight:600;">${txDiscount > 0 ? '-' + window.POS_HELPERS.formatUSD(txDiscount) : '$0.00'}</td>
@@ -8669,10 +8678,13 @@ CREATE TABLE sale_items (
           }
         });
 
-        // Update customerName in historical transactions
+        // Update customerName and staffName in historical transactions
         state.transactions.forEach(tx => {
           if (tx.customerId === editId) {
             tx.customerName = name;
+            tx.staffId = staffId;
+            const sObj = state.staff.find(st => st.id === staffId);
+            if (sObj) tx.staffName = sObj.name;
           }
         });
 
