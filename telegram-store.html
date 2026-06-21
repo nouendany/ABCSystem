@@ -562,7 +562,7 @@
       color: var(--text-muted);
     }
 
-    .form-group input, .form-group textarea {
+    .form-group input, .form-group textarea, .form-group select {
       width: 100%;
       padding: 12px;
       border: 1px solid var(--border);
@@ -571,10 +571,11 @@
       font-size: 13px;
       outline: none;
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.03);
       transition: var(--transition);
     }
 
-    .form-group input:focus, .form-group textarea:focus {
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
       border-color: var(--primary);
     }
 
@@ -818,8 +819,29 @@
       </div>
 
       <div class="form-group">
+        <label for="customer-facebook">តំណភ្ជាប់/ឈ្មោះ Facebook (Facebook Link/Profile)</label>
+        <input type="text" id="customer-facebook" placeholder="ឧទាហរណ៍ Sopheap Meas FB ឬតំណភ្ជាប់...">
+      </div>
+
+      <div class="form-group">
+        <label for="customer-source">ប្រភពអតិថិជន (Lead Source)</label>
+        <select id="customer-source">
+          <option value="Facebook Page" selected>Facebook Page</option>
+          <option value="Walk-In">Walk-In Client</option>
+          <option value="Telegram Channel">Telegram Channel</option>
+          <option value="Website">Website Link</option>
+          <option value="Referral">Agent Referral</option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label for="customer-address">ទីតាំងប្រគល់ទំនិញ (Delivery Location) *</label>
         <textarea id="customer-address" rows="2" placeholder="អាសយដ្ឋាន ឬទីតាំងលម្អិតរបស់អតិថិជន..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="customer-notes">កំណត់សម្គាល់បន្ថែម (Customer Notes)</label>
+        <textarea id="customer-notes" rows="2" placeholder="ការណែនាំបន្ថែម ឬកំណត់សម្គាល់ផ្សេងៗ..."></textarea>
       </div>
 
       <!-- Pricing Adjustments -->
@@ -941,6 +963,9 @@
     const customerName = document.getElementById('customer-name');
     const customerPhone = document.getElementById('customer-phone');
     const customerAddress = document.getElementById('customer-address');
+    const customerFacebook = document.getElementById('customer-facebook');
+    const customerSource = document.getElementById('customer-source');
+    const customerNotes = document.getElementById('customer-notes');
     const discountPercent = document.getElementById('discount-percent');
     const shippingFee = document.getElementById('shipping-fee');
     
@@ -1373,6 +1398,9 @@
             customerName.value = c.name;
             customerPhone.value = c.phone;
             customerAddress.value = c.address || '';
+            customerFacebook.value = c.facebookLink || '';
+            customerSource.value = c.source || 'Facebook Page';
+            customerNotes.value = c.notes || '';
             
             autosuggestCustomers.style.display = 'none';
             customerSearch.value = '';
@@ -1409,6 +1437,9 @@
       const cName = customerName.value.trim();
       const cPhone = customerPhone.value.trim();
       const cAddress = customerAddress.value.trim();
+      const cFacebook = customerFacebook.value.trim();
+      const cSource = customerSource.value;
+      const cNotes = customerNotes.value.trim();
 
       if (!cName || !cPhone || !cAddress) {
         alert("សូមបំពេញ ឈ្មោះ លេខទូរស័ព្ទ និងទីតាំងអតិថិជនឱ្យបានគ្រប់គ្រាន់!");
@@ -1426,6 +1457,9 @@
         customerName: cName,
         customerPhone: cPhone,
         customerAddress: cAddress,
+        customerFacebook: cFacebook,
+        customerSource: cSource,
+        customerNotes: cNotes,
         discountPercent: parseFloat(discountPercent.value) || 0,
         shippingFee: parseFloat(shippingFee.value) || 0
       };

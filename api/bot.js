@@ -135,10 +135,24 @@ async function handleWebAppOrder(req, res, body) {
           notes: `Ordered via Telegram WebApp`
         });
         
-        await updateDoc(doc(db, "customers", existingCust.docId), {
+        const updatePayload = {
           purchaseCount: newCount,
           timeline: timeline
-        });
+        };
+        if (req.body.customerFacebook && !existingCust.facebookLink) {
+          updatePayload.facebookLink = req.body.customerFacebook;
+        }
+        if (customerAddress && customerAddress !== "-" && (!existingCust.address || existingCust.address === "-")) {
+          updatePayload.address = customerAddress;
+        }
+        if (req.body.customerNotes) {
+          updatePayload.notes = req.body.customerNotes;
+        }
+        if (req.body.customerSource && (!existingCust.source || existingCust.source === "Telegram Bot")) {
+          updatePayload.source = req.body.customerSource;
+        }
+        
+        await updateDoc(doc(db, "customers", existingCust.docId), updatePayload);
       } else {
         // Create new customer
         const custCountSnap = await getCountFromServer(customersRef);
@@ -150,11 +164,12 @@ async function handleWebAppOrder(req, res, body) {
           id: customerId,
           name: customerNameStr,
           phone: customerPhone,
+          facebookLink: req.body.customerFacebook || "",
           address: customerAddress || "-",
-          source: "Telegram Bot",
+          source: req.body.customerSource || "Facebook Page",
           outstandingDebt: 0,
           status: "active",
-          notes: "Registered via Telegram bot sales ordering",
+          notes: req.body.customerNotes || "Registered via Telegram bot sales ordering",
           rank: "Bronze",
           purchaseCount: 1,
           timeline: [
@@ -305,18 +320,28 @@ async function handleWebAppOrder(req, res, body) {
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
     if (salesGroup) {
       const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
-      const orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n\n` + 
-                              `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
-                              `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
-                              `🏢 សាខា៖ **${branchId === "BR-001" ? "Phnom Penh HQ" : branchId === "BR-002" ? "Siem Reap" : "Sihanoukville"}**\n` +
-                              `------------------------\n` +
-                              `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}\n` +
-                              `------------------------\n` +
-                              `💵 សរុប៖ **$${total}** (បញ្ចុះតម្លៃ ${discPercent}%)\n\n` +
-                              `👤 **អតិថិជន៖**\n` +
-                              `📛 ឈ្មោះ៖ ${customerNameStr}\n` +
-                              `📞 លេខទូរស័ព្ទ៖ ${customerPhone}\n` +
-                              `📍 ទីតាំង៖ ${customerAddress || "-"}`;
+      let orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n\n` + 
+                            `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
+                            `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
+                            `🏢 សាខា៖ **${branchId === "BR-001" ? "Phnom Penh HQ" : branchId === "BR-002" ? "Siem Reap" : "Sihanoukville"}**\n` +
+                            `------------------------\n` +
+                            `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}\n` +
+                            `------------------------\n` +
+                            `💵 សរុប៖ **$${total}** (បញ្ចុះតម្លៃ ${discPercent}%)\n\n` +
+                            `👤 **អតិថិជន៖**\n` +
+                            `📛 ឈ្មោះ៖ ${customerNameStr}\n` +
+                            `📞 លេខទូរស័ព្ទ៖ ${customerPhone}\n` +
+                            `📍 ទីតាំង៖ ${customerAddress || "-"}`;
+
+      if (req.body.customerFacebook) {
+        orderNotifyText += `\n🌐 Facebook: ${req.body.customerFacebook}`;
+      }
+      if (req.body.customerSource) {
+        orderNotifyText += `\n📣 ប្រភព (Source): ${req.body.customerSource}`;
+      }
+      if (req.body.customerNotes) {
+        orderNotifyText += `\n📝 កំណត់សម្គាល់ (Notes): ${req.body.customerNotes}`;
+      }
 
       await sendTelegram(token, "sendMessage", {
         chat_id: salesGroup,
