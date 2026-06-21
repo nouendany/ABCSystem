@@ -753,11 +753,16 @@
       <div id="view-customers" class="view-panel">
         <div class="table-actions-row" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="btn-add-customer-modal" data-translate="addCustomer">Add Customer</button>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label style="margin:0; font-size:12px; font-weight:600; white-space:nowrap;" data-translate="filterByStaff">Filter by Staff</label>
-            <select class="form-control" id="filter-customer-staff" style="width:180px; padding:6px; font-size:12px; height:auto; margin:0;">
-              <!-- Populated dynamically -->
-            </select>
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <!-- Customer Search Input -->
+            <input type="text" class="form-control" id="search-customer-input" placeholder="Search customer..." data-translate="searchPlaceholderCustomers" style="width:240px; padding:6px 12px; font-size:12.5px; height:34px; margin:0; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff;">
+            
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label style="margin:0; font-size:12px; font-weight:600; white-space:nowrap;" data-translate="filterByStaff">Filter by Staff</label>
+              <select class="form-control" id="filter-customer-staff" style="width:180px; padding:6px; font-size:12px; height:auto; margin:0;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
           </div>
         </div>
         

@@ -2990,6 +2990,8 @@
 
     const activeStaffFilter = filterSelect ? filterSelect.value : 'all';
     const filterBranch = getActiveBranchFilter();
+    const searchInput = document.getElementById('search-customer-input');
+    const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
     state.customers.forEach((c, idx) => {
       if (filterBranch && c.branchId && c.branchId !== filterBranch && c.id !== 'CST-001') return;
@@ -2997,6 +2999,14 @@
       // Filter by Staff
       if (activeStaffFilter === 'unassigned' && c.staffId) return;
       if (activeStaffFilter !== 'all' && activeStaffFilter !== 'unassigned' && c.staffId !== activeStaffFilter) return;
+
+      // Filter by Search Query
+      if (searchQuery) {
+        const matchesName = c.name && c.name.toLowerCase().includes(searchQuery);
+        const matchesPhone = c.phone && c.phone.includes(searchQuery);
+        const matchesId = c.id && c.id.toLowerCase().includes(searchQuery);
+        if (!matchesName && !matchesPhone && !matchesId) return;
+      }
 
       let badgeColor = 'badge-success';
       if (c.rank === 'Silver') badgeColor = 'badge-warning';
@@ -8235,6 +8245,13 @@ CREATE TABLE sale_items (
     const filterCustomerStaff = document.getElementById('filter-customer-staff');
     if (filterCustomerStaff) {
       filterCustomerStaff.addEventListener('change', () => {
+        renderCustomers();
+      });
+    }
+
+    const searchCustomerInput = document.getElementById('search-customer-input');
+    if (searchCustomerInput) {
+      searchCustomerInput.addEventListener('input', () => {
         renderCustomers();
       });
     }
