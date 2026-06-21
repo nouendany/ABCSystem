@@ -5264,7 +5264,8 @@
     if (searchQuery) {
       transactions = transactions.filter(t => {
         const invNo = (t.invoiceNo || t.id || '').toLowerCase();
-        const custName = (t.customerName || '').toLowerCase();
+        const custObj = state.customers.find(c => c.id === t.customerId);
+        const custName = (custObj && custObj.id !== 'CST-001') ? custObj.name.toLowerCase() : (t.customerName || '').toLowerCase();
         const staffName = (t.staffName || '').toLowerCase();
         const itemsText = t.items.map(it => `${it.nameKh || ''} ${it.nameEn || ''}`).join(' ').toLowerCase();
         return invNo.includes(searchQuery) || custName.includes(searchQuery) || staffName.includes(searchQuery) || itemsText.includes(searchQuery);
@@ -5298,11 +5299,14 @@
       sumCost += txCost;
       sumTotal += tx.total;
 
+      const custObj = state.customers.find(c => c.id === tx.customerId);
+      const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (tx.customerName || 'General Customer');
+
       rowsHtml += `
         <tr>
           <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span></td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
-          <td><strong>${tx.customerName}</strong><br><span style="font-size:9px;color:var(--text-muted);">Rep: ${tx.staffName}</span></td>
+          <td><strong>${displayCustName}</strong><br><span style="font-size:9px;color:var(--text-muted);">Rep: ${tx.staffName}</span></td>
           <td style="font-size:10px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
           <td style="text-align:center; font-weight:700; color:var(--text-primary);">${txQty}</td>
           <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(txCost)}</td>
