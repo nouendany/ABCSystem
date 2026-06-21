@@ -8664,6 +8664,20 @@ CREATE TABLE sale_items (
             if (sObj) f.salesStaffName = sObj.name;
           }
         });
+
+        // Update customerName in historical transactions
+        state.transactions.forEach(tx => {
+          if (tx.customerId === cId) {
+            tx.customerName = name;
+          }
+        });
+
+        // Update customerName in payment logs
+        state.paymentLogs.forEach(log => {
+          if (log.customerId === cId) {
+            log.customerName = name;
+          }
+        });
       } else {
         if (!guardAction('add')) return;
         const newId = 'CST-' + String(state.customers.length + 1).padStart(3, '0');
@@ -8758,6 +8772,7 @@ CREATE TABLE sale_items (
       if (state.activeView === 'view-followups') {
         renderFollowups();
       }
+      renderFinance();
       checkCRMNotifications();
     });
 
