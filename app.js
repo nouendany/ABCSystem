@@ -3067,8 +3067,8 @@
         </td>
       `;
 
-      tr.querySelector('.btn-edit-c').addEventListener('click', () => openCustomerModal(idx));
-      tr.querySelector('.btn-del-c').addEventListener('click', () => deleteCustomer(idx));
+      tr.querySelector('.btn-edit-c').addEventListener('click', () => openCustomerModal(c.id));
+      tr.querySelector('.btn-del-c').addEventListener('click', () => deleteCustomer(c.id));
       
       const viewHistoryBtn = tr.querySelector('.btn-history-c');
       if (viewHistoryBtn) {
@@ -3282,9 +3282,9 @@
     }
   }
 
-  function openCustomerModal(idx = null) {
-    if (idx !== null && !guardAction('edit')) return;
-    if (idx === null && !guardAction('add')) return;
+  function openCustomerModal(cId = null) {
+    if (cId !== null && !guardAction('edit')) return;
+    if (cId === null && !guardAction('add')) return;
 
     const form = document.getElementById('customer-form');
     form.reset();
@@ -3308,10 +3308,11 @@
       });
     }
 
-    if (idx !== null) {
-      const c = state.customers[idx];
+    if (cId !== null) {
+      const c = state.customers.find(cust => cust.id === cId);
+      if (!c) return;
       document.getElementById('customer-modal-title').innerText = window.POS_TRANSLATIONS[state.lang].editCustomer;
-      document.getElementById('customer-edit-index').value = idx;
+      document.getElementById('customer-edit-index').value = cId;
       document.getElementById('cust-id').value = c.id;
       document.getElementById('cust-name').value = c.name;
       document.getElementById('cust-phone').value = c.phone;
@@ -3347,15 +3348,16 @@
     document.getElementById('modal-customer').classList.add('active-modal');
   }
 
-  function deleteCustomer(idx) {
+  function deleteCustomer(cId) {
     if (!guardAction('delete')) return;
-    const c = state.customers[idx];
-    if (c.id === 'CST-001') {
+    if (cId === 'CST-001') {
       alert(state.lang === 'km' ? 'មិនអាចលុបគណនីអតិថិជនទូទៅបានឡើយ!' : 'Cannot delete default General Customer profile!');
       return;
     }
+    const c = state.customers.find(cust => cust.id === cId);
+    if (!c) return;
     if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
-      state.customers.splice(idx, 1);
+      state.customers = state.customers.filter(cust => cust.id !== cId);
       state.followups = state.followups.filter(f => f.customerId !== c.id);
       saveStateToLocalStorage();
       renderCustomers();
@@ -6062,13 +6064,13 @@
 
         setupListener('users', 'users', 'id', []);
         setupListener('branches', 'branches', 'id', [populatePOSSelects]);
-        setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects]);
+        setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects, renderFinance]);
         setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
         setupListener('staff', 'staff', 'id', [populatePOSSelects]);
-        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects]);
+        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects, renderFinance]);
         setupListener('expenses', 'expenses', 'id', [renderFinance]);
         setupListener('stock_logs', 'stockLogs', 'id', []);
-        setupListener('payment_logs', 'paymentLogs', 'id', []);
+        setupListener('payment_logs', 'paymentLogs', 'id', [renderFinance]);
         setupListener('followups', 'followups', 'id', [renderFollowups]);
         setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
         setupListener('attendance', 'attendance', 'id', [cleanupOldSelfies, renderAttendanceLogs, renderHRDashboard]);
@@ -8629,7 +8631,7 @@ CREATE TABLE sale_items (
     // Customer CRUD Profile submission
     document.getElementById('customer-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const idx = document.getElementById('customer-edit-index').value;
+      const editId = document.getElementById('customer-edit-index').value;
       const name = document.getElementById('cust-name').value.trim();
       const phone = document.getElementById('cust-phone').value.trim();
       const address = document.getElementById('cust-address').value.trim();
@@ -8640,24 +8642,26 @@ CREATE TABLE sale_items (
       const facebookLink = document.getElementById('cust-facebook').value.trim();
       const birthday = document.getElementById('cust-birthday').value;
 
-      if (idx !== '') {
+      if (editId !== '') {
         if (!guardAction('edit')) return;
-        state.customers[idx].name = name;
-        state.customers[idx].phone = phone;
-        state.customers[idx].facebookLink = facebookLink;
-        state.customers[idx].address = address;
-        state.customers[idx].source = source;
-        state.customers[idx].status = status;
-        state.customers[idx].notes = notes;
-        state.customers[idx].staffId = staffId;
-        state.customers[idx].birthday = birthday;
-        state.customers[idx].updatedBy = state.currentUser ? state.currentUser.username : 'system';
-        state.customers[idx].timestamp = new Date().toISOString();
+        const customer = state.customers.find(c => c.id === editId);
+        if (customer) {
+          customer.name = name;
+          customer.phone = phone;
+          customer.facebookLink = facebookLink;
+          customer.address = address;
+          customer.source = source;
+          customer.status = status;
+          customer.notes = notes;
+          customer.staffId = staffId;
+          customer.birthday = birthday;
+          customer.updatedBy = state.currentUser ? state.currentUser.username : 'system';
+          customer.timestamp = new Date().toISOString();
+        }
         
         // Also update names in active followups
-        const cId = state.customers[idx].id;
         state.followups.forEach(f => {
-          if (f.customerId === cId) {
+          if (f.customerId === editId) {
             f.customerName = name;
             f.salesStaffId = staffId;
             const sObj = state.staff.find(st => st.id === staffId);
@@ -8667,14 +8671,14 @@ CREATE TABLE sale_items (
 
         // Update customerName in historical transactions
         state.transactions.forEach(tx => {
-          if (tx.customerId === cId) {
+          if (tx.customerId === editId) {
             tx.customerName = name;
           }
         });
 
         // Update customerName in payment logs
         state.paymentLogs.forEach(log => {
-          if (log.customerId === cId) {
+          if (log.customerId === editId) {
             log.customerName = name;
           }
         });
