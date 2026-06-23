@@ -347,7 +347,7 @@ async function handleWebAppOrder(req, res, body) {
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
     if (salesGroup) {
       const paymentStatusText = isDebt ? "⚠️ ជំពាក់ (On Account)" : `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
-      let orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n` + 
+      let orderNotifyText = `🛍️ **ការកម្មង់ថ្មី (New Order)**\n` + 
                             `🔢 ការបញ្ជាទិញលើកទី៖ **${purchaseCountVal}**\n\n` + 
                             `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
                             `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
