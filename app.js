@@ -2720,6 +2720,21 @@
     const area = document.getElementById('receipt-print-area');
     const br = state.branches.find(b => b.id === tx.branchId) || { name: 'ABC System' };
     
+    // Multi-company invoice branding (Requirement 10)
+    let comp = null;
+    if (tx.staffId) {
+      const staffObj = state.staff.find(s => s.id === tx.staffId || s.employeeId === tx.staffId);
+      const empId = staffObj ? (staffObj.employeeId || staffObj.id) : tx.staffId;
+      const empObj = state.employees.find(e => e.id === empId);
+      if (empObj && empObj.companyId) {
+        comp = state.companies.find(c => c.id === empObj.companyId);
+      }
+    }
+    
+    const companyName = (comp && comp.name) ? comp.name : (state.companySettings.companyName || 'ABC System');
+    const logoBase64 = (comp && comp.logoBase64) ? comp.logoBase64 : state.companySettings.logoBase64;
+    const companyPhone = (comp && comp.phone) ? comp.phone : (state.companySettings.phone || br.phone);
+
     let itemsHtml = '';
     tx.items.forEach(item => {
       const name = state.lang === 'km' ? item.nameKh : item.nameEn;
@@ -2734,16 +2749,16 @@
     const isKm = state.lang === 'km';
     const methodTranslate = window.POS_TRANSLATIONS[state.lang][tx.paymentMethod] || tx.paymentMethod;
 
-    const logoHtml = state.companySettings.logoBase64
-      ? `<div style="margin-bottom:6px;"><img src="${state.companySettings.logoBase64}" style="max-height:50px; max-width:145px; object-fit:contain;"></div>`
+    const logoHtml = logoBase64
+      ? `<div style="margin-bottom:6px;"><img src="${logoBase64}" style="max-height:50px; max-width:145px; object-fit:contain;"></div>`
       : '';
 
     area.innerHTML = `
       <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:10px; margin-bottom:10px;">
         ${logoHtml}
-        <h3 style="margin:0; font-size:16px;">${state.companySettings.companyName || 'ABC System'}</h3>
+        <h3 style="margin:0; font-size:16px;">${companyName}</h3>
         <p style="margin:2px 0; font-size:10px;">${isKm ? br.nameKh : br.name}</p>
-        <p style="margin:2px 0; font-size:9px;">Tel: ${state.companySettings.phone || br.phone}</p>
+        <p style="margin:2px 0; font-size:9px;">Tel: ${companyPhone}</p>
       </div>
 
       <div style="font-size:10px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:10px; display:flex; flex-direction:column; gap:2px;">
@@ -11221,13 +11236,14 @@ CREATE TABLE sale_items (
     if (compBody) {
       compBody.innerHTML = state.companies.map(c => `
         <tr>
+          <td>${c.logoBase64 ? `<img src="${c.logoBase64}" style="max-height:30px; max-width:70px; object-fit:contain; border-radius:3px;">` : '<span style="color:#777; font-size:11px;">No Logo</span>'}</td>
           <td><strong>${c.name}</strong></td>
           <td>${c.taxId || 'N/A'}</td>
           <td>${c.address || 'N/A'}</td>
           <td>${c.phone || 'N/A'}</td>
           <td><button class="btn btn-sm btn-outline" onclick="deleteOrgItem('companies', '${c.id}')">🗑️</button></td>
         </tr>
-      `).join('') || `<tr><td colspan="5" style="text-align:center;">No companies defined yet.</td></tr>`;
+      `).join('') || `<tr><td colspan="6" style="text-align:center;">No companies defined yet.</td></tr>`;
     }
 
     // Render Departments
@@ -11292,6 +11308,7 @@ CREATE TABLE sale_items (
   }
   window.deleteOrgItem = deleteOrgItem;
 
+  let tempCompanyLogoBase64 = '';
   function setupOrgEventListeners() {
     // Tab buttons
     ['companies', 'departments', 'teams', 'positions'].forEach(tab => {
@@ -11301,6 +11318,29 @@ CREATE TABLE sale_items (
       }
     });
 
+    const compLogoInput = document.getElementById('company-logo');
+    const compLogoPreview = document.getElementById('company-logo-preview');
+    if (compLogoInput) {
+      compLogoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          compressProductImage(file, (base64) => {
+            tempCompanyLogoBase64 = base64;
+            if (compLogoPreview) {
+              compLogoPreview.src = base64;
+              compLogoPreview.style.display = 'block';
+            }
+          });
+        } else {
+          tempCompanyLogoBase64 = '';
+          if (compLogoPreview) {
+            compLogoPreview.src = '';
+            compLogoPreview.style.display = 'none';
+          }
+        }
+      });
+    }
+
     const orgCompanyForm = document.getElementById('org-company-form');
     if (orgCompanyForm) {
       orgCompanyForm.addEventListener('submit', (e) => {
@@ -11309,10 +11349,16 @@ CREATE TABLE sale_items (
         const taxId = document.getElementById('company-tax-id').value.trim();
         const address = document.getElementById('company-address').value.trim();
         const phone = document.getElementById('company-phone').value.trim();
+        const logoBase64 = tempCompanyLogoBase64;
         const id = 'COMP' + String(state.companies.length + 1).padStart(3, '0');
-        state.companies.push({ id, name, taxId, address, phone });
+        state.companies.push({ id, name, taxId, address, phone, logoBase64 });
         saveStateToLocalStorage();
         orgCompanyForm.reset();
+        tempCompanyLogoBase64 = '';
+        if (compLogoPreview) {
+          compLogoPreview.src = '';
+          compLogoPreview.style.display = 'none';
+        }
         renderHROrg();
         alert("Company saved successfully!");
       });

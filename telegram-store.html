@@ -1258,6 +1258,39 @@
               employeeDisplay.innerText = `👤 ID: ${employeeId}`;
             }
           }
+
+          // Fetch Company Details if employee is linked to a company (Requirement 10)
+          if (employeeData && employeeData.companyId) {
+            try {
+              const compSnap = await db.collection('companies').doc(employeeData.companyId).get();
+              if (compSnap.exists) {
+                const compData = compSnap.data();
+                companySettings = {
+                  ...companySettings,
+                  logoBase64: compData.logoBase64 || companySettings.logoBase64,
+                  companyName: compData.name || companySettings.companyName,
+                  phone: compData.phone || companySettings.phone,
+                  address: compData.address || companySettings.address,
+                  email: compData.email || companySettings.email || ''
+                };
+              } else {
+                const compQ = await db.collection('companies').where('id', '==', employeeData.companyId).get();
+                if (!compQ.empty) {
+                  const compData = compQ.docs[0].data();
+                  companySettings = {
+                    ...companySettings,
+                    logoBase64: compData.logoBase64 || companySettings.logoBase64,
+                    companyName: compData.name || companySettings.companyName,
+                    phone: compData.phone || companySettings.phone,
+                    address: compData.address || companySettings.address,
+                    email: compData.email || companySettings.email || ''
+                  };
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching company details:", err);
+            }
+          }
         } else {
           employeeDisplay.innerText = `👤 Guest Seller`;
         }

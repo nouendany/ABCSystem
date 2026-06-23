@@ -293,7 +293,7 @@
           <a href="tel:010955536" style="font-size: 9.5px; color: var(--primary); font-weight: 600; display: inline-block; margin-top: 2px; text-decoration: none;">Tel: 010 955 536</a>
         </div>
         <div style="margin-top: 6px; text-align: center; font-size: 9px; color: var(--primary); font-weight: bold; opacity: 0.85;">
-          Version 1.4.9 (Build 15.06.2026)
+          Version 1.5.0 (Build 15.06.2026)
         </div>
       </div>
     </aside>
@@ -1630,6 +1630,13 @@
                     <label>Phone</label>
                     <input type="text" class="form-control" id="company-phone" placeholder="e.g. 023 999 888">
                   </div>
+                  <div class="form-group">
+                    <label>Company Logo</label>
+                    <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
+                      <input type="file" class="form-control" id="company-logo" accept="image/*" style="padding: 3px;">
+                      <img id="company-logo-preview" src="" style="display:none; max-height:40px; max-width:100px; object-fit:contain; border-radius:4px; border:1px solid rgba(255,255,255,0.2);">
+                    </div>
+                  </div>
                   <button type="submit" class="btn btn-primary btn-sm w-100" style="margin-top:10px;">Save Company</button>
                 </form>
               </div>
@@ -1638,6 +1645,7 @@
                   <table class="pos-table">
                     <thead>
                       <tr>
+                        <th>Logo</th>
                         <th>Name</th>
                         <th>Tax ID</th>
                         <th>Address</th>

@@ -118,6 +118,19 @@ async function handleWebAppOrder(req, res, body) {
       return res.status(400).json({ error: "Employee profile not found in system." });
     }
 
+    // Resolve employee's company (Requirement 10)
+    let companyName = "";
+    if (employee.companyId) {
+      try {
+        const compSnap = await getDoc(doc(db, "companies", employee.companyId));
+        if (compSnap.exists()) {
+          companyName = compSnap.data().name || "";
+        }
+      } catch (err) {
+        console.error("Error fetching company info for Telegram bot:", err);
+      }
+    }
+
     // Fetch all products in cart and prepare lines
     const txCountSnap = await getCountFromServer(collection(db, "transactions"));
     const nextTxNum = 1000 + txCountSnap.data().count + 1;
@@ -348,6 +361,7 @@ async function handleWebAppOrder(req, res, body) {
     if (salesGroup) {
       const paymentStatusText = isDebt ? "⚠️ ជំពាក់ (On Account)" : `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
       let orderNotifyText = `🛍️ **ការកម្មង់ថ្មី (New Order)**\n` + 
+                            (companyName ? `🏢 ក្រុមហ៊ុន៖ **${companyName}**\n` : '') +
                             `🔢 ការបញ្ជាទិញលើកទី៖ **${purchaseCountVal}**\n\n` + 
                             `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
                             `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
@@ -380,6 +394,7 @@ async function handleWebAppOrder(req, res, body) {
 
     // Send direct notification to employee
     const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n` +
+                       (companyName ? `🏢 ក្រុមហ៊ុន៖ **${companyName}**\n` : '') +
                        `🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n` +
                        `💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n` +
                        `💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n` +
