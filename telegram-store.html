@@ -4,6 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>FutureTech Sales Ordering</title>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      const errDiv = document.createElement('div');
+      errDiv.style.position = 'fixed';
+      errDiv.style.top = '0';
+      errDiv.style.left = '0';
+      errDiv.style.width = '100%';
+      errDiv.style.background = 'red';
+      errDiv.style.color = 'white';
+      errDiv.style.fontSize = '10px';
+      errDiv.style.zIndex = '9999999';
+      errDiv.style.padding = '8px';
+      errDiv.style.wordBreak = 'break-all';
+      errDiv.innerHTML = `⚠️ JS Error: ${msg} <br>Line: ${line}, Col: ${col} <br>URL: ${url}`;
+      document.body.appendChild(errDiv);
+      return false;
+    };
+  </script>
   
   <!-- Google Fonts: Outfit & Koh Santepheap for Khmer -->
   <link href="https://fonts.googleapis.com/css2?family=Koh+Santepheap:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,6 +35,16 @@
   
   <!-- html2canvas for receipt downloading -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    if (typeof html2canvas === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>');
+    }
+  </script>
+  <script>
+    if (typeof html2canvas === 'undefined') {
+      document.write('<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>');
+    }
+  </script>
 
   <style>
     :root {
@@ -1050,41 +1078,62 @@
 
       const element = document.getElementById('overlay-receipt');
       if (!element) return;
+
+      // Clone the element to avoid scroll/positioning issues in fixed/scrolled overlays
+      const clone = element.cloneNode(true);
       
-      const originalBoxShadow = element.style.boxShadow;
-      const originalBorder = element.style.border;
-      element.style.boxShadow = 'none';
-      element.style.border = '1px solid #ddd';
+      // Explicitly style the clone to ensure it is visible, styled, and offscreen
+      clone.style.position = 'absolute';
+      clone.style.top = '0';
+      clone.style.left = '-9999px';
+      clone.style.width = '320px';
+      clone.style.background = '#ffffff';
+      clone.style.padding = '16px';
+      clone.style.boxShadow = 'none';
+      clone.style.border = '1px solid #ddd';
+      clone.style.display = 'flex';
+      clone.style.flexDirection = 'column';
+      clone.style.gap = '6px';
+      clone.style.zIndex = '-9999';
       
-      html2canvas(element, {
-        scale: 2, // 2x scale is perfect for mobile devices and uses less memory
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#ffffff',
-        logging: false
-      }).then(canvas => {
-        element.style.boxShadow = originalBoxShadow;
-        element.style.border = originalBorder;
-        
-        const dataUrl = canvas.toDataURL('image/png');
-        
-        // Show Image Preview modal so they can long-press to save on Telegram mobile clients
-        const previewModal = document.getElementById('image-preview-modal');
-        const previewImg = document.getElementById('preview-invoice-img');
-        if (previewModal && previewImg) {
-          previewImg.src = dataUrl;
-          previewModal.style.display = 'flex';
-        }
-        
-        // Normal direct browser download fallback
-        const link = document.createElement('a');
-        link.download = `Invoice_${invoiceNo}.png`;
-        link.href = dataUrl;
-        link.click();
-      }).catch(err => {
-        console.error("Canvas capture error:", err);
-        alert("មិនអាចទាញយកវិក្កយបត្របានទេ (Failed: " + err.message + ")");
-      });
+      document.body.appendChild(clone);
+
+      // Wait a tiny bit for the browser to attach the element and load any base64 resources
+      setTimeout(() => {
+        html2canvas(clone, {
+          scale: 2, // 2x scale is perfect for mobile devices and uses less memory
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          logging: false
+        }).then(canvas => {
+          // Clean up clone immediately
+          document.body.removeChild(clone);
+
+          const dataUrl = canvas.toDataURL('image/png');
+
+          // Show Image Preview modal so they can long-press to save on Telegram mobile clients
+          const previewModal = document.getElementById('image-preview-modal');
+          const previewImg = document.getElementById('preview-invoice-img');
+          if (previewModal && previewImg) {
+            previewImg.src = dataUrl;
+            previewModal.style.display = 'flex';
+          }
+
+          // Normal direct browser download fallback
+          const link = document.createElement('a');
+          link.download = `Invoice_${invoiceNo}.png`;
+          link.href = dataUrl;
+          link.click();
+        }).catch(err => {
+          // Clean up clone on error
+          if (clone.parentNode) {
+            document.body.removeChild(clone);
+          }
+          console.error("Canvas capture error:", err);
+          alert("មិនអាចទាញយកវិក្កយបត្របានទេ (Failed: " + err.message + ")");
+        });
+      }, 100);
     }
 
     function showOrderSuccess(invoiceNo, total, custName, custPhone, itemsCount) {
@@ -1716,8 +1765,17 @@
     // Download Invoice Click
     if (btnOverlayDownload) {
       btnOverlayDownload.addEventListener('click', () => {
-        if (currentInvoiceNo) {
-          downloadInvoicePNG(currentInvoiceNo);
+        try {
+          if (currentInvoiceNo) {
+            downloadInvoicePNG(currentInvoiceNo);
+          } else {
+            // Try to resolve invoiceNo from success element text content if currentInvoiceNo is somehow empty
+            const matches = overlayReceipt.innerHTML.match(/Inv No[\s\S]*?<strong>([\s\S]*?)<\/strong>/i);
+            const resolvedInv = matches ? matches[1].trim() : "INV-TEMP";
+            downloadInvoicePNG(resolvedInv);
+          }
+        } catch (e) {
+          alert("Click Handler Error: " + e.message);
         }
       });
     }
