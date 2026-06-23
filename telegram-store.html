@@ -931,6 +931,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const employeeId = urlParams.get('employeeId') || '';
     const chatId = urlParams.get('chatId') || '';
+    const botType = urlParams.get('bot') || 'attendance';
 
     // Application state
     let employeeData = null;
@@ -1450,6 +1451,7 @@
 
       const payload = {
         webAppOrder: true,
+        bot: botType,
         employeeId: employeeId,
         chatId: chatId,
         branchId: activeBranchId,

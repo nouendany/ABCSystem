@@ -62,17 +62,25 @@ async function downloadTelegramFileAsBase64(token, fileId) {
 }
 
 function getMenuMarkup(req, empId, chatId) {
-  const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
-  const protocol = req.headers["x-forwarded-proto"] || "https";
-  const storeAppUrl = `${protocol}://${host}/telegram-store.html?employeeId=${empId || ""}&chatId=${chatId}`;
   return {
     keyboard: [
       [{ text: "✅ ចូលការងារ (Check-In)" }, { text: "✅ ចេញការងារ (Check-Out)" }],
-      [{ text: "🛍️ ដាក់ការបញ្ជាទិញ (Order)", web_app: { url: storeAppUrl } }],
       [{ text: "📝 សុំច្បាប់ (Leave)" }, { text: "🕒 សុំម៉ោងបន្ថែម (OT)" }],
       [{ text: "📄 ប័ណ្ណបើកប្រាក់ខែ" }, { text: "🏢 ក្រុមហ៊ុនខ្ញុំ (Company)" }],
       [{ text: "👤 ព័ត៌មានខ្ញុំ (Profile)" }, { text: "📅 ប្រវត្តិវត្តមាន" }],
       [{ text: "📢 សេចក្ដីជូនដំណឹង" }, { text: "☎️ ទាក់ទង Admin" }]
+    ],
+    resize_keyboard: true
+  };
+}
+
+function getSalesMenuMarkup(req, empId, chatId) {
+  const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  const storeAppUrl = `${protocol}://${host}/telegram-store.html?employeeId=${empId || ""}&chatId=${chatId}&bot=sales`;
+  return {
+    keyboard: [
+      [{ text: "🛍️ ដាក់ការបញ្ជាទិញ (Order)", web_app: { url: storeAppUrl } }]
     ],
     resize_keyboard: true
   };
@@ -87,7 +95,11 @@ async function handleWebAppOrder(req, res, body) {
     // Load settings
     const settingsSnap = await getDoc(doc(db, "company_settings", "global"));
     const settings = settingsSnap.exists() ? settingsSnap.data() : {};
-    const token = settings.hrTelegramBotToken || settings.telegramToken;
+    
+    const botType = body.bot || req.query.bot || 'attendance';
+    const token = botType === 'sales'
+      ? (settings.salesTelegramBotToken || settings.hrTelegramBotToken || settings.telegramToken)
+      : (settings.hrTelegramBotToken || settings.telegramToken);
 
     if (!token) {
       return res.status(400).json({ error: "Missing Telegram Bot token configuration." });
@@ -395,10 +407,13 @@ export default async function handler(req, res) {
     const photo = message && message.photo ? message.photo : null;
     const callbackData = callback_query ? callback_query.data : null;
 
-    // Load HR Settings
     const settingsSnap = await getDoc(doc(db, "company_settings", "global"));
     const settings = settingsSnap.exists() ? settingsSnap.data() : {};
-    const token = settings.hrTelegramBotToken || settings.telegramToken;
+    
+    const isSalesBot = req.query.bot === 'sales';
+    const token = isSalesBot
+      ? (settings.salesTelegramBotToken || settings.hrTelegramBotToken || settings.telegramToken)
+      : (settings.hrTelegramBotToken || settings.telegramToken);
 
     if (!token) {
       return res.status(200).send("Bot Token is not configured in settings yet.");
@@ -414,7 +429,59 @@ export default async function handler(req, res) {
       employee = { docId: doc.id, ...doc.data() };
     });
 
-    const menuMarkup = getMenuMarkup(req, employee ? employee.id : '', chatId);
+    const menuMarkup = isSalesBot
+      ? getSalesMenuMarkup(req, employee ? employee.id : '', chatId)
+      : getMenuMarkup(req, employee ? employee.id : '', chatId);
+
+    // Sales Bot Custom Routing
+    if (isSalesBot) {
+      if (!employee) {
+        const isCommand = text && (text.startsWith("/") || text.toLowerCase() === "start" || text.toLowerCase() === "cancel");
+        if (text && !isCommand) {
+          const empIdInput = text.trim().toUpperCase();
+          const checkRef = query(employeesRef, where("id", "==", empIdInput));
+          const checkSnap = await getDocs(checkRef);
+          
+          let foundEmp = null;
+          checkSnap.forEach(doc => {
+            foundEmp = { docId: doc.id, ...doc.data() };
+          });
+
+          if (foundEmp) {
+            await updateDoc(doc(db, "employees", foundEmp.docId), {
+              telegramId: String(chatId)
+            });
+
+            await sendTelegram(token, "sendMessage", {
+              chat_id: chatId,
+              text: `🎉 ការចុះឈ្មោះជោគជ័យ!\n\nគណនី Telegram របស់អ្នកត្រូវបានភ្ជាប់ជាមួយ៖\n👤 ឈ្មោះ៖ ${foundEmp.fullName}\n🆔 អត្តលេខ៖ ${foundEmp.id}\n\nសូមចុចប៊ូតុង "🛍️ ដាក់ការបញ្ជាទិញ (Order)" ខាងក្រោមដើម្បីដាក់ការកម្មង់៖`,
+              reply_markup: getSalesMenuMarkup(req, foundEmp.id, chatId)
+            });
+          } else {
+            await sendTelegram(token, "sendMessage", {
+              chat_id: chatId,
+              text: `❌ រកមិនឃើញអត្តលេខបុគ្គលិក "${empIdInput}" ក្នុងប្រព័ន្ធឡើយ។ សូមពិនិត្យឡើងវិញ ឬទាក់ទង Admin!`
+            });
+          }
+          return res.status(200).send("OK");
+        }
+
+        // Welcome / Start message for unregistered users
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: `👋 សូមស្វាគមន៍មកកាន់ Mini Bot សម្រាប់បញ្ជាទិញទំនិញរបស់ ABC System!\n\nដើម្បីអាចដាក់ការបញ្ជាទិញបាន សូមវាយបញ្ចូល **អត្តលេខបុគ្គលិក (Employee ID)** របស់អ្នកជាមុនសិន (ឧទាហរណ៍៖ **EMP001**)៖`
+        });
+        return res.status(200).send("OK");
+      }
+
+      // Welcome message for already registered user
+      await sendTelegram(token, "sendMessage", {
+        chat_id: chatId,
+        text: `👋 សួស្តី ${employee.fullName}! សូមចុចប៊ូតុង "🛍️ ដាក់ការបញ្ជាទិញ (Order)" ខាងក្រោមដើម្បីចាប់ផ្តើម៖`,
+        reply_markup: menuMarkup
+      });
+      return res.status(200).send("OK");
+    }
 
     // User is not registered
     if (!employee) {

@@ -6634,6 +6634,15 @@
               <input type="text" class="form-control" id="hr-settings-sales-group-id-master" placeholder="e.g. -100123456789" value="${state.companySettings.salesTelegramGroupId || ''}">
               <small style="color: var(--text-muted); font-size: 11px;" data-translate="salesGroupIdHelp">For sales order reports. If empty, falls back to Admin Reports group.</small>
             </div>
+            <div class="form-group">
+              <label data-translate="salesBotToken">Sales Bot Token (for Orders)</label>
+              <input type="text" class="form-control" id="hr-settings-sales-token-master" placeholder="Enter Sales Bot Token from BotFather" value="${state.companySettings.salesTelegramBotToken || ''}">
+              <small style="color: var(--text-muted); font-size: 11px;" data-translate="salesBotTokenHelp">Used for ordering bot notifications.</small>
+            </div>
+            <div class="form-group">
+              <label data-translate="salesBotUsername">Sales Bot Username</label>
+              <input type="text" class="form-control" id="hr-settings-sales-username-master" placeholder="e.g. abc_sales_bot" value="${state.companySettings.salesTelegramBotUsername || ''}">
+            </div>
             
             <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
               <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
@@ -6670,15 +6679,23 @@
 
             <!-- Telegram Webhook Registration Help -->
             <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 10px;">
-              <label style="margin-bottom:4px; font-weight:700;" data-translate="botUrl">Webhook URL</label>
-              <div style="display: flex; gap: 8px;">
-                <input type="text" class="form-control" id="hr-settings-webhook-url-master" readonly style="background: rgba(0,0,0,0.2);" value="${window.location.origin + '/api/bot'}">
+              <label style="margin-bottom:4px; font-weight:700;" data-translate="attendanceBotWebhookUrl">Attendance Bot Webhook URL</label>
+              <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" class="form-control" id="hr-settings-webhook-url-master" readonly style="background: rgba(0,0,0,0.2);" value="${window.location.origin + '/api/bot?bot=attendance'}">
                 <button type="button" class="btn btn-outline" id="btn-copy-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;">Copy</button>
                 <button type="button" class="btn btn-primary" id="btn-register-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;" data-translate="registerWebhook">Set Webhook</button>
               </div>
-              <small style="color: var(--text-muted); font-size: 11px; display:block; margin-top:6px;">
-                Copy this Webhook URL and register it to your Telegram Bot by visiting:<br>
-                <code style="color: var(--primary); font-family: monospace; font-size:10px; word-break: break-all;">https://api.telegram.org/bot&lt;Token&gt;/setWebhook?url=&lt;URL&gt;</code>
+              
+              <label style="margin-bottom:4px; font-weight:700;" data-translate="salesBotWebhookUrl">Sales Bot Webhook URL</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-control" id="hr-settings-sales-webhook-url-master" readonly style="background: rgba(0,0,0,0.2);" value="${window.location.origin + '/api/bot?bot=sales'}">
+                <button type="button" class="btn btn-outline" id="btn-copy-sales-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;">Copy</button>
+                <button type="button" class="btn btn-primary" id="btn-register-sales-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;" data-translate="registerWebhook">Set Webhook</button>
+              </div>
+              
+              <small style="color: var(--text-muted); font-size: 11px; display:block; margin-top:10px;">
+                Copy these Webhook URLs and register them to your Telegram Bots by clicking "Set Webhook", or visiting:<br>
+                <code style="color: var(--primary); font-family: monospace; font-size:10px; word-break: break-all;">https://api.telegram.org/bot&lt;Token&gt;/setWebhook?url=&lt;Webhook_URL&gt;</code>
               </small>
             </div>
 
@@ -6707,6 +6724,11 @@
         state.companySettings.hrTelegramBotUsername = username;
         state.companySettings.hrTelegramGroupId = groupId;
         state.companySettings.salesTelegramGroupId = salesGroupId;
+
+        const salesToken = document.getElementById('hr-settings-sales-token-master').value.trim();
+        const salesUsername = document.getElementById('hr-settings-sales-username-master').value.trim();
+        state.companySettings.salesTelegramBotToken = salesToken;
+        state.companySettings.salesTelegramBotUsername = salesUsername;
         state.companySettings.hrLocationCheckEnabled = locationCheckEnabled;
         state.companySettings.hrOfficeLatitude = lat;
         state.companySettings.hrOfficeLongitude = lng;
@@ -6732,6 +6754,27 @@
         const webhookUrl = document.getElementById('hr-settings-webhook-url-master').value.trim();
         if (!token) {
           alert(state.lang === 'km' ? 'សូមបញ្ចូល Telegram Bot Token ជាមុនសិន!' : 'Please enter the Telegram Bot Token first!');
+          return;
+        }
+        
+        const registerUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
+        window.open(registerUrl, '_blank');
+      });
+
+      document.getElementById('btn-copy-sales-webhook-master').addEventListener('click', () => {
+        const urlInput = document.getElementById('hr-settings-sales-webhook-url-master');
+        if (urlInput) {
+          urlInput.select();
+          document.execCommand('copy');
+          alert('Sales Webhook URL copied to clipboard!');
+        }
+      });
+
+      document.getElementById('btn-register-sales-webhook-master').addEventListener('click', () => {
+        const token = document.getElementById('hr-settings-sales-token-master').value.trim();
+        const webhookUrl = document.getElementById('hr-settings-sales-webhook-url-master').value.trim();
+        if (!token) {
+          alert(state.lang === 'km' ? 'សូមបញ្ចូល Sales Bot Token ជាមុនសិន!' : 'Please enter the Sales Bot Token first!');
           return;
         }
         
