@@ -3126,7 +3126,7 @@
       if (score < 50) scoreColor = '#ef4444'; // red
       else if (score < 80) scoreColor = '#f59e0b'; // yellow
 
-      let staff = state.staff.find(s => s.id === c.staffId);
+      let staff = state.staff.find(s => s.id === c.staffId || s.employeeId === c.staffId);
       if (!staff && state.employees) {
         const emp = state.employees.find(e => e.id === c.staffId || e.telegramId === c.staffId);
         if (emp) {
@@ -3270,7 +3270,7 @@
     document.getElementById('cust-profile-phone').innerText = customer.phone || '-';
     document.getElementById('cust-profile-source').innerText = customer.source || '-';
     
-    let staff = state.staff.find(s => s.id === customer.staffId);
+    let staff = state.staff.find(s => s.id === customer.staffId || s.employeeId === customer.staffId);
     if (!staff && state.employees) {
       const emp = state.employees.find(e => e.id === customer.staffId || e.telegramId === customer.staffId);
       if (emp) {
@@ -3648,7 +3648,7 @@
           }
 
           // Facebook Page info & Sales Staff Info
-          let staffMember = state.staff.find(s => s.id === f.salesStaffId || s.name === f.salesStaffName);
+          let staffMember = state.staff.find(s => s.id === f.salesStaffId || s.name === f.salesStaffName || s.employeeId === f.salesStaffId);
           if (!staffMember && state.employees) {
             const emp = state.employees.find(e => e.id === f.salesStaffId || e.fullName === f.salesStaffName || e.name === f.salesStaffName);
             if (emp) {
@@ -4252,7 +4252,7 @@
         // Determine staff display name (fallback to transaction processor if no customer assigned staff)
         let staffNameDisplay = tx.staffName;
         if (customer && customer.id !== 'CST-001' && customer.staffId) {
-          let assignedStaff = state.staff.find(s => s.id === customer.staffId);
+          let assignedStaff = state.staff.find(s => s.id === customer.staffId || s.employeeId === customer.staffId);
           if (!assignedStaff && state.employees) {
             const emp = state.employees.find(e => e.id === customer.staffId || e.telegramId === customer.staffId);
             if (emp) {
@@ -6261,7 +6261,7 @@
         setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects, renderFinance]);
         setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
         setupListener('staff', 'staff', 'id', [populatePOSSelects]);
-        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects, renderFinance]);
+        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects, renderFinance, renderCustomers]);
         setupListener('expenses', 'expenses', 'id', [renderFinance]);
         setupListener('stock_logs', 'stockLogs', 'id', []);
         setupListener('payment_logs', 'paymentLogs', 'id', [renderFinance]);
@@ -8901,7 +8901,7 @@ CREATE TABLE sale_items (
           if (f.customerId === editId) {
             f.customerName = name;
             f.salesStaffId = staffId;
-            let sObj = state.staff.find(st => st.id === staffId);
+            let sObj = state.staff.find(st => st.id === staffId || st.employeeId === staffId);
             if (!sObj && state.employees) {
               const emp = state.employees.find(e => e.id === staffId);
               if (emp) sObj = { id: emp.id, name: emp.fullName || emp.name };
@@ -8915,7 +8915,7 @@ CREATE TABLE sale_items (
           if (tx.customerId === editId) {
             tx.customerName = name;
             tx.staffId = staffId;
-            let sObj = state.staff.find(st => st.id === staffId);
+            let sObj = state.staff.find(st => st.id === staffId || st.employeeId === staffId);
             if (!sObj && state.employees) {
               const emp = state.employees.find(e => e.id === staffId);
               if (emp) sObj = { id: emp.id, name: emp.fullName || emp.name };
@@ -8940,7 +8940,7 @@ CREATE TABLE sale_items (
         const productObj = state.products.find(p => p.sku === prodSku);
         const productName = productObj ? (state.lang === 'km' ? productObj.nameKh : productObj.nameEn) : prodSku;
 
-        let staffObj = state.staff.find(s => s.id === staffId);
+        let staffObj = state.staff.find(s => s.id === staffId || s.employeeId === staffId);
         if (!staffObj && state.employees) {
           const emp = state.employees.find(e => e.id === staffId);
           if (emp) staffObj = { id: emp.id, name: emp.fullName || emp.name };
@@ -9340,7 +9340,7 @@ CREATE TABLE sale_items (
       const f = state.followups.find(fl => fl.id === fId);
       if (f) {
         f.salesStaffId = staffId;
-        let staffObj = state.staff.find(s => s.id === staffId);
+        let staffObj = state.staff.find(s => s.id === staffId || s.employeeId === staffId);
         if (!staffObj && state.employees) {
           const emp = state.employees.find(e => e.id === staffId);
           if (emp) staffObj = { id: emp.id, name: emp.fullName || emp.name };
