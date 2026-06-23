@@ -3083,6 +3083,13 @@
       state.staff.forEach(s => {
         filterOpts += `<option value="${s.id}">${s.name}</option>`;
       });
+      if (state.employees) {
+        state.employees.forEach(emp => {
+          if (!state.staff.some(s => s.id === emp.id)) {
+            filterOpts += `<option value="${emp.id}">${emp.fullName || emp.name} (HR)</option>`;
+          }
+        });
+      }
       filterSelect.innerHTML = filterOpts;
       filterSelect.value = currentFilterVal;
     }
@@ -3119,7 +3126,13 @@
       if (score < 50) scoreColor = '#ef4444'; // red
       else if (score < 80) scoreColor = '#f59e0b'; // yellow
 
-      const staff = state.staff.find(s => s.id === c.staffId);
+      let staff = state.staff.find(s => s.id === c.staffId);
+      if (!staff && state.employees) {
+        const emp = state.employees.find(e => e.id === c.staffId || e.telegramId === c.staffId);
+        if (emp) {
+          staff = { id: emp.id, name: emp.fullName || emp.name };
+        }
+      }
       let staffDisplay = `<span style="color:var(--text-muted); font-style:italic;">${state.lang === 'km' ? 'មិនទាន់ចាត់តាំង' : 'Unassigned'}</span>`;
       if (staff) {
         staffDisplay = `<strong>${staff.name}</strong>`;
@@ -3257,7 +3270,13 @@
     document.getElementById('cust-profile-phone').innerText = customer.phone || '-';
     document.getElementById('cust-profile-source').innerText = customer.source || '-';
     
-    const staff = state.staff.find(s => s.id === customer.staffId);
+    let staff = state.staff.find(s => s.id === customer.staffId);
+    if (!staff && state.employees) {
+      const emp = state.employees.find(e => e.id === customer.staffId || e.telegramId === customer.staffId);
+      if (emp) {
+        staff = { id: emp.id, name: emp.fullName || emp.name };
+      }
+    }
     document.getElementById('cust-profile-staff').innerText = staff ? staff.name : (state.lang === 'km' ? 'មិនទាន់ចាត់តាំង' : 'Unassigned');
     
     const debtEl = document.getElementById('cust-profile-debt');
@@ -3395,6 +3414,13 @@
       state.staff.forEach(s => {
         modalStaffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
       });
+      if (state.employees) {
+        state.employees.forEach(emp => {
+          if (!state.staff.some(s => s.id === emp.id)) {
+            modalStaffSelect.innerHTML += `<option value="${emp.id}">${emp.fullName || emp.name} (HR)</option>`;
+          }
+        });
+      }
     }
 
     // Populate product dropdown in modal
@@ -3622,7 +3648,13 @@
           }
 
           // Facebook Page info & Sales Staff Info
-          const staffMember = state.staff.find(s => s.id === f.salesStaffId || s.name === f.salesStaffName);
+          let staffMember = state.staff.find(s => s.id === f.salesStaffId || s.name === f.salesStaffName);
+          if (!staffMember && state.employees) {
+            const emp = state.employees.find(e => e.id === f.salesStaffId || e.fullName === f.salesStaffName || e.name === f.salesStaffName);
+            if (emp) {
+              staffMember = { id: emp.id, name: emp.fullName || emp.name, fbPage: emp.fbPage };
+            }
+          }
           const staffUser = state.users.find(u => u.name === f.salesStaffName || u.id === f.salesStaffId || u.username === f.salesStaffId);
           const pageNameVal = staffMember && staffMember.fbPage ? staffMember.fbPage : (staffUser ? (staffUser.pageName || "Direct Sales") : (tx && tx.pageName ? tx.pageName : (custObj && custObj.source ? custObj.source : 'Walk-In')));
           const staffNameVal = f.salesStaffName || 'System';
@@ -4220,7 +4252,13 @@
         // Determine staff display name (fallback to transaction processor if no customer assigned staff)
         let staffNameDisplay = tx.staffName;
         if (customer && customer.id !== 'CST-001' && customer.staffId) {
-          const assignedStaff = state.staff.find(s => s.id === customer.staffId);
+          let assignedStaff = state.staff.find(s => s.id === customer.staffId);
+          if (!assignedStaff && state.employees) {
+            const emp = state.employees.find(e => e.id === customer.staffId || e.telegramId === customer.staffId);
+            if (emp) {
+              assignedStaff = { id: emp.id, name: emp.fullName || emp.name };
+            }
+          }
           if (assignedStaff) {
             staffNameDisplay = assignedStaff.name;
           }
@@ -8863,7 +8901,11 @@ CREATE TABLE sale_items (
           if (f.customerId === editId) {
             f.customerName = name;
             f.salesStaffId = staffId;
-            const sObj = state.staff.find(st => st.id === staffId);
+            let sObj = state.staff.find(st => st.id === staffId);
+            if (!sObj && state.employees) {
+              const emp = state.employees.find(e => e.id === staffId);
+              if (emp) sObj = { id: emp.id, name: emp.fullName || emp.name };
+            }
             if (sObj) f.salesStaffName = sObj.name;
           }
         });
@@ -8873,7 +8915,11 @@ CREATE TABLE sale_items (
           if (tx.customerId === editId) {
             tx.customerName = name;
             tx.staffId = staffId;
-            const sObj = state.staff.find(st => st.id === staffId);
+            let sObj = state.staff.find(st => st.id === staffId);
+            if (!sObj && state.employees) {
+              const emp = state.employees.find(e => e.id === staffId);
+              if (emp) sObj = { id: emp.id, name: emp.fullName || emp.name };
+            }
             if (sObj) tx.staffName = sObj.name;
           }
         });
@@ -8894,7 +8940,11 @@ CREATE TABLE sale_items (
         const productObj = state.products.find(p => p.sku === prodSku);
         const productName = productObj ? (state.lang === 'km' ? productObj.nameKh : productObj.nameEn) : prodSku;
 
-        const staffObj = state.staff.find(s => s.id === staffId);
+        let staffObj = state.staff.find(s => s.id === staffId);
+        if (!staffObj && state.employees) {
+          const emp = state.employees.find(e => e.id === staffId);
+          if (emp) staffObj = { id: emp.id, name: emp.fullName || emp.name };
+        }
         const staffName = staffObj ? staffObj.name : 'System';
 
         const orders = [];
@@ -9290,7 +9340,11 @@ CREATE TABLE sale_items (
       const f = state.followups.find(fl => fl.id === fId);
       if (f) {
         f.salesStaffId = staffId;
-        const staffObj = state.staff.find(s => s.id === staffId);
+        let staffObj = state.staff.find(s => s.id === staffId);
+        if (!staffObj && state.employees) {
+          const emp = state.employees.find(e => e.id === staffId);
+          if (emp) staffObj = { id: emp.id, name: emp.fullName || emp.name };
+        }
         const staffName = staffObj ? staffObj.name : f.salesStaffName;
         f.salesStaffName = staffName;
         
