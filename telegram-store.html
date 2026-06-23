@@ -844,6 +844,17 @@
         <textarea id="customer-notes" rows="2" placeholder="ការណែនាំបន្ថែម ឬកំណត់សម្គាល់ផ្សេងៗ..."></textarea>
       </div>
 
+      <div class="form-group">
+        <label for="payment-method">វិធីសាស្ត្រទូទាត់ (Payment Method)</label>
+        <select id="payment-method">
+          <option value="COD (Cash on Delivery)" selected>COD (សាច់ប្រាក់ពេលទំនិញដល់)</option>
+          <option value="On Account (Debt)">On Account (ជំពាក់ / Credit)</option>
+          <option value="ABA Pay / KHQR">ABA Pay / KHQR (ទូទាត់រួច)</option>
+          <option value="Bank Transfer">Bank Transfer (ទូទាត់រួច)</option>
+          <option value="Credit Card">Credit Card (ទូទាត់រួច)</option>
+        </select>
+      </div>
+
       <!-- Pricing Adjustments -->
       <div class="checkout-section-title">💵 ការបញ្ចុះតម្លៃ \ ដឹកជញ្ជូន (Adjustments)</div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -1462,6 +1473,7 @@
         customerFacebook: cFacebook,
         customerSource: cSource,
         customerNotes: cNotes,
+        paymentMethod: document.getElementById('payment-method').value,
         discountPercent: parseFloat(discountPercent.value) || 0,
         shippingFee: parseFloat(shippingFee.value) || 0
       };

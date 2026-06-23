@@ -118,87 +118,6 @@ async function handleWebAppOrder(req, res, body) {
       return res.status(400).json({ error: "Employee profile not found in system." });
     }
 
-    // Determine customer
-    let customerId = "CST-001";
-    let customerNameStr = "General Customer";
-    
-    if (customerPhone && customerPhone !== "-") {
-      const customersRef = collection(db, "customers");
-      const custQuery = query(customersRef, where("phone", "==", customerPhone));
-      const custSnap = await getDocs(custQuery);
-      
-      let existingCust = null;
-      custSnap.forEach(d => {
-        existingCust = { docId: d.id, ...d.data() };
-      });
-      
-      if (existingCust) {
-        customerId = existingCust.id;
-        customerNameStr = existingCust.name;
-        
-        // Update purchase count
-        const newCount = (existingCust.purchaseCount || 0) + 1;
-        const timeline = existingCust.timeline || [];
-        timeline.push({
-          date: new Date().toISOString(),
-          status: 'Purchase',
-          staffName: employee.fullName,
-          feedback: 'Purchase placed via Telegram bot',
-          notes: `Ordered via Telegram WebApp`
-        });
-        
-        const updatePayload = {
-          purchaseCount: newCount,
-          timeline: timeline
-        };
-        if (req.body.customerFacebook && !existingCust.facebookLink) {
-          updatePayload.facebookLink = req.body.customerFacebook;
-        }
-        if (customerAddress && customerAddress !== "-" && (!existingCust.address || existingCust.address === "-")) {
-          updatePayload.address = customerAddress;
-        }
-        if (req.body.customerNotes) {
-          updatePayload.notes = req.body.customerNotes;
-        }
-        if (req.body.customerSource && (!existingCust.source || existingCust.source === "Telegram Bot")) {
-          updatePayload.source = req.body.customerSource;
-        }
-        
-        await updateDoc(doc(db, "customers", existingCust.docId), updatePayload);
-      } else {
-        // Create new customer
-        const custCountSnap = await getCountFromServer(customersRef);
-        const nextCustNum = 1000 + custCountSnap.data().count + 1;
-        customerId = "CST-" + nextCustNum;
-        customerNameStr = customerName || "New Customer";
-        
-        const newCustData = {
-          id: customerId,
-          name: customerNameStr,
-          phone: customerPhone,
-          facebookLink: req.body.customerFacebook || "",
-          address: customerAddress || "-",
-          source: req.body.customerSource || "Facebook Page",
-          outstandingDebt: 0,
-          status: "active",
-          notes: req.body.customerNotes || "Registered via Telegram bot sales ordering",
-          rank: "Bronze",
-          purchaseCount: 1,
-          timeline: [
-            {
-              date: new Date().toISOString(),
-              status: 'Register & Purchase',
-              staffName: employee.fullName,
-              feedback: 'Registered and ordered via Telegram Bot',
-              notes: `Registered via Telegram WebApp`
-            }
-          ]
-        };
-        
-        await setDoc(doc(db, "customers", customerId), newCustData);
-      }
-    }
-
     // Fetch all products in cart and prepare lines
     const txCountSnap = await getCountFromServer(collection(db, "transactions"));
     const nextTxNum = 1000 + txCountSnap.data().count + 1;
@@ -262,6 +181,9 @@ async function handleWebAppOrder(req, res, body) {
     const tax = parseFloat((afterDiscount * (vatRate / 100)).toFixed(2));
     const total = parseFloat((afterDiscount + tax + shipping).toFixed(2));
 
+    const chosenPaymentMethod = body.paymentMethod || "COD (Cash on Delivery)";
+    const isDebt = chosenPaymentMethod === "On Account (Debt)";
+
     // Update Product Stocks and Log Movements
     const stockLogColl = collection(db, "stock_logs");
     const stockLogCountSnap = await getCountFromServer(stockLogColl);
@@ -296,6 +218,94 @@ async function handleWebAppOrder(req, res, body) {
       });
     }
 
+    // Determine customer and update/create in Firestore
+    let customerId = "CST-001";
+    let customerNameStr = "General Customer";
+    
+    if (customerPhone && customerPhone !== "-") {
+      const customersRef = collection(db, "customers");
+      const custQuery = query(customersRef, where("phone", "==", customerPhone));
+      const custSnap = await getDocs(custQuery);
+      
+      let existingCust = null;
+      custSnap.forEach(d => {
+        existingCust = { docId: d.id, ...d.data() };
+      });
+      
+      if (existingCust) {
+        customerId = existingCust.id;
+        customerNameStr = existingCust.name;
+        
+        // Update purchase count
+        const newCount = (existingCust.purchaseCount || 0) + 1;
+        const timeline = existingCust.timeline || [];
+        timeline.push({
+          date: new Date().toISOString(),
+          status: 'Purchase',
+          staffName: employee.fullName,
+          feedback: 'Purchase placed via Telegram bot',
+          notes: `Ordered via Telegram WebApp`
+        });
+        
+        const updatePayload = {
+          purchaseCount: newCount,
+          timeline: timeline
+        };
+        if (isDebt) {
+          updatePayload.outstandingDebt = (existingCust.outstandingDebt || 0) + total;
+        }
+        if (!existingCust.staffId) {
+          updatePayload.staffId = employee.id;
+        }
+        if (req.body.customerFacebook && !existingCust.facebookLink) {
+          updatePayload.facebookLink = req.body.customerFacebook;
+        }
+        if (customerAddress && customerAddress !== "-" && (!existingCust.address || existingCust.address === "-")) {
+          updatePayload.address = customerAddress;
+        }
+        if (req.body.customerNotes) {
+          updatePayload.notes = req.body.customerNotes;
+        }
+        if (req.body.customerSource && (!existingCust.source || existingCust.source === "Telegram Bot")) {
+          updatePayload.source = req.body.customerSource;
+        }
+        
+        await updateDoc(doc(db, "customers", existingCust.docId), updatePayload);
+      } else {
+        // Create new customer
+        const custCountSnap = await getCountFromServer(customersRef);
+        const nextCustNum = 1000 + custCountSnap.data().count + 1;
+        customerId = "CST-" + nextCustNum;
+        customerNameStr = customerName || "New Customer";
+        
+        const newCustData = {
+          id: customerId,
+          name: customerNameStr,
+          phone: customerPhone,
+          facebookLink: req.body.customerFacebook || "",
+          address: customerAddress || "-",
+          source: req.body.customerSource || "Facebook Page",
+          outstandingDebt: isDebt ? total : 0,
+          status: "active",
+          notes: req.body.customerNotes || "Registered via Telegram bot sales ordering",
+          rank: "Bronze",
+          purchaseCount: 1,
+          staffId: employee.id, // Assign the employee who created the customer!
+          timeline: [
+            {
+              date: new Date().toISOString(),
+              status: 'Register & Purchase',
+              staffName: employee.fullName,
+              feedback: 'Registered and ordered via Telegram Bot',
+              notes: `Registered via Telegram WebApp`
+            }
+          ]
+        };
+        
+        await setDoc(doc(db, "customers", customerId), newCustData);
+      }
+    }
+
     // Write Transaction Record
     const newTX = {
       id: txId,
@@ -316,10 +326,10 @@ async function handleWebAppOrder(req, res, body) {
       taxRate: vatRate,
       taxAmount: tax,
       total: total,
-      paymentMethod: "COD (Cash on Delivery)",
-      cashReceived: total,
+      paymentMethod: chosenPaymentMethod,
+      cashReceived: isDebt ? 0 : total,
       changeDue: 0,
-      outstandingDebt: 0,
+      outstandingDebt: isDebt ? total : 0,
       status: "completed",
       createdBy: employee.fullName,
       updatedBy: employee.fullName,
@@ -332,6 +342,7 @@ async function handleWebAppOrder(req, res, body) {
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
     if (salesGroup) {
       const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
+      const paymentStatusText = isDebt ? "⚠️ ជំពាក់ (On Account)" : `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
       let orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n\n` + 
                             `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
                             `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
@@ -339,7 +350,8 @@ async function handleWebAppOrder(req, res, body) {
                             `------------------------\n` +
                             `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}\n` +
                             `------------------------\n` +
-                            `💵 សរុប៖ **$${total}** (បញ្ចុះតម្លៃ ${discPercent}%)\n\n` +
+                            `💵 សរុប៖ **$${total}** (បញ្ចុះតម្លៃ ${discPercent}%)\n` +
+                            `💳 ស្ថានភាពទូទាត់៖ **${paymentStatusText}**\n\n` +
                             `👤 **អតិថិជន៖**\n` +
                             `📛 ឈ្មោះ៖ ${customerNameStr}\n` +
                             `📞 លេខទូរស័ព្ទ៖ ${customerPhone}\n` +
@@ -362,7 +374,7 @@ async function handleWebAppOrder(req, res, body) {
     }
 
     // Send direct notification to employee
-    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n👤 អតិថិជន៖ **${customerNameStr}** (${customerPhone})`;
+    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n👤 អតិថិជន៖ **${customerNameStr}** (${customerPhone})`;
     await sendTelegram(token, "sendMessage", {
       chat_id: chatId,
       text: directText
