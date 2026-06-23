@@ -341,10 +341,11 @@ async function handleWebAppOrder(req, res, body) {
 
     await setDoc(doc(db, "transactions", txId), newTX);
 
+    const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
+
     // Send Telegram Group Notification
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
     if (salesGroup) {
-      const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
       const paymentStatusText = isDebt ? "⚠️ ជំពាក់ (On Account)" : `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
       let orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n` + 
                             `🔢 ការបញ្ជាទិញលើកទី៖ **${purchaseCountVal}**\n\n` + 
@@ -378,7 +379,12 @@ async function handleWebAppOrder(req, res, body) {
     }
 
     // Send direct notification to employee
-    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})`;
+    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n` +
+                       `🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n` +
+                       `💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n` +
+                       `💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n` +
+                       `👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})\n\n` +
+                       `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}`;
     await sendTelegram(token, "sendMessage", {
       chat_id: chatId,
       text: directText
