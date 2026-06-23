@@ -924,6 +924,24 @@
     </button>
   </div>
 
+  <!-- Image Preview Modal for Telegram WebApp (Requirement: Save Image restriction fallback) -->
+  <div id="image-preview-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; justify-content:center; align-items:center; z-index:999999; background:rgba(0,0,0,0.85); padding:20px;">
+    <div style="background:var(--card-bg, #1e293b); border-radius:12px; width:100%; max-width:340px; padding:15px; display:flex; flex-direction:column; align-items:center; box-shadow:0 10px 25px rgba(0,0,0,0.3); border:1px solid var(--border-color, rgba(255,255,255,0.1));">
+      <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:10px; align-items:center;">
+        <span style="font-weight:700; font-size:14px; color:var(--text-primary, #f8fafc);">រក្សាទុកវិក្កយបត្រ (Save Invoice)</span>
+        <button id="btn-close-preview" style="background:none; border:none; color:var(--text-muted, #94a3b8); font-size:24px; cursor:pointer; padding:0 5px; line-height:1;">&times;</button>
+      </div>
+      <p style="font-size:11px; color:var(--text-muted, #94a3b8); text-align:center; margin-bottom:12px; line-height:1.4;">
+        👉 សូមចុចសង្កត់លើរូបភាពខាងក្រោម ដើម្បីរក្សាទុក ឬផ្ញើបន្ត<br>
+        (Long-press the image below to Save to Gallery or Share)
+      </p>
+      <div style="width:100%; max-height:360px; overflow-y:auto; border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:8px; margin-bottom:15px; padding:5px; background:#fff;">
+        <img id="preview-invoice-img" src="" style="width:100%; height:auto; display:block; border-radius:4px;">
+      </div>
+      <button id="btn-ok-close-preview" class="view-cart-btn" style="width:100%; padding:10px; border-radius:8px; font-weight:600; background:var(--primary, #3b82f6); border:none; color:#fff;">យល់ព្រម (OK)</button>
+    </div>
+  </div>
+
   <script>
     // Initialize Telegram WebApp
     const tg = window.Telegram?.WebApp;
@@ -1042,9 +1060,20 @@
         element.style.boxShadow = originalBoxShadow;
         element.style.border = originalBorder;
         
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // Show Image Preview modal so they can long-press to save on Telegram mobile clients
+        const previewModal = document.getElementById('image-preview-modal');
+        const previewImg = document.getElementById('preview-invoice-img');
+        if (previewModal && previewImg) {
+          previewImg.src = dataUrl;
+          previewModal.style.display = 'flex';
+        }
+        
+        // Normal direct browser download fallback
         const link = document.createElement('a');
         link.download = `Invoice_${invoiceNo}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
       }).catch(err => {
         console.error("Canvas capture error:", err);
@@ -1691,6 +1720,22 @@
         if (currentInvoiceNo) {
           downloadInvoicePNG(currentInvoiceNo);
         }
+      });
+    }
+
+    // Close Image Preview modal
+    const previewModal = document.getElementById('image-preview-modal');
+    const btnClosePreview = document.getElementById('btn-close-preview');
+    const btnOkClosePreview = document.getElementById('btn-ok-close-preview');
+    
+    if (btnClosePreview && previewModal) {
+      btnClosePreview.addEventListener('click', () => {
+        previewModal.style.display = 'none';
+      });
+    }
+    if (btnOkClosePreview && previewModal) {
+      btnOkClosePreview.addEventListener('click', () => {
+        previewModal.style.display = 'none';
       });
     }
 
