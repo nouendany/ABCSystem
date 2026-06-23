@@ -1110,7 +1110,7 @@
           // Clean up clone immediately
           document.body.removeChild(clone);
 
-          const dataUrl = canvas.toDataURL('image/png');
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
           // Show Image Preview modal so they can long-press to save on Telegram mobile clients
           const previewModal = document.getElementById('image-preview-modal');
@@ -1120,9 +1120,46 @@
             previewModal.style.display = 'flex';
           }
 
+          // Send photo to the Telegram user chat via Bot API fallback
+          if (chatId) {
+            // Show status inside preview modal
+            const statusMsg = document.querySelector('#image-preview-modal p');
+            if (statusMsg) {
+              statusMsg.innerHTML = "⏳ កំពុងផ្ញើវិក្កយបត្រទៅកាន់ Telegram Chat របស់លោកអ្នក...<br>(Sending invoice to your Telegram chat...)";
+            }
+            
+            fetch('/api/bot?bot=sales', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                webAppInvoicePhoto: true,
+                chatId: chatId,
+                invoiceNo: invoiceNo,
+                photoBase64: dataUrl
+              })
+            }).then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  if (statusMsg) {
+                    statusMsg.innerHTML = "✅ វិក្កយបត្រត្រូវបានផ្ញើចូល Telegram Chat រួចហើយ!<br>👉 ឬចុចសង្កត់លើរូបខាងក្រោមដើម្បីរក្សាទុក (Save to Gallery)";
+                  }
+                } else {
+                  console.error("API failed to send photo:", data.error);
+                  if (statusMsg) {
+                    statusMsg.innerHTML = "⚠️ មិនអាចផ្ញើចូល Chat បានទេ ប៉ុន្តែលោកអ្នកអាចចុចសង្កត់លើរូបខាងក្រោមដើម្បីរក្សាទុក";
+                  }
+                }
+              }).catch(err => {
+                console.error("Error sending photo:", err);
+                if (statusMsg) {
+                  statusMsg.innerHTML = "⚠️ មិនអាចផ្ញើចូល Chat បានទេ ប៉ុន្តែលោកអ្នកអាចចុចសង្កត់លើរូបខាងក្រោមដើម្បីរក្សាទុក";
+                }
+              });
+          }
+
           // Normal direct browser download fallback
           const link = document.createElement('a');
-          link.download = `Invoice_${invoiceNo}.png`;
+          link.download = `Invoice_${invoiceNo}.jpg`;
           link.href = dataUrl;
           link.click();
         }).catch(err => {
@@ -1788,11 +1825,19 @@
     if (btnClosePreview && previewModal) {
       btnClosePreview.addEventListener('click', () => {
         previewModal.style.display = 'none';
+        const statusMsg = document.querySelector('#image-preview-modal p');
+        if (statusMsg) {
+          statusMsg.innerHTML = "👉 សូមចុចសង្កត់លើរូបភាពខាងក្រោម ដើម្បីរក្សាទុក ឬផ្ញើបន្ត<br>(Long-press the image below to Save to Gallery or Share)";
+        }
       });
     }
     if (btnOkClosePreview && previewModal) {
       btnOkClosePreview.addEventListener('click', () => {
         previewModal.style.display = 'none';
+        const statusMsg = document.querySelector('#image-preview-modal p');
+        if (statusMsg) {
+          statusMsg.innerHTML = "👉 សូមចុចសង្កត់លើរូបភាពខាងក្រោម ដើម្បីរក្សាទុក ឬផ្ញើបន្ត<br>(Long-press the image below to Save to Gallery or Share)";
+        }
       });
     }
 

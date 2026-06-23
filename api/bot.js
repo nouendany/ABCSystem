@@ -445,6 +445,11 @@ export default async function handler(req, res) {
       return await handleWebAppOrder(req, res, body);
     }
 
+    // Route Web App invoice photo posts
+    if (body && body.webAppInvoicePhoto) {
+      return await handleWebAppInvoicePhoto(req, res, body);
+    }
+
     const { message, callback_query } = body || {};
     const incomingData = message || (callback_query ? callback_query.message : null);
     if (!incomingData) {
@@ -1442,5 +1447,57 @@ async function handleWebAppPhoto(req, res, body) {
   } catch (error) {
     console.error("handleWebAppPhoto error:", error);
     return res.status(500).send(`Error processing photo: ${error.message}`);
+  }
+}
+
+async function handleWebAppInvoicePhoto(req, res, body) {
+  const { chatId, invoiceNo, photoBase64 } = body;
+
+  try {
+    const settingsSnap = await getDoc(doc(db, "company_settings", "global"));
+    const settings = settingsSnap.exists() ? settingsSnap.data() : {};
+    
+    // Choose sales telegram bot token or fallback
+    const isSalesBot = req.query.bot === 'sales';
+    const token = isSalesBot
+      ? (settings.salesTelegramBotToken || settings.hrTelegramBotToken || settings.telegramToken)
+      : (settings.hrTelegramBotToken || settings.telegramToken);
+
+    if (!token) {
+      return res.status(400).json({ error: "Missing Bot Token" });
+    }
+
+    if (!chatId) {
+      return res.status(400).json({ error: "Missing Chat ID" });
+    }
+
+    // Convert base64 data URL to Buffer
+    const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    // Telegram sendPhoto API using FormData (native in Node.js 18+)
+    const formData = new FormData();
+    formData.append('chat_id', chatId.toString());
+    
+    // Create Blob from Buffer
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
+    formData.append('photo', blob, `Invoice_${invoiceNo}.jpg`);
+    formData.append('caption', `🧾 វិក្កយបត្រ / Invoice៖ ${invoiceNo}`);
+
+    const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      method: "POST",
+      body: formData
+    });
+
+    const tgJson = await tgRes.json();
+    if (tgJson.ok) {
+      return res.status(200).json({ success: true });
+    } else {
+      console.error("Telegram sendPhoto failed:", tgJson);
+      return res.status(500).json({ error: tgJson.description || "Failed to send photo to Telegram" });
+    }
+  } catch (err) {
+    console.error("handleWebAppInvoicePhoto error:", err);
+    return res.status(500).json({ error: err.message });
   }
 }
