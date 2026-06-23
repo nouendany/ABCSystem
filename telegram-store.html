@@ -1110,7 +1110,7 @@
       // Build receipt layout
       overlayReceipt.innerHTML = `
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:12px; width:100%;">
-          ${companySettings.logoBase64 ? `<img src="${companySettings.logoBase64}" crossOrigin="anonymous" style="max-height:60px; max-width:180px; object-fit:contain; margin-bottom:6px;">` : ''}
+          ${companySettings.logoBase64 ? `<img src="${companySettings.logoBase64}" style="max-height:60px; max-width:180px; object-fit:contain; margin-bottom:6px;">` : ''}
           <div style="font-size:15px; font-weight:800; text-align:center;">${companySettings.companyName || 'ABC System'}</div>
           ${companySettings.phone ? `<div style="font-size:9.5px; color:var(--text-muted); text-align:center;">Tel: ${companySettings.phone}</div>` : ''}
           ${companySettings.email ? `<div style="font-size:9.5px; color:var(--text-muted); text-align:center;">Email: ${companySettings.email}</div>` : ''}

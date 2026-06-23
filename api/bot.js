@@ -77,7 +77,7 @@ function getMenuMarkup(req, empId, chatId) {
 function getSalesMenuMarkup(req, empId, chatId) {
   const host = req.headers["host"] || req.headers["x-forwarded-host"] || "khmer-pos-system.vercel.app";
   const protocol = req.headers["x-forwarded-proto"] || "https";
-  const storeAppUrl = `${protocol}://${host}/telegram-store.html?employeeId=${empId || ""}&chatId=${chatId}&bot=sales&v=1.5.0`;
+  const storeAppUrl = `${protocol}://${host}/telegram-store.html?employeeId=${empId || ""}&chatId=${chatId}&bot=sales&v=1.5.1`;
   return {
     keyboard: [
       [{ text: "🛍️ ដាក់ការបញ្ជាទិញ (Order)", web_app: { url: storeAppUrl } }]
