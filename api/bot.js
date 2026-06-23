@@ -221,6 +221,7 @@ async function handleWebAppOrder(req, res, body) {
     // Determine customer and update/create in Firestore
     let customerId = "CST-001";
     let customerNameStr = "General Customer";
+    let purchaseCountVal = 1;
     
     if (customerPhone && customerPhone !== "-") {
       const customersRef = collection(db, "customers");
@@ -238,6 +239,7 @@ async function handleWebAppOrder(req, res, body) {
         
         // Update purchase count
         const newCount = (existingCust.purchaseCount || 0) + 1;
+        purchaseCountVal = newCount;
         const timeline = existingCust.timeline || [];
         timeline.push({
           date: new Date().toISOString(),
@@ -273,6 +275,7 @@ async function handleWebAppOrder(req, res, body) {
         await updateDoc(doc(db, "customers", existingCust.docId), updatePayload);
       } else {
         // Create new customer
+        purchaseCountVal = 1;
         const custCountSnap = await getCountFromServer(customersRef);
         const nextCustNum = 1000 + custCountSnap.data().count + 1;
         customerId = "CST-" + nextCustNum;
@@ -343,7 +346,8 @@ async function handleWebAppOrder(req, res, body) {
     if (salesGroup) {
       const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
       const paymentStatusText = isDebt ? "⚠️ ជំពាក់ (On Account)" : `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
-      let orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n\n` + 
+      let orderNotifyText = `🛍️ **ការបញ្ជាទិញថ្មី (New Order placed via Telegram)**\n` + 
+                            `🔢 ការបញ្ជាទិញលើកទី៖ **${purchaseCountVal}**\n\n` + 
                             `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
                             `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
                             `🏢 សាខា៖ **${branchId === "BR-001" ? "Phnom Penh HQ" : branchId === "BR-002" ? "Siem Reap" : "Sihanoukville"}**\n` +
@@ -374,7 +378,7 @@ async function handleWebAppOrder(req, res, body) {
     }
 
     // Send direct notification to employee
-    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n👤 អតិថិជន៖ **${customerNameStr}** (${customerPhone})`;
+    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})`;
     await sendTelegram(token, "sendMessage", {
       chat_id: chatId,
       text: directText
