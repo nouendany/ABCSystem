@@ -2725,10 +2725,21 @@
     if (tx.staffId) {
       const staffObj = state.staff.find(s => s.id === tx.staffId || s.employeeId === tx.staffId);
       const empId = staffObj ? (staffObj.employeeId || staffObj.id) : tx.staffId;
-      const empObj = state.employees.find(e => e.id === empId);
+      let empObj = state.employees.find(e => e.id === empId);
+      
+      // Fallback 1: Match by name if ID link is missing
+      if (!empObj && staffObj) {
+        empObj = state.employees.find(e => e.fullName === staffObj.name || e.name === staffObj.name);
+      }
+      
       if (empObj && empObj.companyId) {
         comp = state.companies.find(c => c.id === empObj.companyId);
       }
+    }
+    
+    // Fallback 2: If no company matched but companies exist in settings, use the first company
+    if (!comp && state.companies.length > 0) {
+      comp = state.companies[0];
     }
     
     const companyName = (comp && comp.name) ? comp.name : (state.companySettings.companyName || 'ABC System');

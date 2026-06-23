@@ -1271,7 +1271,12 @@
           updateCartUI();
         });
 
-        // 5. Fetch Employee Details
+        // 5. Fetch Companies
+        const compCollSnap = await db.collection('companies').get();
+        const companiesList = [];
+        compCollSnap.forEach(doc => companiesList.push({ id: doc.id, ...doc.data() }));
+
+        // 6. Fetch Employee Details
         if (employeeId) {
           const empSnap = await db.collection('employees').doc(employeeId).get();
           if (empSnap.exists) {
@@ -1287,41 +1292,29 @@
               employeeDisplay.innerText = `👤 ID: ${employeeId}`;
             }
           }
-
-          // Fetch Company Details if employee is linked to a company (Requirement 10)
-          if (employeeData && employeeData.companyId) {
-            try {
-              const compSnap = await db.collection('companies').doc(employeeData.companyId).get();
-              if (compSnap.exists) {
-                const compData = compSnap.data();
-                companySettings = {
-                  ...companySettings,
-                  logoBase64: compData.logoBase64 || companySettings.logoBase64,
-                  companyName: compData.name || companySettings.companyName,
-                  phone: compData.phone || companySettings.phone,
-                  address: compData.address || companySettings.address,
-                  email: compData.email || companySettings.email || ''
-                };
-              } else {
-                const compQ = await db.collection('companies').where('id', '==', employeeData.companyId).get();
-                if (!compQ.empty) {
-                  const compData = compQ.docs[0].data();
-                  companySettings = {
-                    ...companySettings,
-                    logoBase64: compData.logoBase64 || companySettings.logoBase64,
-                    companyName: compData.name || companySettings.companyName,
-                    phone: compData.phone || companySettings.phone,
-                    address: compData.address || companySettings.address,
-                    email: compData.email || companySettings.email || ''
-                  };
-                }
-              }
-            } catch (err) {
-              console.error("Error fetching company details:", err);
-            }
-          }
         } else {
           employeeDisplay.innerText = `👤 Guest Seller`;
+        }
+
+        // Determine company branding (Requirement 10)
+        let matchedCompany = null;
+        if (employeeData && employeeData.companyId) {
+          matchedCompany = companiesList.find(c => c.id === employeeData.companyId);
+        }
+        // Fallback: If no company matched but companies exist, use the first company
+        if (!matchedCompany && companiesList.length > 0) {
+          matchedCompany = companiesList[0];
+        }
+
+        if (matchedCompany) {
+          companySettings = {
+            ...companySettings,
+            logoBase64: matchedCompany.logoBase64 || companySettings.logoBase64,
+            companyName: matchedCompany.name || companySettings.companyName,
+            phone: matchedCompany.phone || companySettings.phone,
+            address: matchedCompany.address || companySettings.address,
+            email: matchedCompany.email || companySettings.email || ''
+          };
         }
 
         hideOverlay();

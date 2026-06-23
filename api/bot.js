@@ -130,6 +130,19 @@ async function handleWebAppOrder(req, res, body) {
         console.error("Error fetching company info for Telegram bot:", err);
       }
     }
+    
+    // Fallback: if no company linked but companies exist in Firestore, use the first company
+    if (!companyName) {
+      try {
+        const compColl = collection(db, "companies");
+        const compSnap = await getDocs(compColl);
+        if (!compSnap.empty) {
+          companyName = compSnap.docs[0].data().name || "";
+        }
+      } catch (err) {
+        console.error("Error fetching fallback company info:", err);
+      }
+    }
 
     // Fetch all products in cart and prepare lines
     const txCountSnap = await getCountFromServer(collection(db, "transactions"));
