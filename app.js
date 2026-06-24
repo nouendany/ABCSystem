@@ -3462,7 +3462,9 @@
       });
     }
 
+    const staffSection = document.getElementById('cust-staff-section');
     if (cId !== null) {
+      if (staffSection) staffSection.style.display = 'block';
       const c = state.customers.find(cust => cust.id === cId);
       if (!c) return;
       document.getElementById('customer-modal-title').innerText = window.POS_TRANSLATIONS[state.lang].editCustomer;
@@ -3483,6 +3485,7 @@
       const purchaseSection = document.getElementById('cust-purchase-section');
       if (purchaseSection) purchaseSection.style.display = 'none';
     } else {
+      if (staffSection) staffSection.style.display = 'none';
       document.getElementById('customer-modal-title').innerText = window.POS_TRANSLATIONS[state.lang].addCustomer;
       document.getElementById('customer-edit-index').value = '';
       
@@ -3491,6 +3494,17 @@
       document.getElementById('cust-id').value = nextId;
       document.getElementById('cust-facebook').value = '';
       document.getElementById('cust-birthday').value = '';
+
+      // Default the new customer's representative to the logged-in staff member if possible
+      if (modalStaffSelect) {
+        let activeStaffId = '';
+        const curUser = state.currentUser;
+        if (curUser) {
+          const matchedStaff = state.staff.find(s => s.name === curUser.name || s.employeeId === curUser.id || s.id === curUser.id || (curUser.username && s.username === curUser.username));
+          if (matchedStaff) activeStaffId = matchedStaff.id;
+        }
+        modalStaffSelect.value = activeStaffId;
+      }
 
       // Show purchase section on add, and set default date to today
       const purchaseSection = document.getElementById('cust-purchase-section');
