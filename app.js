@@ -5119,6 +5119,155 @@
       </div>
     `;
 
+    // Products sold aggregation
+    const productSales = {};
+    transactions.forEach(t => {
+      t.items.forEach(item => {
+        const sku = item.sku;
+        if (!productSales[sku]) {
+          const p = state.products.find(prod => prod.sku === sku);
+          const name = p ? (isKhmer ? p.nameKh : p.nameEn) : (item.nameKh || item.nameEn || item.name || 'Deleted Product');
+          
+          let stockQty = 0;
+          if (p) {
+            if (state.currentUser && state.currentUser.role === 'super_admin') {
+              stockQty = p.stockQty || 0;
+            } else if (state.currentUser && state.currentUser.branchId) {
+              stockQty = p.warehouseStock ? (p.warehouseStock[state.currentUser.branchId] || 0) : 0;
+            } else {
+              stockQty = p.stockQty || 0;
+            }
+          }
+          
+          const unitObj = p ? state.units.find(u => u.name === p.unit) : null;
+          const displayUnit = unitObj ? (isKhmer ? unitObj.nameKh : unitObj.name) : (p ? (p.unit || '-') : '-');
+          
+          productSales[sku] = {
+            sku: sku,
+            name: name,
+            qty: 0,
+            revenue: 0,
+            stock: stockQty,
+            unit: displayUnit
+          };
+        }
+        productSales[sku].qty += item.qty;
+        productSales[sku].revenue += item.total;
+      });
+    });
+
+    const sortedProductSales = Object.values(productSales).sort((a, b) => b.qty - a.qty);
+
+    let productSalesHtml = `
+      <div class="glass-card" style="padding: 16px; margin-top:20px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--success); display:flex; align-items:center; gap:8px;">📦 ${isKhmer ? "សេចក្តីសង្ខេបផលិតផលលក់ចេញ" : "Products Sold Summary"}</h4>
+        <div class="table-responsive">
+          <table class="pos-table" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>${isKhmer ? "ឈ្មោះផលិតផល" : "Product Name"}</th>
+                <th style="text-align: center;">${isKhmer ? "ឯកតា" : "Unit"}</th>
+                <th style="text-align: center;">${isKhmer ? "ស្តុកបច្ចុប្បន្ន" : "Current Stock"}</th>
+                <th style="text-align: center;">${isKhmer ? "លក់ចេញសរុប" : "Total Qty Sold"}</th>
+                <th style="text-align: right;">${isKhmer ? "ប្រាក់លក់សរុប" : "Total Revenue"}</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (sortedProductSales.length === 0) {
+      productSalesHtml += `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      let sumStock = 0;
+      let sumUnits = 0;
+      let sumRevenue = 0;
+      sortedProductSales.forEach(item => {
+        sumStock += item.stock;
+        sumUnits += item.qty;
+        sumRevenue += item.revenue;
+        productSalesHtml += `
+          <tr>
+            <td><strong style="font-family:monospace;">${item.sku}</strong></td>
+            <td><strong>${item.name}</strong></td>
+            <td style="text-align: center;">${item.unit}</td>
+            <td style="text-align: center; font-weight:800; color:var(--text-secondary);">${item.stock}</td>
+            <td style="text-align: center; font-weight:800; color:var(--secondary);">${item.qty}</td>
+            <td style="text-align: right; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(item.revenue)}</td>
+          </tr>
+        `;
+      });
+      productSalesHtml += `
+            </tbody>
+            <tfoot>
+              <tr style="background:rgba(16,185,129,0.06); font-weight:800; border-top: 2.5px solid #10b981; font-size:12px;">
+                <td colspan="3" style="text-align:left; padding:8px; color:#10b981;">📊 ${isKhmer ? 'សរុប (Total)' : 'Total'}</td>
+                <td style="text-align:center; font-weight:800; color:var(--text-secondary); padding:8px;">${sumStock}</td>
+                <td style="text-align:center; font-weight:800; color:#f59e0b; padding:8px;">${sumUnits}</td>
+                <td style="text-align:right; font-weight:800; color:#10b981; padding:8px;">${window.POS_HELPERS.formatUSD(sumRevenue)}</td>
+              </tr>
+            </tfoot>
+      `;
+    }
+    productSalesHtml += `
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Detailed Expenses List
+    let expenseDetailsListHtml = `
+      <div class="glass-card" style="padding: 16px; margin-top:20px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--danger); display:flex; align-items:center; gap:8px;">💸 ${isKhmer ? "បញ្ជីលម្អិតនៃការចំណាយទូទៅ" : "Detailed Expenses Log"}</h4>
+        <div class="table-responsive">
+          <table class="pos-table" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>${isKhmer ? "កាលបរិច្ឆេទ" : "Date"}</th>
+                <th>${isKhmer ? "ប្រភេទចំណាយ" : "Category"}</th>
+                <th>${isKhmer ? "ការពិពណ៌នា" : "Description"}</th>
+                <th>${isKhmer ? "បុគ្គលិកចំណាយ" : "Staff"}</th>
+                <th style="text-align: right;">${isKhmer ? "ចំនួនចំណាយ" : "Amount"}</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (expenses.length === 0) {
+      expenseDetailsListHtml += `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      let sumExp = 0;
+      expenses.forEach(exp => {
+        sumExp += exp.amount;
+        const catLabel = window.POS_TRANSLATIONS[state.lang][exp.category] || exp.category;
+        const expDate = window.POS_HELPERS.formatDate(exp.date, state.lang);
+        const staffName = exp.createdBy || '-';
+        expenseDetailsListHtml += `
+          <tr>
+            <td>${expDate}</td>
+            <td><strong>${catLabel}</strong></td>
+            <td>${exp.description || '-'}</td>
+            <td>${staffName}</td>
+            <td style="text-align: right; font-weight:700; color:var(--danger);">${window.POS_HELPERS.formatUSD(exp.amount)}</td>
+          </tr>
+        `;
+      });
+      expenseDetailsListHtml += `
+            </tbody>
+            <tfoot>
+              <tr style="background:rgba(239,68,68,0.06); font-weight:800; border-top: 2.5px solid #ef4444; font-size:12px;">
+                <td colspan="4" style="text-align:left; padding:8px; color:#ef4444;">📊 ${isKhmer ? 'សរុប (Total)' : 'Total'}</td>
+                <td style="text-align:right; font-weight:800; color:#ef4444; padding:8px;">${window.POS_HELPERS.formatUSD(sumExp)}</td>
+              </tr>
+            </tfoot>
+      `;
+    }
+    expenseDetailsListHtml += `
+          </table>
+        </div>
+      </div>
+    `;
+
     container.innerHTML = `
       ${widgetsHtml}
       <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:20px;">
@@ -5126,6 +5275,8 @@
         ${expenseBreakdownHtml}
         ${staffSalesHtml}
       </div>
+      ${productSalesHtml}
+      ${expenseDetailsListHtml}
       ${txChecklistHtml}
     `;
   }

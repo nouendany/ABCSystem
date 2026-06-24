@@ -2313,6 +2313,14 @@ body.light-theme .kanban-card .prod-pill {
   color: #1f2937 !important;
   font-weight: bold !important;
 }
+.pdf-generation-active .glass-card {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+.pdf-generation-active tr {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
 
 /* GEDA Advanced Updates Styling (Khmer Font Scale, VIP Badges, Cart Enhancements, Audit Logs) */
 
