@@ -5457,13 +5457,13 @@
       const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (tx.customerName || 'General Customer');
 
       const canEdit = checkPermission('edit');
-      const repDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : (tx.staffName || 'System');
+      const repDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : `<span style="font-size:9px;color:var(--text-muted);">Rep: <strong>${tx.staffName || 'System'}</strong></span>`;
 
       rowsHtml += `
         <tr>
           <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span></td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
-          <td><strong>${displayCustName}</strong><br><span style="font-size:9px;color:var(--text-muted);">Rep: ${repDisplay}</span></td>
+          <td><strong>${displayCustName}</strong><br>${repDisplay}</td>
           <td style="font-size:10px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
           <td style="text-align:center; font-weight:700; color:var(--text-primary);">${txQty}</td>
           <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(txCost)}</td>
@@ -5568,13 +5568,13 @@
   }
 
   function getStaffSelectHtml(selectedStaffId, txId) {
-    let html = `<select class="tx-staff-select" data-txid="${txId}" style="background:transparent; border:none; color:var(--text-primary); font-size:11px; padding:0; cursor:pointer; font-weight:700;">`;
+    let selectOptions = '';
     let found = false;
     
     state.staff.forEach(s => {
       const isSel = s.id === selectedStaffId || s.employeeId === selectedStaffId;
       if (isSel) found = true;
-      html += `<option value="${s.id}" ${isSel ? 'selected' : ''}>${s.name}</option>`;
+      selectOptions += `<option value="${s.id}" ${isSel ? 'selected' : ''}>${s.name}</option>`;
     });
     
     if (state.employees) {
@@ -5582,17 +5582,26 @@
         if (!state.staff.some(s => s.id === emp.id)) {
           const isSel = emp.id === selectedStaffId;
           if (isSel) found = true;
-          html += `<option value="${emp.id}" ${isSel ? 'selected' : ''}>${emp.fullName || emp.name} (HR)</option>`;
+          selectOptions += `<option value="${emp.id}" ${isSel ? 'selected' : ''}>${emp.fullName || emp.name} (HR)</option>`;
         }
       });
     }
     
     if (!found && selectedStaffId) {
-      html += `<option value="${selectedStaffId}" selected>${selectedStaffId}</option>`;
+      selectOptions += `<option value="${selectedStaffId}" selected>${selectedStaffId}</option>`;
     }
     
-    html += `</select>`;
-    return html;
+    return `
+      <div class="rep-select-container">
+        <span class="rep-select-label">Rep:</span>
+        <div class="custom-select-wrapper">
+          <select class="tx-staff-select" data-txid="${txId}">
+            ${selectOptions}
+          </select>
+          <span class="custom-select-arrow">▼</span>
+        </div>
+      </div>
+    `;
   }
 
   function updateTransactionStaff(txId, newStaffId, selectElement) {

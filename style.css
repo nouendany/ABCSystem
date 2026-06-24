@@ -4137,3 +4137,67 @@ body.light-theme .noti-item:hover {
   transform: translateY(-1px);
 }
 
+/* Custom styling for representative dropdown */
+.rep-select-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 3px 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.rep-select-container:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.rep-select-label {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.custom-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tx-staff-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 16px 0 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+}
+
+.custom-select-arrow {
+  position: absolute;
+  right: 0;
+  font-size: 8px;
+  color: var(--primary);
+  pointer-events: none;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.tx-staff-select:focus + .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
