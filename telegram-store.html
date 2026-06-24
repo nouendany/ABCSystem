@@ -430,6 +430,21 @@
       text-align: center;
     }
 
+    .input-icon-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .input-icon-wrapper .input-icon-prefix {
+      position: absolute;
+      left: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      pointer-events: none;
+    }
+
     /* Cart Action Bar (Bottom Bar) */
     .cart-action-bar {
       position: fixed;
@@ -942,12 +957,18 @@
       <div class="checkout-section-title">💵 ការបញ្ចុះតម្លៃ \ ដឹកជញ្ជូន (Adjustments)</div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div class="form-group">
-          <label for="discount-percent">បញ្ចុះតម្លៃ (%) (Discount %)</label>
-          <input type="number" id="discount-percent" value="0" min="0" max="100">
+          <label for="discount-fixed">បញ្ចុះតម្លៃ ($) (Discount $)</label>
+          <div class="input-icon-wrapper">
+            <span class="input-icon-prefix" style="color: var(--success);">$</span>
+            <input type="number" id="discount-fixed" value="0" min="0" step="0.5" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--success) !important; background-color: var(--success-light) !important; border-color: rgba(16, 185, 129, 0.2) !important;">
+          </div>
         </div>
         <div class="form-group">
           <label for="shipping-fee">ថ្លៃដឹកជញ្ជូន ($) (Shipping Fee)</label>
-          <input type="number" id="shipping-fee" value="0" min="0" step="0.5">
+          <div class="input-icon-wrapper">
+            <span class="input-icon-prefix" style="color: var(--primary);">$</span>
+            <input type="number" id="shipping-fee" value="0" min="0" step="0.5" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--primary) !important; background-color: var(--primary-light) !important; border-color: rgba(37, 99, 235, 0.2) !important;">
+          </div>
         </div>
       </div>
 
@@ -1083,7 +1104,7 @@
     const customerFacebook = document.getElementById('customer-facebook');
     const customerSource = document.getElementById('customer-source');
     const customerNotes = document.getElementById('customer-notes');
-    const discountPercent = document.getElementById('discount-percent');
+    const discountFixed = document.getElementById('discount-fixed');
     const shippingFee = document.getElementById('shipping-fee');
     
     // Summaries
@@ -1630,8 +1651,7 @@
       });
 
       // Fetch adjustments
-      const discPercent = parseFloat(discountPercent.value) || 0;
-      const discAmount = parseFloat((subtotal * (discPercent / 100)).toFixed(2));
+      const discAmount = Math.min(subtotal, parseFloat(discountFixed.value) || 0);
       const shipping = parseFloat(shippingFee.value) || 0;
 
       // VAT Management Settings integration
@@ -1792,7 +1812,7 @@
     });
 
     // Discount/Shipping adjustments listeners
-    discountPercent.addEventListener('input', updateCartPricing);
+    discountFixed.addEventListener('input', updateCartPricing);
     shippingFee.addEventListener('input', updateCartPricing);
 
     btnViewCart.addEventListener('click', openCartDrawer);
@@ -1820,6 +1840,16 @@
 
       showOverlay("Submitting order to POS...");
 
+      // Calculate equivalent discount percentage for backend API compatibility
+      let subtotal = 0;
+      cart.forEach(item => {
+        const p = productsList.find(x => x.sku === item.sku);
+        const price = p ? p.sellingPrice : item.price;
+        subtotal += price * item.qty;
+      });
+      const discAmount = Math.min(subtotal, parseFloat(discountFixed.value) || 0);
+      const calculatedPercent = subtotal > 0 ? (discAmount / subtotal) * 100 : 0;
+
       const payload = {
         webAppOrder: true,
         bot: botType,
@@ -1834,7 +1864,7 @@
         customerSource: cSource,
         customerNotes: cNotes,
         paymentMethod: document.getElementById('payment-method').value,
-        discountPercent: parseFloat(discountPercent.value) || 0,
+        discountPercent: calculatedPercent,
         shippingFee: parseFloat(shippingFee.value) || 0
       };
 
