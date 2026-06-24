@@ -4275,20 +4275,8 @@
           `;
         }
 
-        // Determine staff display name (fallback to transaction processor if no customer assigned staff)
-        let staffNameDisplay = tx.staffName;
-        if (customer && customer.id !== 'CST-001' && customer.staffId) {
-          let assignedStaff = state.staff.find(s => s.id === customer.staffId || s.employeeId === customer.staffId);
-          if (!assignedStaff && state.employees) {
-            const emp = state.employees.find(e => e.id === customer.staffId || e.telegramId === customer.staffId);
-            if (emp) {
-              assignedStaff = { id: emp.id, name: emp.fullName || emp.name };
-            }
-          }
-          if (assignedStaff) {
-            staffNameDisplay = assignedStaff.name;
-          }
-        }
+        // Determine staff display name (use transaction staffName directly)
+        let staffNameDisplay = tx.staffName || 'System';
 
         // Calculate cost price and profit for this transaction
         let txCost = 0;
@@ -5600,6 +5588,8 @@
     saveStateToLocalStorage();
     updateLowStockAlertCount();
     triggerReportRender();
+    renderFinance();
+    renderCustomers();
     populatePOSSelects();
     alert(window.POS_TRANSLATIONS[state.lang].voidSuccess);
   }
