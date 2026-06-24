@@ -380,6 +380,56 @@
       cursor: not-allowed;
     }
 
+    .product-qty-selector {
+      display: flex;
+      align-items: center;
+      background-color: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: 20px;
+      height: 32px;
+      padding: 0 4px;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+      transition: var(--transition);
+      animation: popIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .qty-control-btn {
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: var(--transition);
+      padding: 0;
+      line-height: 1;
+    }
+
+    .qty-control-btn:hover {
+      background-color: var(--primary-hover);
+      transform: scale(1.05);
+    }
+
+    .qty-display {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary);
+      min-width: 16px;
+      text-align: center;
+    }
+
     /* Cart Action Bar (Bottom Bar) */
     .cart-action-bar {
       position: fixed;
@@ -1454,6 +1504,29 @@
               </svg>
              </div>`;
 
+        // Check if item is in cart
+        const cartItem = cart.find(item => item.sku === p.sku);
+        const cartQty = cartItem ? cartItem.qty : 0;
+
+        let actionButtonHtml = '';
+        if (cartQty > 0) {
+          actionButtonHtml = `
+            <div class="product-qty-selector">
+              <button class="qty-control-btn btn-minus" data-sku="${p.sku}">−</button>
+              <span class="qty-display">${cartQty}</span>
+              <button class="qty-control-btn btn-plus" data-sku="${p.sku}">+</button>
+            </div>
+          `;
+        } else {
+          actionButtonHtml = `
+            <button class="add-to-cart-btn" data-sku="${p.sku}" ${isOutOfStock ? 'disabled' : ''}>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:18px; height:18px; stroke-width:2.5;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+              </svg>
+            </button>
+          `;
+        }
+
         card.innerHTML = `
           ${isOutOfStock ? `<span class="product-card-badge">អស់ស្តុក</span>` : ''}
           ${imgHtml}
@@ -1464,19 +1537,26 @@
               <div class="product-price">$${p.sellingPrice.toFixed(2)}</div>
               <div class="product-stock">ស្តុក: <strong>${stockQty}</strong></div>
             </div>
-            <button class="add-to-cart-btn" data-sku="${p.sku}" ${isOutOfStock ? 'disabled' : ''}>
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:18px; height:18px; stroke-width:2.5;">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
-              </svg>
-            </button>
+            ${actionButtonHtml}
           </div>
         `;
 
-        // Add to cart click event
-        card.querySelector('.add-to-cart-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          addToCart(p);
-        });
+        // Bind events
+        if (cartQty > 0) {
+          card.querySelector('.btn-minus').addEventListener('click', (e) => {
+            e.stopPropagation();
+            decrementCartItem(p.sku);
+          });
+          card.querySelector('.btn-plus').addEventListener('click', (e) => {
+            e.stopPropagation();
+            incrementCartItem(p.sku);
+          });
+        } else {
+          card.querySelector('.add-to-cart-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            addToCart(p);
+          });
+        }
 
         productsGrid.appendChild(card);
       });
@@ -1579,6 +1659,9 @@
       cartItemCount.innerText = `${totalQty} products`;
       
       const { grandTotal } = updateCartPricing();
+      
+      // Update grid product quantities
+      renderProducts();
 
       if (totalQty > 0) {
         btnViewCart.disabled = false;
