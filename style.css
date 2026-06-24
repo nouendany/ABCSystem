@@ -2279,7 +2279,11 @@ body.light-theme .kanban-card .prod-pill {
 .pdf-generation-active .inner-report-filters,
 .pdf-generation-active .btn,
 .pdf-generation-active .no-pdf,
-.pdf-generation-active .btn-void-tx {
+.pdf-generation-active .btn-void-tx,
+.pdf-generation-active .no-print,
+.pdf-generation-active .kpi-grid,
+.pdf-generation-active input,
+.pdf-generation-active select {
   display: none !important;
 }
 .pdf-generation-active {

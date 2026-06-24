@@ -5241,7 +5241,10 @@
       <!-- 1. Print & Export Action Buttons -->
       <div class="no-print" style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
         <button class="btn btn-secondary btn-sm" id="btn-print-stock-report" style="display:flex; align-items:center; gap:6px;">
-          🖨️ ${isKhmer ? 'បោះពុម្ព / Save PDF' : 'Print / Save PDF'}
+          🖨️ ${isKhmer ? 'បោះពុម្ព' : 'Print'}
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-pdf-stock-report" style="display:flex; align-items:center; gap:6px;">
+          📄 ${isKhmer ? 'ទាញយកជា PDF' : 'Download PDF'}
         </button>
         <button class="btn btn-primary btn-sm" id="btn-export-stock-excel" style="display:flex; align-items:center; gap:6px;">
           📥 ${isKhmer ? 'ទាញយកជា Excel (CSV)' : 'Export Excel (CSV)'}
@@ -5380,6 +5383,10 @@
     // Hook events
     document.getElementById('btn-print-stock-report').addEventListener('click', () => {
       printReportDOM();
+    });
+
+    document.getElementById('btn-pdf-stock-report').addEventListener('click', () => {
+      downloadActiveReportPDF();
     });
 
     document.getElementById('btn-export-stock-excel').addEventListener('click', () => {
