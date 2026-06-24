@@ -2486,6 +2486,21 @@
     const staff = state.staff.find(s => s.id === staffId) || { name: 'Unknown', id: 'STF-001' };
     const customer = state.customers.find(c => c.id === customerId);
 
+    // If the customer profile doesn't have an assigned staff member, automatically assign them to this checkout staff member
+    if (customer && customer.id !== 'CST-001' && (!customer.staffId || customer.staffId === '')) {
+      customer.staffId = staff.id;
+      customer.updatedBy = state.currentUser ? state.currentUser.username : 'system';
+      customer.timestamp = new Date().toISOString();
+      if (!customer.timeline) customer.timeline = [];
+      customer.timeline.push({
+        date: txDate,
+        status: 'Staff Assigned',
+        staffName: staff.name,
+        feedback: 'Automatically assigned at checkout',
+        notes: `Assigned to ${staff.name} at checkout`
+      });
+    }
+
     let subtotal = 0;
     let totalQty = 0;
     state.cart.forEach(item => {
@@ -3495,13 +3510,18 @@
       document.getElementById('cust-facebook').value = '';
       document.getElementById('cust-birthday').value = '';
 
-      // Default the new customer's representative to the logged-in staff member if possible
+      // Default the new customer's representative to the currently selected POS cashier/representative, or logged-in user
       if (modalStaffSelect) {
         let activeStaffId = '';
-        const curUser = state.currentUser;
-        if (curUser) {
-          const matchedStaff = state.staff.find(s => s.name === curUser.name || s.employeeId === curUser.id || s.id === curUser.id || (curUser.username && s.username === curUser.username));
-          if (matchedStaff) activeStaffId = matchedStaff.id;
+        const cartStaffEl = document.getElementById('cart-staff-select');
+        if (cartStaffEl && cartStaffEl.value) {
+          activeStaffId = cartStaffEl.value;
+        } else {
+          const curUser = state.currentUser;
+          if (curUser) {
+            const matchedStaff = state.staff.find(s => s.name === curUser.name || s.employeeId === curUser.id || s.id === curUser.id || (curUser.username && s.username === curUser.username));
+            if (matchedStaff) activeStaffId = matchedStaff.id;
+          }
         }
         modalStaffSelect.value = activeStaffId;
       }
