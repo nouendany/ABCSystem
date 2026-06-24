@@ -2205,6 +2205,7 @@ body.light-theme .kanban-card .prod-pill {
 
 /* Print Overrides CSS media */
 @media print {
+  /* Default: receipt printing */
   body * {
     visibility: hidden;
   }
@@ -2217,6 +2218,96 @@ body.light-theme .kanban-card .prod-pill {
     top: 0;
     width: 100%;
   }
+
+  /* If printing report */
+  body.printing-report-active * {
+    visibility: hidden;
+  }
+  body.printing-report-active #report-content-area,
+  body.printing-report-active #report-content-area * {
+    visibility: visible;
+  }
+  body.printing-report-active #report-content-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* In print mode, force tables to have visible black text and light background */
+  body.printing-report-active #report-content-area table,
+  body.printing-report-active #report-content-area table * {
+    color: #000000 !important;
+    background: transparent !important;
+    border-color: #cccccc !important;
+  }
+  body.printing-report-active #report-content-area th {
+    background: #f0f0f0 !important;
+    font-weight: bold !important;
+  }
+}
+
+/* Dashboard closing summary card styles */
+.closing-summary-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.summary-card {
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* PDF layout overrides */
+.pdf-header-only {
+  display: none !important;
+}
+.pdf-generation-active .pdf-header-only {
+  display: block !important;
+}
+.pdf-generation-active .inner-report-filters,
+.pdf-generation-active .btn,
+.pdf-generation-active .no-pdf,
+.pdf-generation-active .btn-void-tx {
+  display: none !important;
+}
+.pdf-generation-active {
+  box-shadow: none !important;
+  border: none !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  padding: 15px !important;
+}
+.pdf-generation-active * {
+  color: #1f2937 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+.pdf-generation-active .summary-card {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+}
+.pdf-generation-active table,
+.pdf-generation-active table * {
+  color: #1f2937 !important;
+  border-color: #e5e7eb !important;
+  background: transparent !important;
+}
+.pdf-generation-active th {
+  background: #f3f4f6 !important;
+  color: #1f2937 !important;
+  font-weight: bold !important;
 }
 
 /* GEDA Advanced Updates Styling (Khmer Font Scale, VIP Badges, Cart Enhancements, Audit Logs) */

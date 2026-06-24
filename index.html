@@ -293,7 +293,7 @@
           <a href="tel:010955536" style="font-size: 9.5px; color: var(--primary); font-weight: 600; display: inline-block; margin-top: 2px; text-decoration: none;">Tel: 010 955 536</a>
         </div>
         <div style="margin-top: 6px; text-align: center; font-size: 9px; color: var(--primary); font-weight: bold; opacity: 0.85;">
-          Version 1.5.7 (Build 15.06.2026)
+          Version 1.5.8 (Build 15.06.2026)
         </div>
       </div>
     </aside>
@@ -1937,11 +1937,12 @@
 
         <!-- Scrollable tab slider -->
         <div class="pos-categories-slider" id="reports-tabs" style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
-          <span class="category-tab active" data-report="prodReport" data-translate="prodReport">Product Valuation</span>
+          <span class="category-tab active" data-report="summaryClosingReport" data-translate="summaryClosingReport">Summary & Daily Closing</span>
+          <span class="category-tab" data-report="prodReport" data-translate="prodReport">Product Valuation</span>
           <span class="category-tab" data-report="stockLogReport" data-translate="stockLogReport">Stock Movement Log</span>
           <span class="category-tab" data-report="dailySalesReport" data-translate="dailySalesReport">Daily Sales Chart</span>
           <span class="category-tab" data-report="prodSalesReport" data-translate="prodSalesReport">Sales by Product</span>
-          <span class="category-tab" data-report="salesDetailsReport" data-translate="salesDetailsReport">Sales Details Ledger</span>
+          <span class="category-tab" data-report="salesDetailsReport" data-translate="salesDetailsReport">Sales Transactions Ledger</span>
           <span class="category-tab" data-report="custPayReport" data-translate="custPayReport">Customer Payments Log</span>
           <span class="category-tab" data-report="commReport" data-translate="commReport">Staff Commission Log</span>
           <span class="category-tab" data-report="debtReport" data-translate="debtReport">Customer Outstanding Debt</span>
@@ -1954,6 +1955,7 @@
         <div class="glass-card">
           <div style="padding:12px; border-bottom:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-outline btn-sm" id="btn-print-active-report">🖨️ Print</button>
+            <button class="btn btn-secondary btn-sm" id="btn-pdf-active-report">📄 Download PDF</button>
             <button class="btn btn-secondary btn-sm" id="btn-export-active-report" data-translate="exportBtn">Export CSV</button>
           </div>
           <div class="table-responsive" id="report-content-area">
@@ -3068,6 +3070,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
+  <!-- PDF Generator library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <!-- Core logic engine application file -->
   <script src="app.js?v=1.5.4"></script>
 

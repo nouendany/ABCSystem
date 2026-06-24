@@ -79,7 +79,7 @@
     theme: safeGetItem('abc_theme') || 'dark',
     activeView: 'view-dashboard',
     activeSettingTab: 'company',
-    activeReportTab: 'prodReport',
+    activeReportTab: 'summaryClosingReport',
     hideFollowupRoadmap: safeGetItem('abc_hide_followup_roadmap') === 'true',
     
     // DB Collections
@@ -4627,7 +4627,16 @@
 
     // Active Print action
     document.getElementById('btn-print-active-report').addEventListener('click', () => {
+      document.body.classList.add('printing-report-active');
       window.print();
+      setTimeout(() => {
+        document.body.classList.remove('printing-report-active');
+      }, 1000);
+    });
+
+    // Active PDF download action
+    document.getElementById('btn-pdf-active-report').addEventListener('click', () => {
+      downloadActiveReportPDF();
     });
 
     // Active CSV Exporter
@@ -4656,6 +4665,9 @@
     }
 
     switch(state.activeReportTab) {
+      case 'summaryClosingReport':
+        renderSummaryClosingReport(container, start, end);
+        break;
       case 'prodReport':
         renderProductReport(container);
         break;
@@ -4842,6 +4854,342 @@
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  function renderSummaryClosingReport(container, start, end) {
+    const isKhmer = state.lang === 'km';
+    const transactions = getFilteredTransactions().filter(t => {
+      const d = new Date(t.date);
+      return d >= start && d <= end;
+    });
+
+    const expenses = getFilteredExpenses().filter(e => {
+      const d = new Date(e.date);
+      return d >= start && d <= end;
+    });
+
+    let totalSales = 0;
+    let totalPaid = 0;
+    let totalDebt = 0;
+    let totalCost = 0;
+    let totalOrders = transactions.length;
+
+    // Payment methods
+    const paymentMethods = {
+      cash: 0,
+      khqr: 0,
+      bank: 0,
+      card: 0,
+      other: 0
+    };
+
+    // Staff stats
+    const staffStats = {};
+
+    transactions.forEach(t => {
+      totalSales += t.total;
+      const debt = t.outstandingDebt || 0;
+      const paid = t.total - debt;
+      totalPaid += paid;
+      totalDebt += debt;
+
+      // Cost price
+      let txCost = 0;
+      t.items.forEach(item => {
+        const p = state.products.find(prod => prod.sku === item.sku);
+        const costPrice = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
+        txCost += costPrice * item.qty;
+      });
+      totalCost += txCost;
+
+      // Method grouping
+      const method = (t.paymentMethod || 'cash').toLowerCase();
+      if (paymentMethods[method] !== undefined) {
+        paymentMethods[method] += paid;
+      } else {
+        paymentMethods['other'] = (paymentMethods['other'] || 0) + paid;
+      }
+
+      // Staff grouping
+      const staffName = t.staffName || 'System';
+      if (!staffStats[staffName]) {
+        staffStats[staffName] = { sales: 0, count: 0 };
+      }
+      staffStats[staffName].sales += t.total;
+      staffStats[staffName].count += 1;
+    });
+
+    let totalExpenses = 0;
+    const expenseGroups = {};
+    expenses.forEach(e => {
+      totalExpenses += e.amount;
+      const cat = e.category || 'Other';
+      expenseGroups[cat] = (expenseGroups[cat] || 0) + e.amount;
+    });
+
+    const netCashPosition = totalPaid - totalExpenses;
+
+    // Widgets
+    const labelTotalSales = isKhmer ? "ប្រាក់លក់សរុប" : "Total Sales";
+    const labelPaidAmount = isKhmer ? "បង់ប្រាក់រួច" : "Paid Collected";
+    const labelDebt = isKhmer ? "ជំពាក់សរុប" : "Total Debt";
+    const labelExpenses = isKhmer ? "ចំណាយសរុប" : "Total Expenses";
+    const labelNetCash = isKhmer ? "សមតុល្យសាច់ប្រាក់សុទ្ធ" : "Net Cash Position";
+
+    const widgetsHtml = `
+      <div class="closing-summary-dashboard">
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%); border-left: 4px solid #3b82f6;">
+          <div style="font-size: 24px; margin-bottom: 8px;">💵</div>
+          <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelTotalSales}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #3b82f6; margin-top: 4px;">${window.POS_HELPERS.formatUSD(totalSales)}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(totalSales)}</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${totalOrders} ${isKhmer ? 'ការលក់' : 'Orders'}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%); border-left: 4px solid #10b981;">
+          <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+          <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelPaidAmount}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #10b981; margin-top: 4px;">${window.POS_HELPERS.formatUSD(totalPaid)}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(totalPaid)}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6) 100%); border-left: 4px solid #f59e0b;">
+          <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+          <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelDebt}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #f59e0b; margin-top: 4px;">${window.POS_HELPERS.formatUSD(totalDebt)}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(totalDebt)}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%); border-left: 4px solid #ef4444;">
+          <div style="font-size: 24px; margin-bottom: 8px;">💸</div>
+          <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelExpenses}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #ef4444; margin-top: 4px;">${window.POS_HELPERS.formatUSD(totalExpenses)}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(totalExpenses)}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(13, 148, 136, 0.05) 100%); border-left: 4px solid #14b8a6;">
+          <div style="font-size: 24px; margin-bottom: 8px;">📈</div>
+          <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelNetCash}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #14b8a6; margin-top: 4px;">${window.POS_HELPERS.formatUSD(netCashPosition)}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(netCashPosition)}</div>
+        </div>
+      </div>
+    `;
+
+    // Payment methods breakdown
+    let paymentBreakdownHtml = `
+      <div class="glass-card" style="padding: 16px; flex: 1; min-width: 280px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--primary); display:flex; align-items:center; gap:8px;">💳 ${isKhmer ? "ការប្រមូលប្រាក់តាមប្រភេទ" : "Collections by Payment Method"}</h4>
+        <table class="pos-table" style="font-size:11px;">
+          <thead>
+            <tr>
+              <th>${isKhmer ? "ប្រភេទបង់ប្រាក់" : "Payment Method"}</th>
+              <th style="text-align: right;">${isKhmer ? "ចំនួនទទួលបាន" : "Amount Collected"}</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    Object.keys(paymentMethods).forEach(method => {
+      const val = paymentMethods[method];
+      const methodLabel = window.POS_TRANSLATIONS[state.lang][method] || method.toUpperCase();
+      paymentBreakdownHtml += `
+        <tr>
+          <td><strong>${methodLabel}</strong></td>
+          <td style="text-align: right; font-weight:700; color:var(--text-primary);">${window.POS_HELPERS.formatUSD(val)}</td>
+        </tr>
+      `;
+    });
+    paymentBreakdownHtml += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Expense breakdown
+    let expenseBreakdownHtml = `
+      <div class="glass-card" style="padding: 16px; flex: 1; min-width: 280px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--danger); display:flex; align-items:center; gap:8px;">💸 ${isKhmer ? "ចំណាយតាមប្រភេទ" : "Expenses by Category"}</h4>
+        <table class="pos-table" style="font-size:11px;">
+          <thead>
+            <tr>
+              <th>${isKhmer ? "ប្រភេទចំណាយ" : "Expense Category"}</th>
+              <th style="text-align: right;">${isKhmer ? "ចំនួនចំណាយ" : "Amount"}</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    const expKeys = Object.keys(expenseGroups);
+    if (expKeys.length === 0) {
+      expenseBreakdownHtml += `<tr><td colspan="2" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      expKeys.forEach(cat => {
+        const val = expenseGroups[cat];
+        const catLabel = window.POS_TRANSLATIONS[state.lang][cat] || cat;
+        expenseBreakdownHtml += `
+          <tr>
+            <td><strong>${catLabel}</strong></td>
+            <td style="text-align: right; font-weight:700; color:var(--danger);">${window.POS_HELPERS.formatUSD(val)}</td>
+          </tr>
+        `;
+      });
+    }
+    expenseBreakdownHtml += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Staff sales performance
+    let staffSalesHtml = `
+      <div class="glass-card" style="padding: 16px; flex: 1; min-width: 280px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--secondary); display:flex; align-items:center; gap:8px;">👥 ${isKhmer ? "ការលក់របស់បុគ្គលិក" : "Employee Sales Summary"}</h4>
+        <table class="pos-table" style="font-size:11px;">
+          <thead>
+            <tr>
+              <th>${isKhmer ? "ឈ្មោះបុគ្គលិក" : "Employee"}</th>
+              <th style="text-align: center;">${isKhmer ? "ចំនួនវិក្កយបត្រ" : "Invoices"}</th>
+              <th style="text-align: right;">${isKhmer ? "លក់សរុប" : "Total Sold"}</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    const staffKeys = Object.keys(staffStats);
+    if (staffKeys.length === 0) {
+      staffSalesHtml += `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      staffKeys.forEach(staffName => {
+        const stats = staffStats[staffName];
+        staffSalesHtml += `
+          <tr>
+            <td><strong>${staffName}</strong></td>
+            <td style="text-align: center;">${stats.count}</td>
+            <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(stats.sales)}</td>
+          </tr>
+        `;
+      });
+    }
+    staffSalesHtml += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Transaction Checklist
+    let txChecklistHtml = `
+      <div class="glass-card" style="padding: 16px; margin-top:20px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-primary); display:flex; align-items:center; gap:8px;">📋 ${isKhmer ? "បញ្ជីផ្ទៀងផ្ទាត់វិក្កយបត្រប្រចាំថ្ងៃ" : "Daily Invoices Checklist"}</h4>
+        <div class="table-responsive">
+          <table class="pos-table" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>${isKhmer ? "លេខវិក្កយបត្រ" : "Invoice No"}</th>
+                <th>${isKhmer ? "អតិថិជន" : "Customer"}</th>
+                <th>${isKhmer ? "អ្នកលក់" : "Sales Representative"}</th>
+                <th style="text-align: right;">${isKhmer ? "តម្លៃសរុប" : "Total Due"}</th>
+                <th style="text-align: right;">${isKhmer ? "បានបង់" : "Paid Amount"}</th>
+                <th style="text-align: right;">${isKhmer ? "ជំពាក់" : "Debt"}</th>
+                <th>${isKhmer ? "ប្រភេទបង់ប្រាក់" : "Payment"}</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+    if (transactions.length === 0) {
+      txChecklistHtml += `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      transactions.forEach(t => {
+        const debt = t.outstandingDebt || 0;
+        const paid = t.total - debt;
+        const methodLabel = window.POS_TRANSLATIONS[state.lang][t.paymentMethod] || t.paymentMethod;
+        const custObj = state.customers.find(c => c.id === t.customerId);
+        const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (t.customerName || 'General Customer');
+
+        txChecklistHtml += `
+          <tr>
+            <td><strong style="color:var(--secondary); font-family:monospace;">${t.invoiceNo || t.id}</strong></td>
+            <td><strong>${displayCustName}</strong></td>
+            <td>${t.staffName || 'System'}</td>
+            <td style="text-align: right; font-weight:700; color:var(--text-primary);">${window.POS_HELPERS.formatUSD(t.total)}</td>
+            <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(paid)}</td>
+            <td style="text-align: right; font-weight:700; color:${debt > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${window.POS_HELPERS.formatUSD(debt)}</td>
+            <td><span style="font-size:10px; text-transform:uppercase;">${methodLabel}</span></td>
+          </tr>
+        `;
+      });
+    }
+    txChecklistHtml += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = `
+      ${widgetsHtml}
+      <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:20px;">
+        ${paymentBreakdownHtml}
+        ${expenseBreakdownHtml}
+        ${staffSalesHtml}
+      </div>
+      ${txChecklistHtml}
+    `;
+  }
+
+  function downloadActiveReportPDF() {
+    const reportArea = document.getElementById('report-content-area');
+    if (!reportArea) return;
+
+    const btn = document.getElementById('btn-pdf-active-report');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Generating PDF...';
+    btn.disabled = true;
+
+    // Create a temporary header for the PDF report
+    const isKhmer = state.lang === 'km';
+    const compName = state.companySettings.name || 'ABC POS System';
+    const activeTab = state.activeReportTab || 'Summary';
+    const reportTitle = window.POS_TRANSLATIONS[state.lang][activeTab] || activeTab;
+
+    const pdfHeader = document.createElement('div');
+    pdfHeader.className = 'pdf-header-only';
+    pdfHeader.style.cssText = 'text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 12px;';
+    pdfHeader.innerHTML = `
+      <h2 style="margin: 0; color: #3b82f6; font-size: 22px; font-weight:800;">${compName}</h2>
+      <h3 style="margin: 6px 0 0 0; font-size: 16px; color: #1f2937; font-weight:700;">${reportTitle}</h3>
+      <p style="margin: 6px 0 0 0; font-size: 11px; color: #4b5563; font-weight:600;">
+        ${isKhmer ? 'កាលបរិច្ឆេទសាកសួរ៖' : 'Reporting Date Range:'} ${state.reportStartDate} ${isKhmer ? 'ដល់' : 'to'} ${state.reportEndDate}
+      </p>
+    `;
+    reportArea.insertBefore(pdfHeader, reportArea.firstChild);
+
+    // Apply PDF styling override class
+    reportArea.classList.add('pdf-generation-active');
+
+    // Setup options for html2pdf
+    const opt = {
+      margin:       10,
+      filename:     `${activeTab}_Report_${state.reportStartDate}_to_${state.reportEndDate}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        letterRendering: true,
+        backgroundColor: '#ffffff'
+      },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Trigger PDF generation
+    html2pdf().from(reportArea).set(opt).save().then(() => {
+      // Cleanup
+      reportArea.classList.remove('pdf-generation-active');
+      pdfHeader.remove();
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }).catch(err => {
+      console.error('PDF generation error:', err);
+      // Cleanup on error
+      reportArea.classList.remove('pdf-generation-active');
+      pdfHeader.remove();
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      alert(isKhmer ? 'ការបង្កើត PDF បានបរាជ័យ។ សូមព្យាយាមបោះពុម្ពជំនួសវិញ។' : 'PDF generation failed. Please try printing instead.');
+    });
   }
 
   function renderProductReport(container) {
@@ -5317,19 +5665,29 @@
     let rowsHtml = '';
     let sumUnits = 0;
     let sumRevenue = 0;
+    let sumStock = 0;
     const skus = Object.keys(prodSales);
 
     skus.forEach(sku => {
       const p = state.products.find(pr => pr.sku === sku);
       const name = p ? (state.lang === 'km' ? p.nameKh : p.nameEn) : 'Deleted Product';
-      
+
+      let stockQty = 0;
+      if (fBranch === 'all') {
+        stockQty = p ? (p.stockQty || 0) : 0;
+      } else {
+        stockQty = p ? (p.warehouseStock[fBranch] || 0) : 0;
+      }
+
       sumUnits += prodSales[sku];
       sumRevenue += prodRevenue[sku];
-      
+      sumStock += stockQty;
+
       rowsHtml += `
         <tr>
           <td><strong style="font-family:monospace;">${sku}</strong></td>
           <td><strong>${name}</strong></td>
+          <td style="text-align:center; font-weight:800; color:var(--text-secondary);">${stockQty}</td>
           <td style="text-align:center; font-weight:800; color:var(--secondary);">${prodSales[sku]}</td>
           <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(prodRevenue[sku])}</td>
         </tr>
@@ -5340,6 +5698,7 @@
       <tfoot>
         <tr style="background:rgba(16,185,129,0.06); font-weight:800; border-top: 2.5px solid #10b981; font-size:13px;">
           <td colspan="2" style="text-align:left; padding:12px 8px; color:#10b981;">📊 ${state.lang === 'km' ? 'សរុប (Total)' : 'Total'}</td>
+          <td style="text-align:center; font-weight:800; color:var(--text-secondary); padding:12px 8px;">${sumStock}</td>
           <td style="text-align:center; font-weight:800; color:#f59e0b; padding:12px 8px;">${sumUnits}</td>
           <td style="font-weight:800; color:#10b981; padding:12px 8px;">${window.POS_HELPERS.formatUSD(sumRevenue)}</td>
         </tr>
@@ -5352,13 +5711,14 @@
         <thead>
           <tr>
             <th>SKU</th>
-            <th>Product</th>
-            <th style="text-align:center;">Units Sold</th>
-            <th>Revenue Generated</th>
+            <th>${state.lang === 'km' ? 'ផលិតផល' : 'Product'}</th>
+            <th style="text-align:center;">${state.lang === 'km' ? 'ស្តុកបច្ចុប្បន្ន' : 'Current Stock'}</th>
+            <th style="text-align:center;">${state.lang === 'km' ? 'លក់ចេញ' : 'Units Sold'}</th>
+            <th>${state.lang === 'km' ? 'ចំណូលទទួលបាន' : 'Revenue Generated'}</th>
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
+          ${rowsHtml || `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
         ${footerHtml}
       </table>
@@ -5382,6 +5742,7 @@
     const fBranch = state.reportFilterBranch || 'all';
     const fStaff = state.reportFilterStaff || 'all';
     const fCategory = state.reportFilterCategory || 'all';
+    const fPayStatus = state.reportFilterPayStatus || 'all';
 
     let branchOpts = '<option value="all">All Branches</option>';
     state.branches.forEach(b => {
@@ -5398,13 +5759,20 @@
       catOpts += `<option value="${c.id}" ${fCategory === c.id ? 'selected' : ''}>${state.lang === 'km' ? c.nameKh : c.nameEn}</option>`;
     });
 
+    let payStatusOpts = `
+      <option value="all" ${fPayStatus === 'all' ? 'selected' : ''}>${state.lang === 'km' ? 'ស្ថានភាពទាំងអស់' : 'All Statuses'}</option>
+      <option value="paid" ${fPayStatus === 'paid' ? 'selected' : ''}>${state.lang === 'km' ? 'បានបង់ប្រាក់រួច' : 'Paid Only'}</option>
+      <option value="debt" ${fPayStatus === 'debt' ? 'selected' : ''}>${state.lang === 'km' ? 'ជំពាក់' : 'Outstanding Debt'}</option>
+    `;
+
     const filterRowHtml = `
       <div class="inner-report-filters" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:6px; align-items:center; width: 100%;">
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">Filter Report:</span>
         <select id="rep-filter-branch" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
         <select id="rep-filter-staff" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${staffOpts}</select>
         <select id="rep-filter-category" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
-        <input type="text" id="rep-filter-search" class="form-control" placeholder="${state.lang === 'km' ? 'ស្វែងរកលេខវិក្កយបត្រ / អតិថិជន...' : 'Search Invoice / Customer...'}" value="${state.reportSearchQuery || ''}" style="width:220px; padding:4px 8px; font-size:11px; height:auto; margin-left:auto; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px;">
+        <select id="rep-filter-paystatus" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${payStatusOpts}</select>
+        <input type="text" id="rep-filter-search" class="form-control" placeholder="${state.lang === 'km' ? 'ស្វែងរកលេខវិក្កយបត្រ / អតិថិជន...' : 'Search Invoice / Customer...'}" value="${state.reportSearchQuery || ''}" style="width:200px; padding:4px 8px; font-size:11px; height:auto; margin-left:auto; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px;">
       </div>
     `;
 
@@ -5427,6 +5795,11 @@
         });
       });
     }
+    if (fPayStatus === 'paid') {
+      transactions = transactions.filter(t => (t.outstandingDebt || 0) === 0);
+    } else if (fPayStatus === 'debt') {
+      transactions = transactions.filter(t => (t.outstandingDebt || 0) > 0);
+    }
 
     const searchQuery = (state.reportSearchQuery || '').trim().toLowerCase();
     if (searchQuery) {
@@ -5446,12 +5819,13 @@
     let sumQty = 0;
     let sumCost = 0;
     let sumTotal = 0;
+    let sumPaid = 0;
+    let sumDebt = 0;
 
     sorted.forEach(tx => {
       const br = state.branches.find(b => b.id === tx.branchId);
       const brText = br ? (state.lang === 'km' ? br.nameKh : br.name) : 'HQ';
       const itemsText = tx.items.map(it => `${state.lang === 'km' ? it.nameKh : it.nameEn} x${it.qty}`).join(', ');
-      const methodTranslate = window.POS_TRANSLATIONS[state.lang][tx.paymentMethod] || tx.paymentMethod;
 
       // Calculate quantity and cost price for this transaction
       let txQty = 0;
@@ -5463,9 +5837,14 @@
         txCost += costPrice * item.qty;
       });
 
+      const txDebt = tx.outstandingDebt || 0;
+      const txPaid = tx.total - txDebt;
+
       sumQty += txQty;
       sumCost += txCost;
       sumTotal += tx.total;
+      sumPaid += txPaid;
+      sumDebt += txDebt;
 
       const custObj = state.customers.find(c => c.id === tx.customerId);
       const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (tx.customerName || 'General Customer');
@@ -5473,17 +5852,28 @@
       const canEdit = checkPermission('edit');
       const repDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : `<span style="font-size:9px;color:var(--text-muted);">Rep: <strong>${tx.staffName || 'System'}</strong></span>`;
 
+      let statusBadge = '';
+      if (txDebt === 0) {
+        statusBadge = `<span class="badge badge-success" style="font-size: 9px; padding: 2px 6px;">${state.lang === 'km' ? 'បានបង់' : 'Paid'}</span>`;
+      } else if (txDebt > 0 && txDebt < tx.total) {
+        statusBadge = `<span class="badge badge-warning" style="font-size: 9px; padding: 2px 6px;">${state.lang === 'km' ? 'ជំពាក់ខ្លះ' : 'Partial'}</span>`;
+      } else {
+        statusBadge = `<span class="badge badge-danger" style="font-size: 9px; padding: 2px 6px;">${state.lang === 'km' ? 'ជំពាក់ទាំងស្រុង' : 'Unpaid'}</span>`;
+      }
+
       rowsHtml += `
         <tr>
           <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span></td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
           <td><strong>${displayCustName}</strong><br>${repDisplay}</td>
-          <td style="font-size:10px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
+          <td style="font-size:10px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
           <td style="text-align:center; font-weight:700; color:var(--text-primary);">${txQty}</td>
           <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(txCost)}</td>
           <td style="text-align:right; font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(tx.total)}</td>
-          <td><span style="font-size:10px; text-transform:uppercase;">${methodTranslate}</span></td>
-          <td>
+          <td style="text-align:right; font-weight:750; color:#10b981;">${window.POS_HELPERS.formatUSD(txPaid)}</td>
+          <td style="text-align:right; font-weight:750; color:#ef4444;">${window.POS_HELPERS.formatUSD(txDebt)}</td>
+          <td style="text-align:center;">${statusBadge}</td>
+          <td style="text-align:center;" class="no-pdf no-print">
             <button class="btn btn-danger btn-sm btn-void-tx" data-id="${tx.id}" style="padding:2px 6px;">🗑️ Void</button>
           </td>
         </tr>
@@ -5497,7 +5887,10 @@
           <td style="text-align:center; font-weight:800; color:var(--text-primary);">${sumQty}</td>
           <td style="text-align:right; font-weight:800; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(sumCost)}</td>
           <td style="text-align:right; color:var(--primary); font-weight:800;">${window.POS_HELPERS.formatUSD(sumTotal)}</td>
-          <td colspan="2"></td>
+          <td style="text-align:right; color:#10b981; font-weight:800;">${window.POS_HELPERS.formatUSD(sumPaid)}</td>
+          <td style="text-align:right; color:#ef4444; font-weight:800;">${window.POS_HELPERS.formatUSD(sumDebt)}</td>
+          <td></td>
+          <td class="no-pdf no-print"></td>
         </tr>
       </tfoot>
     ` : '';
@@ -5511,15 +5904,17 @@
             <th>${state.lang === 'km' ? 'កាលបរិច្ឆេទ' : 'Date'}</th>
             <th>${state.lang === 'km' ? 'អតិថិជន / បុគ្គលិក' : 'Customer / Staff'}</th>
             <th>${state.lang === 'km' ? 'ទំនិញ' : 'Items'}</th>
-            <th style="text-align:center;">${state.lang === 'km' ? 'ចំនួនផលិតផល' : 'Qty'}</th>
+            <th style="text-align:center;">${state.lang === 'km' ? 'ចំនួន' : 'Qty'}</th>
             <th style="text-align:right;">${state.lang === 'km' ? 'តម្លៃដើម' : 'Cost'}</th>
             <th style="text-align:right;">${state.lang === 'km' ? 'លក់សរុប' : 'Total Due'}</th>
-            <th>${state.lang === 'km' ? 'ការទូទាត់' : 'Payment'}</th>
-            <th>${state.lang === 'km' ? 'សកម្មភាព' : 'Action'}</th>
+            <th style="text-align:right;">${state.lang === 'km' ? 'បានបង់' : 'Paid'}</th>
+            <th style="text-align:right;">${state.lang === 'km' ? 'ជំពាក់' : 'Debt'}</th>
+            <th style="text-align:center;">${state.lang === 'km' ? 'ស្ថានភាព' : 'Status'}</th>
+            <th style="text-align:center;" class="no-pdf no-print">${state.lang === 'km' ? 'សកម្មភាព' : 'Action'}</th>
           </tr>
         </thead>
         <tbody>
-          ${rowsHtml || `<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
+          ${rowsHtml || `<tr><td colspan="11" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`}
         </tbody>
         ${footerHtml}
       </table>
@@ -5535,6 +5930,10 @@
     });
     document.getElementById('rep-filter-category').addEventListener('change', (e) => {
       state.reportFilterCategory = e.target.value;
+      triggerReportRender();
+    });
+    document.getElementById('rep-filter-paystatus').addEventListener('change', (e) => {
+      state.reportFilterPayStatus = e.target.value;
       triggerReportRender();
     });
 
