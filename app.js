@@ -165,7 +165,8 @@
     teams: [],
     positions: [],
     payrollItems: [],
-    kpis: []
+    kpis: [],
+    voidedTransactions: []
   };
 
   let firebaseActive = false;
@@ -762,6 +763,7 @@
         syncChanges('positions', state.positions, lastSyncedState.positions, 'id');
         syncChanges('payroll_items', state.payrollItems, lastSyncedState.payrollItems, 'id');
         syncChanges('kpis', state.kpis, lastSyncedState.kpis, 'id');
+        syncChanges('voided_transactions', state.voidedTransactions, lastSyncedState.voidedTransactions, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
         db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error("Firebase commission rules save error:", e));
@@ -787,7 +789,8 @@
           teams: JSON.parse(JSON.stringify(state.teams)),
           positions: JSON.parse(JSON.stringify(state.positions)),
           payrollItems: JSON.parse(JSON.stringify(state.payrollItems)),
-          kpis: JSON.parse(JSON.stringify(state.kpis))
+          kpis: JSON.parse(JSON.stringify(state.kpis)),
+          voidedTransactions: JSON.parse(JSON.stringify(state.voidedTransactions))
         };
       } catch (err) {
         console.error("Cloud sync diff error:", err);
@@ -4275,8 +4278,9 @@
           `;
         }
 
-        // Determine staff display name (use transaction staffName directly)
-        let staffNameDisplay = tx.staffName || 'System';
+        // Determine staff display name (use transaction staffName directly, editable if permitted)
+        const canEdit = checkPermission('edit');
+        const staffNameDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : (tx.staffName || 'System');
 
         // Calculate cost price and profit for this transaction
         let txCost = 0;
@@ -4380,6 +4384,18 @@
         };
 
         trMain.addEventListener('click', toggle);
+
+        const staffSelect = trMain.querySelector('.tx-staff-select');
+        if (staffSelect) {
+          staffSelect.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+          staffSelect.addEventListener('change', (e) => {
+            const txId = staffSelect.getAttribute('data-txid');
+            const newStaffId = e.target.value;
+            updateTransactionStaff(txId, newStaffId, staffSelect);
+          });
+        }
 
         incomeBody.appendChild(trMain);
         incomeBody.appendChild(trDetail);
@@ -5440,11 +5456,14 @@
       const custObj = state.customers.find(c => c.id === tx.customerId);
       const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (tx.customerName || 'General Customer');
 
+      const canEdit = checkPermission('edit');
+      const repDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : (tx.staffName || 'System');
+
       rowsHtml += `
         <tr>
           <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span></td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
-          <td><strong>${displayCustName}</strong><br><span style="font-size:9px;color:var(--text-muted);">Rep: ${tx.staffName}</span></td>
+          <td><strong>${displayCustName}</strong><br><span style="font-size:9px;color:var(--text-muted);">Rep: ${repDisplay}</span></td>
           <td style="font-size:10px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
           <td style="text-align:center; font-weight:700; color:var(--text-primary);">${txQty}</td>
           <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(txCost)}</td>
@@ -5529,12 +5548,118 @@
         }
       });
     });
+
+    container.querySelectorAll('.tx-staff-select').forEach(select => {
+      select.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      select.addEventListener('change', (e) => {
+        const txId = select.getAttribute('data-txid');
+        const newStaffId = e.target.value;
+        updateTransactionStaff(txId, newStaffId, select);
+      });
+    });
   }
 
   function itemsHtmlEntities(str) {
     return str.replace(/[\u00A0-\u9999<>\&]/g, function(i) {
        return '&#'+i.charCodeAt(0)+';';
     });
+  }
+
+  function getStaffSelectHtml(selectedStaffId, txId) {
+    let html = `<select class="tx-staff-select" data-txid="${txId}" style="background:transparent; border:none; color:var(--text-primary); font-size:11px; padding:0; cursor:pointer; font-weight:700;">`;
+    let found = false;
+    
+    state.staff.forEach(s => {
+      const isSel = s.id === selectedStaffId || s.employeeId === selectedStaffId;
+      if (isSel) found = true;
+      html += `<option value="${s.id}" ${isSel ? 'selected' : ''}>${s.name}</option>`;
+    });
+    
+    if (state.employees) {
+      state.employees.forEach(emp => {
+        if (!state.staff.some(s => s.id === emp.id)) {
+          const isSel = emp.id === selectedStaffId;
+          if (isSel) found = true;
+          html += `<option value="${emp.id}" ${isSel ? 'selected' : ''}>${emp.fullName || emp.name} (HR)</option>`;
+        }
+      });
+    }
+    
+    if (!found && selectedStaffId) {
+      html += `<option value="${selectedStaffId}" selected>${selectedStaffId}</option>`;
+    }
+    
+    html += `</select>`;
+    return html;
+  }
+
+  function updateTransactionStaff(txId, newStaffId, selectElement) {
+    if (!guardAction('edit')) {
+      const tx = state.transactions.find(t => t.id === txId);
+      if (tx) selectElement.value = tx.staffId || '';
+      return;
+    }
+    
+    const tx = state.transactions.find(t => t.id === txId);
+    if (!tx) return;
+    
+    let sObj = state.staff.find(st => st.id === newStaffId || st.employeeId === newStaffId);
+    if (!sObj && state.employees) {
+      const emp = state.employees.find(e => e.id === newStaffId);
+      if (emp) sObj = { id: emp.id, name: emp.fullName || emp.name };
+    }
+    const newStaffName = sObj ? sObj.name : newStaffId;
+    
+    if (confirm(state.lang === 'km' 
+      ? `តើអ្នកពិតជាចង់ប្តូរអ្នកលក់នៃវិក្កយបត្រនេះទៅជា "${newStaffName}" មែនទេ?`
+      : `Are you sure you want to change the representative of this transaction to "${newStaffName}"?`)) {
+      
+      const oldStaffId = tx.staffId;
+      const oldStaffName = tx.staffName;
+      
+      tx.staffId = newStaffId;
+      tx.staffName = newStaffName;
+      
+      // Update related Customer history (orders & timeline)
+      if (tx.customerId) {
+        const customer = state.customers.find(c => c.id === tx.customerId);
+        if (customer) {
+          if (customer.orders) {
+            customer.orders.forEach(order => {
+              if (order.date === tx.date && order.staffName === oldStaffName) {
+                order.staffName = newStaffName;
+              }
+            });
+          }
+          if (customer.timeline) {
+            customer.timeline.forEach(item => {
+              if (item.date === tx.date && item.staffName === oldStaffName) {
+                item.staffName = newStaffName;
+              }
+            });
+          }
+        }
+      }
+      
+      // Update corresponding followups
+      state.followups.forEach(f => {
+        if (f.saleId === tx.id || (f.customerId === tx.customerId && f.salesStaffId === oldStaffId)) {
+          f.salesStaffId = newStaffId;
+          f.salesStaffName = newStaffName;
+        }
+      });
+      
+      saveStateToLocalStorage();
+      renderFinance();
+      triggerReportRender();
+      renderCustomers();
+      
+      alert(state.lang === 'km' ? 'បានប្តូរអ្នកលក់ដោយជោគជ័យ!' : 'Representative updated successfully!');
+    } else {
+      selectElement.value = tx.staffId || '';
+    }
   }
 
   function voidTransaction(txId, reason) {
@@ -5566,13 +5691,24 @@
       }
     });
 
-    // Rollback customer debt
-    if (tx.outstandingDebt > 0 && tx.customerId) {
+    // Rollback customer debt & clean history
+    if (tx.customerId) {
       const customer = state.customers.find(c => c.id === tx.customerId);
       if (customer) {
-        customer.outstandingDebt = Math.max(0, (customer.outstandingDebt || 0) - tx.outstandingDebt);
+        if (tx.outstandingDebt > 0) {
+          customer.outstandingDebt = Math.max(0, (customer.outstandingDebt || 0) - tx.outstandingDebt);
+        }
+        // Remove orders with matching date
+        customer.orders = (customer.orders || []).filter(order => order.date !== tx.date);
+        // Remove timeline events with matching date
+        customer.timeline = (customer.timeline || []).filter(item => item.date !== tx.date);
+        // Decrement purchase count
+        customer.purchaseCount = Math.max(0, (customer.purchaseCount || 1) - 1);
       }
     }
+
+    // Remove corresponding followups
+    state.followups = state.followups.filter(f => f.saleId !== tx.id);
 
     // Save void log
     state.voidedTransactions.push({
@@ -6291,6 +6427,7 @@
         setupListener('positions', 'positions', 'id', [renderHROrg]);
         setupListener('payroll_items', 'payrollItems', 'id', [renderHRPayroll]);
         setupListener('kpis', 'kpis', 'id', [renderHRPerformance]);
+        setupListener('voided_transactions', 'voidedTransactions', 'id', []);
 
         // Company settings listener
         let isFirstSettingsSnapshot = true;
