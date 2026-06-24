@@ -128,7 +128,7 @@
   <!-- Chart.js CDN for rich visual analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.5.2">
+  <link rel="stylesheet" href="style.css?v=1.5.3">
 </head>
 <body class="dark-theme">
 
@@ -293,7 +293,7 @@
           <a href="tel:010955536" style="font-size: 9.5px; color: var(--primary); font-weight: 600; display: inline-block; margin-top: 2px; text-decoration: none;">Tel: 010 955 536</a>
         </div>
         <div style="margin-top: 6px; text-align: center; font-size: 9px; color: var(--primary); font-weight: bold; opacity: 0.85;">
-          Version 1.5.2 (Build 15.06.2026)
+          Version 1.5.3 (Build 15.06.2026)
         </div>
       </div>
     </aside>
@@ -2248,42 +2248,13 @@
               </select>
             </div>
           </div>
-          <div class="checkout-method-grid" style="margin-bottom:0;">
-            <div class="form-group">
-              <label data-translate="assignedStaff">Assigned Staff</label>
-              <select class="form-control" id="cust-staff">
-                <!-- Populated dynamically -->
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Customer Birthday</label>
-              <input type="date" class="form-control" id="cust-birthday">
-            </div>
+          <div class="form-group">
+            <label>Customer Birthday</label>
+            <input type="date" class="form-control" id="cust-birthday">
           </div>
           <div class="form-group">
             <label data-translate="notes">Customer Notes</label>
             <input type="text" class="form-control" id="cust-notes" placeholder="Enter special delivery instructions or feedback">
-          </div>
-
-          <!-- Initial Purchase Info (To trigger follow-up schedule) -->
-          <div id="cust-purchase-section" style="border-top: 1px dashed var(--border-color); margin-top: 14px; padding-top: 12px;">
-            <h4 style="font-size: 11.5px; font-weight: bold; color: var(--primary); margin-bottom: 8px;">🛒 Initial Purchase Info (To seed Auto Follow-Up)</h4>
-            <div class="form-group">
-              <label>Product Purchased</label>
-              <select class="form-control" id="cust-product-purchased">
-                <!-- Dynamically populated -->
-              </select>
-            </div>
-            <div class="checkout-method-grid" style="margin-bottom:0;">
-              <div class="form-group">
-                <label>Quantity</label>
-                <input type="number" class="form-control" id="cust-qty" min="1" value="1">
-              </div>
-              <div class="form-group">
-                <label>Purchase Date</label>
-                <input type="date" class="form-control" id="cust-purchase-date">
-              </div>
-            </div>
           </div>
 
         </div>
@@ -3085,16 +3056,16 @@
   </div>
 
   <!-- Load Translation dictionary, Database seed variables, Formatting helper files -->
-  <script src="translations.js?v=1.5.2"></script>
-  <script src="dummyData.js?v=1.5.2"></script>
-  <script src="helpers.js?v=1.5.2"></script>
+  <script src="translations.js?v=1.5.3"></script>
+  <script src="dummyData.js?v=1.5.3"></script>
+  <script src="helpers.js?v=1.5.3"></script>
   
   <!-- Firebase Compat SDK from CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   
   <!-- Core logic engine application file -->
-  <script src="app.js?v=1.5.2"></script>
+  <script src="app.js?v=1.5.3"></script>
 
   <!-- Floating Diagnostics Trigger Button -->
   <button id="btn-diagnostics-toggle" style="position:fixed; bottom:16px; right:16px; z-index:999990; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition:all 0.2s ease-in-out; outline:none;" title="Diagnostics (វិភាគប្រព័ន្ធ)">

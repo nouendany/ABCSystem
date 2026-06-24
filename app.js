@@ -8901,7 +8901,8 @@ CREATE TABLE sale_items (
       const source = document.getElementById('cust-source').value;
       const status = document.getElementById('cust-status').value;
       const notes = document.getElementById('cust-notes').value.trim();
-      const staffId = document.getElementById('cust-staff').value;
+      const staffEl = document.getElementById('cust-staff');
+      const staffId = staffEl ? staffEl.value : '';
       const facebookLink = document.getElementById('cust-facebook').value.trim();
       const birthday = document.getElementById('cust-birthday').value;
 
@@ -8959,9 +8960,12 @@ CREATE TABLE sale_items (
       } else {
         if (!guardAction('add')) return;
         const newId = getNextId('CST-', state.customers);
-        const prodSku = document.getElementById('cust-product-purchased').value;
-        const qty = parseInt(document.getElementById('cust-qty').value) || 1;
-        const purchaseDate = document.getElementById('cust-purchase-date').value || new Date().toISOString().split('T')[0];
+        const prodSkuEl = document.getElementById('cust-product-purchased');
+        const prodSku = prodSkuEl ? prodSkuEl.value : '';
+        const qtyEl = document.getElementById('cust-qty');
+        const qty = qtyEl ? (parseInt(qtyEl.value) || 1) : 1;
+        const purchaseDateEl = document.getElementById('cust-purchase-date');
+        const purchaseDate = purchaseDateEl && purchaseDateEl.value ? purchaseDateEl.value : new Date().toISOString().split('T')[0];
 
         const productObj = state.products.find(p => p.sku === prodSku);
         const productName = productObj ? (state.lang === 'km' ? productObj.nameKh : productObj.nameEn) : prodSku;
