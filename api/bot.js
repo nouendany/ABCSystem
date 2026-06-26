@@ -288,7 +288,7 @@ async function handleWebAppOrder(req, res, body) {
         if (req.body.customerFacebook && !existingCust.facebookLink) {
           updatePayload.facebookLink = req.body.customerFacebook;
         }
-        if (customerAddress && customerAddress !== "-" && (!existingCust.address || existingCust.address === "-")) {
+        if (customerAddress && customerAddress !== "-" && customerAddress !== existingCust.address) {
           updatePayload.address = customerAddress;
         }
         if (req.body.customerNotes) {

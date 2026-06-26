@@ -3195,11 +3195,23 @@
         </div>
       `;
 
+      const addr = (c.address || '').trim();
+      let addressHtml = '-';
+      if (addr) {
+        if (addr.startsWith('http://') || addr.startsWith('https://') || addr.startsWith('www.')) {
+          const url = addr.startsWith('www.') ? 'https://' + addr : addr;
+          addressHtml = `<a href="${url}" target="_blank" style="color:var(--primary); text-decoration:underline; font-weight:700; display:inline-flex; align-items:center; gap:2px;" onclick="event.stopPropagation();">📍 ${state.lang === 'km' ? 'ទីតាំង' : 'Location'} 🔗</a>`;
+        } else {
+          addressHtml = `<span title="${addr}">${addr}</span>`;
+        }
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><strong style="color:var(--secondary); font-family:monospace;">${c.id}</strong></td>
         <td><strong>${c.name}</strong>${vipBadge}</td>
         <td>${c.phone}</td>
+        <td style="font-size:11px; color:var(--text-secondary); max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${addressHtml}</td>
         <td><span class="badge badge-warning" style="text-transform:none;">${c.source}</span></td>
         <td>${staffDisplay}</td>
         <td>
@@ -3327,6 +3339,17 @@
     if (debtEl) {
       debtEl.innerText = window.POS_HELPERS.formatUSD(customer.outstandingDebt || 0);
       debtEl.style.color = (customer.outstandingDebt || 0) > 0 ? 'var(--danger)' : 'var(--text-primary)';
+    }
+
+    const locEl = document.getElementById('cust-profile-location');
+    if (locEl) {
+      const customerAddr = (customer.address || '').trim();
+      if (customerAddr && (customerAddr.startsWith('http://') || customerAddr.startsWith('https://') || customerAddr.startsWith('www.'))) {
+        const url = customerAddr.startsWith('www.') ? 'https://' + customerAddr : customerAddr;
+        locEl.innerHTML = `<a href="${url}" target="_blank" style="color:var(--primary); text-decoration:underline; font-weight:bold; display:inline-flex; align-items:center; gap:4px;">📍 ${customerAddr} 🔗</a>`;
+      } else {
+        locEl.innerText = customerAddr || '-';
+      }
     }
 
     // Notes
