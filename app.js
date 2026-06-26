@@ -4948,6 +4948,8 @@
     });
 
     const netCashPosition = totalPaid - totalExpenses;
+    const grossProfit = totalSales - totalCost;
+    const netProfit = grossProfit - totalExpenses;
 
     // Widgets
     const labelTotalSales = isKhmer ? "ប្រាក់លក់សរុប" : "Total Sales";
@@ -4955,6 +4957,7 @@
     const labelDebt = isKhmer ? "ជំពាក់សរុប" : "Total Debt";
     const labelExpenses = isKhmer ? "ចំណាយសរុប" : "Total Expenses";
     const labelNetCash = isKhmer ? "សមតុល្យសាច់ប្រាក់សុទ្ធ" : "Net Cash Position";
+    const labelNetProfit = isKhmer ? "ប្រាក់ចំណេញសុទ្ធ" : "Net Profit";
 
     const widgetsHtml = `
       <div class="closing-summary-dashboard">
@@ -4988,6 +4991,13 @@
           <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelNetCash}</div>
           <div style="font-size: 20px; font-weight: 800; color: #14b8a6; margin-top: 4px;">${window.POS_HELPERS.formatUSD(netCashPosition)}</div>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(netCashPosition)}</div>
+        </div>
+        <div class="summary-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(109, 40, 217, 0.05) 100%); border-left: 4px solid #8b5cf6;">
+          <div style="font-size: 24px; margin-bottom: 8px;">💎</div>
+          <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelNetProfit}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #8b5cf6; margin-top: 4px;">${window.POS_HELPERS.formatUSD(netProfit)}</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(netProfit)}</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${isKhmer ? 'ចំណេញដុល៖' : 'Gross Profit:'} <strong>${window.POS_HELPERS.formatUSD(grossProfit)}</strong></div>
         </div>
       </div>
     `;
