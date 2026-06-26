@@ -2528,6 +2528,11 @@
     const tax = taxable * (vatRate / 100);
     const total = taxable + tax + shipping;
 
+    const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+    const prefix = state.companySettings.invoicePrefix || 'INV-2026-';
+    const invoiceNo = prefix + String(1000 + state.transactions.length + 1) + '-' + randSuffix;
+    const txId = 'TX-' + String(1000 + state.transactions.length + 1) + '-' + randSuffix;
+
     let cashReceived = total;
     let changeDue = 0;
     let outstandingDebt = 0;
@@ -2576,13 +2581,13 @@
 
         // Log Stock Movement
         state.stockLogs.push({
-          id: 'SLG-' + (1000 + state.stockLogs.length + 1),
+          id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
           date: txDate,
           sku: product.sku,
           type: 'sale',
           qty: -item.qty,
           warehouseId: branchId,
-          description: `Sold via Invoice INV-2026-${1000 + state.transactions.length + 1}`,
+          description: `Sold via Invoice ${invoiceNo}`,
           branchId: branchId,
           createdBy: state.currentUser ? state.currentUser.username : 'system',
           updatedBy: state.currentUser ? state.currentUser.username : 'system',
@@ -2650,11 +2655,12 @@
         flp.salesStaffId = staff.id;
         flp.salesStaffName = staff.name;
         flp.branchId = branchId;
+        flp.saleId = txId;
       } else {
-        const flpId = 'FLP-' + String(state.followups.length + 1).padStart(3, '0');
+        const flpId = 'FLP-' + String(state.followups.length + 1).padStart(3, '0') + '-' + randSuffix;
         state.followups.push({
           id: flpId,
-          saleId: 'TX-' + (1000 + state.transactions.length + 1),
+          saleId: txId,
           customerId: customerId,
           customerName: customer.name,
           salesStaffId: staff.id,
@@ -2666,8 +2672,6 @@
     }
 
     // Build Transaction object
-    const prefix = state.companySettings.invoicePrefix || 'INV-2026-';
-    const invoiceNo = prefix + String(1000 + state.transactions.length + 1);
     
     // Find the user matched with staff to extract Facebook Page assignment (Requirement 10)
     const staffUser = state.users.find(u => u.name === staff.name || u.id === staff.id || u.username === staff.id);
@@ -2675,7 +2679,7 @@
     const pageId = staffUser ? (staffUser.pageId || null) : null;
 
     const newTX = {
-      id: 'TX-' + (1000 + state.transactions.length + 1),
+      id: txId,
       invoiceNo: invoiceNo,
       date: txDate,
       staffId: staff.id,
@@ -9784,7 +9788,8 @@ CREATE TABLE sale_items (
 
         // Generate followup schedule automatically if a product was purchased
         if (prodSku) {
-          const flpId = 'FLP-' + String(state.followups.length + 1).padStart(3, '0');
+          const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+          const flpId = 'FLP-' + String(state.followups.length + 1).padStart(3, '0') + '-' + randSuffix;
           const schedules = [];
           const followUpDays = [3, 5, 7, 22, 37, 52, 82, 112, 142];
           const types = ['satisfaction', 'feedback', 'satisfaction', 'promo', 'engagement', 'engagement', 'engagement', 'promo', 'engagement'];
@@ -9801,7 +9806,7 @@ CREATE TABLE sale_items (
             });
           });
 
-          const saleTxId = 'TX-' + (1000 + state.transactions.length + 1);
+          const saleTxId = 'TX-' + (1000 + state.transactions.length + 1) + '-' + randSuffix;
 
           state.followups.push({
             id: flpId,
@@ -9816,7 +9821,7 @@ CREATE TABLE sale_items (
 
           // Generate Transaction
           const prefix = state.companySettings.invoicePrefix || 'INV-2026-';
-          const invoiceNo = prefix + String(1000 + state.transactions.length + 1);
+          const invoiceNo = prefix + String(1000 + state.transactions.length + 1) + '-' + randSuffix;
           const activeBranch = state.currentUser?.branchId === 'all' ? 'BR-001' : (state.currentUser?.branchId || 'BR-001');
 
           const staffUser = state.users.find(u => u.name === staffName || u.id === staffId || u.username === staffId);
@@ -9879,7 +9884,7 @@ CREATE TABLE sale_items (
 
             // Log Stock Movement
             state.stockLogs.push({
-              id: 'SLG-' + (1000 + state.stockLogs.length + 1),
+              id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
               date: txIsoDate,
               sku: prodSku,
               type: 'sale',
@@ -9953,7 +9958,7 @@ CREATE TABLE sale_items (
       const description = document.getElementById('exp-desc').value.trim();
 
       const newExp = {
-        id: 'EXP-' + (1000 + state.expenses.length + 1),
+        id: 'EXP-' + (1000 + state.expenses.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
         date: new Date().toISOString(),
         category, amount, description, branchId,
         createdBy: state.currentUser ? state.currentUser.username : 'system',

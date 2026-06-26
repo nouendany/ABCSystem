@@ -147,8 +147,9 @@ async function handleWebAppOrder(req, res, body) {
     // Fetch all products in cart and prepare lines
     const txCountSnap = await getCountFromServer(collection(db, "transactions"));
     const nextTxNum = 1000 + txCountSnap.data().count + 1;
-    const txId = "TX-" + nextTxNum;
-    const invoiceNo = (settings.invoicePrefix || "INV-2026-") + nextTxNum;
+    const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+    const txId = "TX-" + nextTxNum + "-" + randSuffix;
+    const invoiceNo = (settings.invoicePrefix || "INV-2026-") + nextTxNum + "-" + randSuffix;
 
     let subtotal = 0;
     const items = [];
@@ -226,7 +227,7 @@ async function handleWebAppOrder(req, res, body) {
       });
 
       // Log Stock Movement
-      const logId = "SLG-" + nextStockLogNum;
+      const logId = "SLG-" + nextStockLogNum + "-" + randSuffix;
       nextStockLogNum++;
       
       await setDoc(doc(db, "stock_logs", logId), {
