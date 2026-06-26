@@ -2428,8 +2428,11 @@
       message += `🏪 <b>Branch:</b> ${branchName}\n`;
       message += `👤 <b>Staff:</b> ${staffName} (${pageName})\n\n`;
 
+      const customerAddress = esc(customer && customer.address ? customer.address : 'N/A');
+
       message += `👤 <b>Customer:</b> ${customerName}\n`;
       message += `📞 <b>Phone:</b> <code>${phone}</code>\n`;
+      message += `📍 <b>${state.lang === 'km' ? 'អាសយដ្ឋាន/ទីតាំង' : 'Address/Location'}:</b> ${customerAddress}\n`;
       message += `${fbSection}\n\n`;
 
       message += `📦 <b>Ordered Items:</b>\n${itemsText}\n`;

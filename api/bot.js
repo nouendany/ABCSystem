@@ -411,7 +411,8 @@ async function handleWebAppOrder(req, res, body) {
                        `🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n` +
                        `💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n` +
                        `💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n` +
-                       `👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})\n\n` +
+                       `👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})\n` +
+                       `📍 ទីតាំង៖ **${customerAddress || "-"}**\n\n` +
                        `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}`;
     await sendTelegram(token, "sendMessage", {
       chat_id: chatId,
