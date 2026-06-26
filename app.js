@@ -10029,10 +10029,12 @@ CREATE TABLE sale_items (
       const category = document.getElementById('exp-category').value;
       const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
       const description = document.getElementById('exp-desc').value.trim();
+      const customDateInput = document.getElementById('exp-date-input').value;
+      const expenseDate = customDateInput ? new Date(customDateInput).toISOString() : new Date().toISOString();
 
       const newExp = {
         id: 'EXP-' + (1000 + state.expenses.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
-        date: new Date().toISOString(),
+        date: expenseDate,
         category, amount, description, branchId,
         createdBy: state.currentUser ? state.currentUser.username : 'system',
         updatedBy: state.currentUser ? state.currentUser.username : 'system',
