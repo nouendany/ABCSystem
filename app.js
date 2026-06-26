@@ -4920,6 +4920,13 @@
       return d >= start && d <= end;
     });
 
+    const transfers = getFilteredStockLogs().filter(log => {
+      if (log.type !== 'transfer') return false;
+      if (log.qty >= 0) return false; // show each transfer once
+      const d = new Date(log.date);
+      return d >= start && d <= end;
+    });
+
     let totalSales = 0;
     let totalPaid = 0;
     let totalDebt = 0;
@@ -5330,6 +5337,69 @@
       </div>
     `;
 
+    // Stock Transfers List
+    let transfersHtml = `
+      <div class="glass-card" style="padding: 16px; margin-top:20px; box-shadow: none;">
+        <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--warning); display:flex; align-items:center; gap:8px;">🚚 ${isKhmer ? "បញ្ជីផ្ទេរទំនិញរវាងសាខា" : "Stock Transfers Log"}</h4>
+        <div class="table-responsive">
+          <table class="pos-table" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>${isKhmer ? "កាលបរិច្ឆេទ" : "Date"}</th>
+                <th>${isKhmer ? "សាខាប្រភព" : "Source"}</th>
+                <th>SKU</th>
+                <th>${isKhmer ? "ឈ្មោះផលិតផល" : "Product"}</th>
+                <th style="text-align: center;">${isKhmer ? "ចំនួនផ្ទេរ" : "Qty Transferred"}</th>
+                <th>${isKhmer ? "ការពិពណ៌នា" : "Description"}</th>
+                <th>${isKhmer ? "បុគ្គលិក" : "Staff"}</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (transfers.length === 0) {
+      transfersHtml += `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      let sumTransfersQty = 0;
+      transfers.forEach(tf => {
+        const tfQty = Math.abs(tf.qty);
+        sumTransfersQty += tfQty;
+        const p = state.products.find(prod => prod.sku === tf.sku);
+        const name = p ? (isKhmer ? p.nameKh : p.nameEn) : 'Deleted Product';
+        const br = state.branches.find(b => b.id === tf.warehouseId);
+        const brText = br ? (isKhmer ? br.nameKh : br.name) : tf.warehouseId;
+        const tfDate = window.POS_HELPERS.formatDate(tf.date, state.lang);
+        const staffName = tf.createdBy || '-';
+        
+        transfersHtml += `
+          <tr>
+            <td>${tfDate}</td>
+            <td><span class="badge badge-primary">${brText}</span></td>
+            <td><strong style="font-family:monospace;">${tf.sku}</strong></td>
+            <td><strong>${name}</strong></td>
+            <td style="text-align: center; font-weight:800; color:var(--warning);">${tfQty}</td>
+            <td>${tf.description}</td>
+            <td>${staffName}</td>
+          </tr>
+        `;
+      });
+      transfersHtml += `
+            </tbody>
+            <tfoot>
+              <tr style="background:rgba(245,158,11,0.06); font-weight:800; border-top: 2.5px solid var(--warning); font-size:12px;">
+                <td colspan="4" style="text-align:left; padding:8px; color:var(--warning);">📊 ${isKhmer ? 'សរុប (Total)' : 'Total'}</td>
+                <td style="text-align:center; font-weight:800; color:var(--warning); padding:8px;">${sumTransfersQty}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+      `;
+    }
+    transfersHtml += `
+          </table>
+        </div>
+      </div>
+    `;
+
     container.innerHTML = `
       ${widgetsHtml}
       <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:20px;">
@@ -5339,6 +5409,7 @@
       </div>
       ${productSalesHtml}
       ${expenseDetailsListHtml}
+      ${transfersHtml}
       ${txChecklistHtml}
     `;
   }
