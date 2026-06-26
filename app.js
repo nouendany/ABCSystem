@@ -2851,7 +2851,7 @@
         </div>
         ${tx.outstandingDebt > 0 ? `
           <div style="display:flex; justify-content:space-between; font-weight:bold; color:red;">
-            <span>On Account (Debt):</span>
+            <span>${tx.paymentMethod === 'COD (Cash on Delivery)' ? 'COD (Unpaid)' : 'On Account (Debt)'}:</span>
             <span>${window.POS_HELPERS.formatUSD(tx.outstandingDebt)}</span>
           </div>
         ` : `
@@ -3403,6 +3403,8 @@
           methodStyle = 'background:rgba(6,182,212,0.1); color:#06b6d4; border:1px solid rgba(6,182,212,0.2);';
         } else if (o.paymentMethod === 'card') {
           methodStyle = 'background:rgba(99,102,241,0.1); color:#6366f1; border:1px solid rgba(99,102,241,0.2);';
+        } else if (o.paymentMethod === 'COD (Cash on Delivery)' || o.paymentMethod === 'On Account (Debt)') {
+          methodStyle = 'background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2);';
         }
         
         const methodTranslate = window.POS_TRANSLATIONS[state.lang][o.paymentMethod] || o.paymentMethod;

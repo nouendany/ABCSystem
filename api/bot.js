@@ -209,7 +209,7 @@ async function handleWebAppOrder(req, res, body) {
     const total = parseFloat((afterDiscount + tax + shipping).toFixed(2));
 
     const chosenPaymentMethod = body.paymentMethod || "COD (Cash on Delivery)";
-    const isDebt = chosenPaymentMethod === "On Account (Debt)";
+    const isDebt = chosenPaymentMethod === "On Account (Debt)" || chosenPaymentMethod === "COD (Cash on Delivery)";
 
     // Update Product Stocks and Log Movements
     const stockLogColl = collection(db, "stock_logs");
@@ -373,7 +373,12 @@ async function handleWebAppOrder(req, res, body) {
     // Send Telegram Group Notification
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
     if (salesGroup) {
-      const paymentStatusText = isDebt ? "⚠️ ជំពាក់ (On Account)" : `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
+      let paymentStatusText = `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
+      if (chosenPaymentMethod === "COD (Cash on Delivery)") {
+        paymentStatusText = "⚠️ មិនទាន់ទូទាត់ (COD)";
+      } else if (chosenPaymentMethod === "On Account (Debt)") {
+        paymentStatusText = "⚠️ ជំពាក់ (On Account)";
+      }
       let orderNotifyText = `🛍️ **ការកម្មង់ថ្មី (New Order)**\n` + 
                             (companyName ? `🏢 ក្រុមហ៊ុន៖ **${companyName}**\n` : '') +
                             `🔢 ការបញ្ជាទិញលើកទី៖ **${purchaseCountVal}**\n\n` + 
@@ -411,7 +416,7 @@ async function handleWebAppOrder(req, res, body) {
                        (companyName ? `🏢 ក្រុមហ៊ុន៖ **${companyName}**\n` : '') +
                        `🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n` +
                        `💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n` +
-                       `💳 ទូទាត់៖ **${isDebt ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n` +
+                       `💳 ទូទាត់៖ **${chosenPaymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n` +
                        `👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})\n` +
                        `📍 ទីតាំង៖ **${customerAddress || "-"}**\n\n` +
                        `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}`;

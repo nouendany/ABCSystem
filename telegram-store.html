@@ -1249,7 +1249,8 @@
       overlaySuccess.style.display = 'flex';
       overlayMsg.innerHTML = `<span style="color:var(--success); font-size:18px; font-weight:700;">Order Placed Successfully!</span>`;
       
-      const isDebt = document.getElementById('payment-method').value === 'On Account (Debt)';
+      const pmVal = document.getElementById('payment-method').value;
+      const isDebt = pmVal === 'On Account (Debt)' || pmVal === 'COD (Cash on Delivery)';
       
       // Build items rows
       const itemsHtml = cart.map(item => {
@@ -1290,7 +1291,7 @@
         </div>
         <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted);">
           <span>ការទូទាត់ (Payment):</span>
-          <span>${document.getElementById('payment-method').value}</span>
+          <span>${pmVal}</span>
         </div>
         
         <div class="receipt-divider"></div>
@@ -1350,7 +1351,9 @@
         </div>
         <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; align-items:center;">
           <span>ស្ថានភាព (Status):</span>
-          <strong style="color:${isDebt ? 'var(--danger)' : 'var(--success)'};">${isDebt ? 'ជំពាក់ (On Account)' : 'ទូទាត់រួច (Paid)'}</strong>
+          <strong style="color:${isDebt ? 'var(--danger)' : 'var(--success)'};">
+            ${pmVal === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : pmVal === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : 'ទូទាត់រួច (Paid)'}
+          </strong>
         </div>
         
         <div class="receipt-divider" style="margin-top:8px;"></div>
