@@ -2107,20 +2107,126 @@
     });
   }
 
+  // Helper to find a parent/box product for a given unit product SKU
+  function findBoxProductForUnit(unitSku) {
+    if (unitSku.endsWith("-SHEET")) {
+      const parentSku = unitSku.replace("-SHEET", "-BOX");
+      return state.products.find(p => p.sku === parentSku);
+    }
+    if (unitSku === "HM-SHEET") {
+      return state.products.find(p => p.sku === "HM-BOX");
+    }
+    return null;
+  }
+
+  function checkAndAutoSplit(sku, neededQty, branchId) {
+    const product = state.products.find(p => p.sku === sku);
+    if (!product) return false;
+
+    let availableQty = product.warehouseStock[branchId] || 0;
+    if (neededQty <= availableQty) return true;
+
+    const parentBoxProduct = findBoxProductForUnit(sku);
+    if (!parentBoxProduct) return false;
+
+    const boxStock = parentBoxProduct.warehouseStock[branchId] || 0;
+    if (boxStock <= 0) return false;
+
+    // Calculate how many boxes we need to split
+    const ratio = 5; // Conversion ratio
+    const missingQty = neededQty - availableQty;
+    const boxesNeeded = Math.ceil(missingQty / ratio);
+
+    if (boxesNeeded > boxStock) {
+      return false; // Not enough boxes to cover the split
+    }
+
+    // Deduct boxes, add sheets
+    parentBoxProduct.warehouseStock[branchId] = boxStock - boxesNeeded;
+    product.warehouseStock[branchId] = availableQty + (boxesNeeded * ratio);
+
+    // Re-sum total stock qty for parent
+    let parentSum = 0;
+    for (const b in parentBoxProduct.warehouseStock) {
+      parentSum += parseInt(parentBoxProduct.warehouseStock[b]) || 0;
+    }
+    parentBoxProduct.stockQty = parentSum;
+
+    // Re-sum total stock qty for unit
+    let unitSum = 0;
+    for (const b in product.warehouseStock) {
+      unitSum += parseInt(product.warehouseStock[b]) || 0;
+    }
+    product.stockQty = unitSum;
+
+    const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+
+    // Create negative log for source (decrease Box)
+    state.stockLogs.push({
+      id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+      date: new Date().toISOString(),
+      sku: parentBoxProduct.sku,
+      type: 'adjustment',
+      qty: -boxesNeeded,
+      warehouseId: branchId,
+      description: `Auto-Split: Deduct ${boxesNeeded} box(es) to split into ${boxesNeeded * ratio} units of ${product.sku} (Triggered by POS Sale)`,
+      branchId: branchId,
+      createdBy: state.currentUser ? state.currentUser.username : 'system',
+      updatedBy: state.currentUser ? state.currentUser.username : 'system',
+      timestamp: new Date().toISOString()
+    });
+
+    // Create positive log for target (increase Sheet)
+    state.stockLogs.push({
+      id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+      date: new Date().toISOString(),
+      sku: product.sku,
+      type: 'replenishment',
+      qty: boxesNeeded * ratio,
+      warehouseId: branchId,
+      description: `Auto-Split: Add ${boxesNeeded * ratio} units converted from ${boxesNeeded} box(es) of ${parentBoxProduct.sku} (Triggered by POS Sale)`,
+      branchId: branchId,
+      createdBy: state.currentUser ? state.currentUser.username : 'system',
+      updatedBy: state.currentUser ? state.currentUser.username : 'system',
+      timestamp: new Date().toISOString()
+    });
+
+    saveStateToLocalStorage();
+    updateLowStockAlertCount();
+    renderInventory();
+
+    alert(state.lang === 'km' 
+      ? `ប្រព័ន្ធបានបំបែកម៉ាស់ ${boxesNeeded}ប្រអប់ ទៅជា ${boxesNeeded * ratio}សន្លឹក ដោយស្វ័យប្រវត្តិសម្រាប់ការលក់នេះ!`
+      : `System automatically split ${boxesNeeded} Box(es) into ${boxesNeeded * ratio} Sheets for this sale!`);
+
+    return true;
+  }
+
   // Shopping Cart Operations
   function addToCart(sku) {
     const product = state.products.find(p => p.sku === sku);
     if (!product) return;
 
     const branchId = document.getElementById('cart-branch-select').value;
-    const branchQty = product.warehouseStock[branchId] || 0;
+    let branchQty = product.warehouseStock[branchId] || 0;
 
     const cartItem = state.cart.find(item => item.sku === sku);
-    if (cartItem) {
-      if (cartItem.qty + 1 > branchQty) {
-        alert(state.lang === 'km' ? 'មិនអាចលក់លើសចំនួនក្នុងស្តុកបានទេ!' : 'Cannot checkout more than branch stock qty!');
-        return;
+    const neededQty = cartItem ? (cartItem.qty + 1) : 1;
+
+    // Check if we need to auto-split
+    if (neededQty > branchQty) {
+      const splitSuccess = checkAndAutoSplit(sku, neededQty, branchId);
+      if (splitSuccess) {
+        branchQty = product.warehouseStock[branchId] || 0;
       }
+    }
+
+    if (neededQty > branchQty) {
+      alert(state.lang === 'km' ? 'មិនអាចលក់លើសចំនួនក្នុងស្តុកបានទេ!' : 'Cannot checkout more than branch stock qty!');
+      return;
+    }
+
+    if (cartItem) {
       cartItem.qty++;
     } else {
       state.cart.push({ sku: sku, qty: 1 });
@@ -2134,7 +2240,7 @@
     if (!product) return;
 
     const branchId = document.getElementById('cart-branch-select').value;
-    const branchQty = product.warehouseStock[branchId] || 0;
+    let branchQty = product.warehouseStock[branchId] || 0;
 
     const cartItem = state.cart.find(item => item.sku === sku);
     if (cartItem) {
@@ -2142,6 +2248,12 @@
       if (newQty <= 0) {
         deleteFromCart(sku);
       } else {
+        if (newQty > branchQty) {
+          const splitSuccess = checkAndAutoSplit(sku, newQty, branchId);
+          if (splitSuccess) {
+            branchQty = product.warehouseStock[branchId] || 0;
+          }
+        }
         if (newQty > branchQty) {
           alert(state.lang === 'km' ? 'មិនអាចលក់លើសចំនួនក្នុងស្តុកបានទេ!' : 'Cannot exceed available branch stock!');
           return;

@@ -175,7 +175,75 @@ async function handleWebAppOrder(req, res, body) {
       }
 
       const p = prodSnap.data();
-      const currentBranchQty = p.warehouseStock ? (p.warehouseStock[branchId] || 0) : 0;
+      let currentBranchQty = p.warehouseStock ? (p.warehouseStock[branchId] || 0) : 0;
+      
+      // Auto-Split in storefront checkout
+      if (currentBranchQty < item.qty) {
+        let parentSku = null;
+        if (item.sku.endsWith("-SHEET")) {
+          parentSku = item.sku.replace("-SHEET", "-BOX");
+        } else if (item.sku === "HM-SHEET") {
+          parentSku = "HM-BOX";
+        }
+
+        if (parentSku) {
+          const parentRef = doc(db, "products", parentSku);
+          const parentSnap = await getDoc(parentRef);
+          if (parentSnap.exists()) {
+            const parentData = parentSnap.data();
+            const boxStock = parentData.warehouseStock ? (parentData.warehouseStock[branchId] || 0) : 0;
+            const ratio = 5;
+            const missingQty = item.qty - currentBranchQty;
+            const boxesNeeded = Math.ceil(missingQty / ratio);
+
+            if (boxesNeeded <= boxStock) {
+              const updatedParentStock = { ...parentData.warehouseStock };
+              updatedParentStock[branchId] = boxStock - boxesNeeded;
+              let parentSum = 0;
+              for (const b in updatedParentStock) parentSum += parseInt(updatedParentStock[b]) || 0;
+
+              await updateDoc(parentRef, {
+                warehouseStock: updatedParentStock,
+                stockQty: parentSum
+              });
+
+              const slgSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+              await setDoc(doc(db, "stock_logs", `SLG-${nextTxNum}-P-${slgSuffix}`), {
+                id: `SLG-${nextTxNum}-P-${slgSuffix}`,
+                date: new Date().toISOString(),
+                sku: parentSku,
+                type: "adjustment",
+                qty: -boxesNeeded,
+                warehouseId: branchId,
+                description: `Auto-Split (Storefront Checkout): Deduct ${boxesNeeded} box(es) to split into ${boxesNeeded * ratio} units of ${item.sku}`,
+                branchId: branchId,
+                createdBy: "storefront",
+                updatedBy: "storefront",
+                timestamp: new Date().toISOString()
+              });
+
+              await setDoc(doc(db, "stock_logs", `SLG-${nextTxNum}-U-${slgSuffix}`), {
+                id: `SLG-${nextTxNum}-U-${slgSuffix}`,
+                date: new Date().toISOString(),
+                sku: item.sku,
+                type: "replenishment",
+                qty: boxesNeeded * ratio,
+                warehouseId: branchId,
+                description: `Auto-Split (Storefront Checkout): Add ${boxesNeeded * ratio} units converted from ${boxesNeeded} box(es) of ${parentSku}`,
+                branchId: branchId,
+                createdBy: "storefront",
+                updatedBy: "storefront",
+                timestamp: new Date().toISOString()
+              });
+
+              if (!p.warehouseStock) p.warehouseStock = {};
+              p.warehouseStock[branchId] = currentBranchQty + (boxesNeeded * ratio);
+              currentBranchQty = p.warehouseStock[branchId];
+            }
+          }
+        }
+      }
+
       if (currentBranchQty < item.qty) {
         return res.status(400).json({ error: `Product "${p.nameKh || p.nameEn}" is out of stock in selected branch.` });
       }

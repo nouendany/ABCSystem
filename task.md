@@ -1,12 +1,19 @@
 # Attendance & HR System Implementation Tasks
 
 - [x] Create package.json and vercel.json configurations
-- [x] Create Telegram Bot Webhook API handler (api/bot.js)
-- [x] Add new translations to translations.js
-- [x] Add CSS styling helper classes for HR UI in style.css
-- [x] Implement UI views and dashboard layout in index.html
-- [x] Implement database sync, state management, and UI rendering in app.js
-- [x] Deploy and verify the Vercel app & Telegram Bot integration
+- [x] Restructure Telegram storefront order notifications:
+  - [x] Query and load the active branch details dynamically in `api/bot.js`
+  - [x] Add Cambodia Time date/time formatting helper in `api/bot.js`
+  - [x] Implement HTML parse mode and redesign the sales group notification in `api/bot.js`
+  - [x] Implement HTML parse mode and redesign the employee direct message in `api/bot.js`
+  - [x] Verify the updates locally, commit, and push to GitHub
+- [x] Implement Split Pack/Box (បំបែកកញ្ចប់/ប្រអប់) feature:
+  - [x] Add split pack action button in the Inventory dashboard actions row in `index.html`
+  - [x] Add `modal-split-pack` modal dialog in `index.html`
+  - [x] Add English and Khmer translation keys in `translations.js`
+  - [x] Populate selects inside `populatePOSSelects()` in `app.js`
+  - [x] Implement event listeners and submission handler for `split-pack-form` in `app.js`
+  - [x] Verify the updates locally, commit, and push to GitHubhe Vercel app & Telegram Bot integration
 - [x] Enable Admin to manually update Attendance logs & OT
   - [x] Add Action column to Attendance table in index.html
   - [x] Render Edit button in renderAttendanceLogs() in app.js
