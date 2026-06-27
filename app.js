@@ -2396,8 +2396,8 @@
 
       // Build items text
       let itemsText = '';
-      tx.items.forEach((item, index) => {
-        itemsText += `${index + 1}. 🛒 <b>${esc(item.nameEn)}</b> (Qty: ${item.qty}) - $${item.price.toFixed(2)}\n`;
+      tx.items.forEach((item) => {
+        itemsText += `- <b>${esc(item.nameKh || item.nameEn)}</b> x ${item.qty} (<code>$${item.price.toFixed(2)}</code>)\n`;
       });
 
       // Helper for Khmer numerals
@@ -2406,40 +2406,37 @@
         return num.toString().split('').map(digit => khmerDigits[digit] || digit).join('');
       };
 
-      // Helper for English ordinal
-      const getOrdinal = (n) => {
-        if (n === 1) return '1st';
-        if (n === 2) return '2nd';
-        if (n === 3) return '3rd';
-        return n + 'th';
-      };
-
-      let headerText = '🔔 <b>New Order / ការកម្មង់ថ្មី</b>';
-      if (!isGeneral && purchaseCount > 1) {
-        const ord = getOrdinal(purchaseCount);
-        const khNum = toKhmerNumerals(purchaseCount);
-        headerText = `🔔 <b>Repeat Order (${ord}) / ការកម្មង់លើកទី${khNum}</b>`;
-      }
+      const khNum = toKhmerNumerals(purchaseCount);
+      let headerText = purchaseCount === 1 
+        ? `🛍️ <b>ការកម្មង់ថ្មី លើកទី ១ (New Order #1)</b>`
+        : `🛍️ <b>ការកម្មង់ឡើងវិញ លើកទី ${khNum} (Repeat Order #${purchaseCount})</b>`;
 
       // Build full message in HTML
-      let message = `${headerText}\n\n`;
-      message += `📄 <b>Invoice No:</b> <code>${invoiceNo}</code>\n`;
-      message += `📅 <b>Date:</b> ${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), state.lang)}\n`;
-      message += `🏪 <b>Branch:</b> ${branchName}\n`;
-      message += `👤 <b>Staff:</b> ${staffName} (${pageName})\n\n`;
-
-      const customerAddress = esc(customer && customer.address ? customer.address : 'N/A');
-
-      message += `👤 <b>Customer:</b> ${customerName}\n`;
-      message += `📞 <b>Phone:</b> <code>${phone}</code>\n`;
-      message += `📍 <b>${state.lang === 'km' ? 'អាសយដ្ឋាន/ទីតាំង' : 'Address/Location'}:</b> ${customerAddress}\n`;
-      message += `${fbSection}\n\n`;
-
-      message += `📦 <b>Ordered Items:</b>\n${itemsText}\n`;
-      message += `💵 <b>Total Amount:</b> $${tx.total.toFixed(2)}\n`;
-      message += `💳 <b>Payment Method:</b> ${paymentMethod}\n`;
+      let message = `${headerText}\n`;
+      message += `----------------------------------------\n`;
+      message += `🧾 <b>Invoice No:</b> <code>${invoiceNo}</code>\n`;
+      message += `📅 <b>Date:</b> <b>${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), 'km')}</b> (${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), 'en')})\n`;
+      message += `🏢 <b>Branch:</b> <b>${branchName}</b>\n`;
+      message += `👤 <b>Staff:</b> <b>${staffName}</b> (<code>${pageName}</code>)\n`;
+      message += `----------------------------------------\n`;
+      message += `🛒 <b>Ordered Items:</b>\n${itemsText}`;
+      message += `----------------------------------------\n`;
+      message += `💵 <b>Total Amount:</b> <b>$${tx.total.toFixed(2)}</b>\n`;
+      if (tx.shippingFee && tx.shippingFee > 0) {
+        message += `🚚 <b>Shipping Fee:</b> <b>$${tx.shippingFee.toFixed(2)}</b>\n`;
+      }
+      message += `💳 <b>Payment Method:</b> <b>${paymentMethod}</b>\n`;
       if (tx.outstandingDebt > 0) {
-        message += `⚠️ <b>Outstanding Debt:</b> $${tx.outstandingDebt.toFixed(2)}\n`;
+        message += `⚠️ <b>Outstanding Debt:</b> <b>$${tx.outstandingDebt.toFixed(2)}</b>\n`;
+      }
+      message += `----------------------------------------\n`;
+      message += `👤 <b>Customer Info:</b>\n`;
+      message += `📛 <b>Name:</b> <b>${customerName}</b>\n`;
+      message += `📞 <b>Phone:</b> <code>${phone}</code>\n`;
+      const customerAddress = esc(customer && customer.address ? customer.address : 'N/A');
+      message += `📍 <b>Address/Location:</b> <b>${customerAddress}</b>`;
+      if (fbLink) {
+        message += `\n🌐 <b>Facebook:</b> <b><a href="${esc(fbLink)}">View Profile</a></b>`;
       }
 
       // Send to Telegram API asynchronously using fetch

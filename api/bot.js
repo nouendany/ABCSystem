@@ -144,6 +144,18 @@ async function handleWebAppOrder(req, res, body) {
       }
     }
 
+    // Resolve branch details dynamically
+    let branchName = branchId === "BR-001" ? "Phnom Penh HQ" : branchId === "BR-002" ? "Siem Reap" : "Sihanoukville";
+    try {
+      const branchSnap = await getDoc(doc(db, "branches", branchId));
+      if (branchSnap.exists()) {
+        const bData = branchSnap.data();
+        branchName = bData.nameKh || bData.name || branchName;
+      }
+    } catch (err) {
+      console.error("Error fetching branch info for Telegram bot:", err);
+    }
+
     // Fetch all products in cart and prepare lines
     const txCountSnap = await getCountFromServer(collection(db, "transactions"));
     const nextTxNum = 1000 + txCountSnap.data().count + 1;
@@ -368,7 +380,53 @@ async function handleWebAppOrder(req, res, body) {
 
     await setDoc(doc(db, "transactions", txId), newTX);
 
-    const itemsListText = items.map(it => `- ${it.nameKh || it.nameEn} x ${it.qty} ($${it.price})`).join("\n");
+    // Helpers for Khmer numerals, HTML escaping, and Date formatting
+    const khmerNumbers = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
+    const toKhmerNum = (num) => String(num).split('').map(char => khmerNumbers[parseInt(char)] || char).join('');
+    const esc = (text) => (text || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Formatting date and time (Cambodia Time, UTC+7)
+    let orderDateKh = "";
+    let orderDateEn = "";
+    try {
+      const now = new Date();
+      const options = { timeZone: "Asia/Phnom_Penh", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false };
+      const formatter = new Intl.DateTimeFormat("en-US", options);
+      const parts = formatter.formatToParts(now);
+      const partMap = {};
+      parts.forEach(p => partMap[p.type] = p.value);
+      
+      const day = parseInt(partMap.day);
+      const monthIndex = parseInt(partMap.month) - 1;
+      const year = parseInt(partMap.year);
+      const hours = partMap.hour;
+      const minutes = partMap.minute;
+
+      const khmerMonths = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
+      const enMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      orderDateKh = `${toKhmerNum(day)}-${khmerMonths[monthIndex]}-${toKhmerNum(year)} ${toKhmerNum(hours)}:${toKhmerNum(minutes)}`;
+      orderDateEn = `${day}-${enMonths[monthIndex]}-${year} ${hours}:${minutes}`;
+    } catch (err) {
+      console.error("Error formatting date for Telegram:", err);
+      // Fallback
+      orderDateKh = new Date().toISOString();
+      orderDateEn = new Date().toISOString();
+    }
+
+    const escapedCompanyName = esc(companyName);
+    const escapedInvoiceNo = esc(invoiceNo);
+    const escapedEmployeeName = esc(employee.fullName);
+    const escapedEmployeeId = esc(employee.id);
+    const escapedBranchName = esc(branchName);
+    const escapedCustomerName = esc(customerNameStr);
+    const escapedCustomerPhone = esc(customerPhone);
+    const escapedCustomerAddress = esc(customerAddress || "-");
+    const escapedFacebook = esc(req.body.customerFacebook);
+    const escapedSource = esc(req.body.customerSource);
+    const escapedNotes = esc(req.body.customerNotes);
+
+    const itemsListText = items.map(it => `- <b>${esc(it.nameKh || it.nameEn)}</b> x ${it.qty} (<code>$${it.price}</code>)`).join("\n");
 
     // Send Telegram Group Notification
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
@@ -379,50 +437,70 @@ async function handleWebAppOrder(req, res, body) {
       } else if (chosenPaymentMethod === "On Account (Debt)") {
         paymentStatusText = "⚠️ ជំពាក់ (On Account)";
       }
-      let orderNotifyText = `🛍️ **ការកម្មង់ថ្មី (New Order)**\n` + 
-                            (companyName ? `🏢 ក្រុមហ៊ុន៖ **${companyName}**\n` : '') +
-                            `🔢 ការបញ្ជាទិញលើកទី៖ **${purchaseCountVal}**\n\n` + 
-                            `🧾 វិក្កយបត្រ៖ **${invoiceNo}**\n` +
-                            `👤 អ្នកលក់៖ **${employee.fullName}** (${employee.id})\n` +
-                            `🏢 សាខា៖ **${branchId === "BR-001" ? "Phnom Penh HQ" : branchId === "BR-002" ? "Siem Reap" : "Sihanoukville"}**\n` +
-                            `------------------------\n` +
-                            `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}\n` +
-                            `------------------------\n` +
-                            `💵 សរុប៖ **$${total}** (បញ្ចុះតម្លៃ ${discPercent}%)\n` +
-                            `💳 ស្ថានភាពទូទាត់៖ **${paymentStatusText}**\n\n` +
-                            `👤 **អតិថិជន៖**\n` +
-                            `📛 ឈ្មោះ៖ ${customerNameStr}\n` +
-                            `📞 លេខទូរស័ព្ទ៖ ${customerPhone}\n` +
-                            `📍 ទីតាំង៖ ${customerAddress || "-"}`;
+
+      const purchaseCountKh = toKhmerNum(purchaseCountVal);
+      const purchaseHeader = purchaseCountVal === 1 
+        ? `🛍️ <b>ការកម្មង់ថ្មី លើកទី ${purchaseCountKh} (New Order #1)</b>`
+        : `🛍️ <b>ការកម្មង់ឡើងវិញ លើកទី ${purchaseCountKh} (Repeat Order #${purchaseCountVal})</b>`;
+
+      let orderNotifyText = `${purchaseHeader}\n` +
+                            `----------------------------------------\n` +
+                            (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
+                            `🧾 វិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
+                            `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
+                            `👤 អ្នកលក់៖ <b>${escapedEmployeeName}</b> (<code>${escapedEmployeeId}</code>)\n` +
+                            `🏢 សាខា៖ <b>${escapedBranchName}</b>\n` +
+                            `----------------------------------------\n` +
+                            `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +
+                            `----------------------------------------\n` +
+                            `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + `\n`;
+      
+      if (shipping > 0) {
+        orderNotifyText += `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>\n`;
+      }
+
+      orderNotifyText += `💳 ស្ថានភាពទូទាត់៖ <b>${paymentStatusText}</b>\n` +
+                         `----------------------------------------\n` +
+                         `👤 <b>ព័ត៌មានអតិថិជន (Customer Info)：</b>\n` +
+                         `📛 ឈ្មោះ៖ <b>${escapedCustomerName}</b>\n` +
+                         `📞 លេខទូរស័ព្ទ៖ <code>${escapedCustomerPhone}</code>\n` +
+                         `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>`;
 
       if (req.body.customerFacebook) {
-        orderNotifyText += `\n🌐 Facebook: ${req.body.customerFacebook}`;
+        orderNotifyText += `\n🌐 Facebook: <b>${escapedFacebook}</b>`;
       }
       if (req.body.customerSource) {
-        orderNotifyText += `\n📣 ប្រភព (Source): ${req.body.customerSource}`;
+        orderNotifyText += `\n📣 ប្រភព (Source): <b>${escapedSource}</b>`;
       }
       if (req.body.customerNotes) {
-        orderNotifyText += `\n📝 កំណត់សម្គាល់ (Notes): ${req.body.customerNotes}`;
+        orderNotifyText += `\n📝 កំណត់សម្គាល់ (Notes): <b>${escapedNotes}</b>`;
       }
 
       await sendTelegram(token, "sendMessage", {
         chat_id: salesGroup,
-        text: orderNotifyText
+        text: orderNotifyText,
+        parse_mode: "HTML"
       });
     }
 
     // Send direct notification to employee
-    const directText = `✅ **ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!**\n\n` +
-                       (companyName ? `🏢 ក្រុមហ៊ុន៖ **${companyName}**\n` : '') +
-                       `🧾 លេខវិក្កយបត្រ៖ **${invoiceNo}**\n` +
-                       `💵 ចំនួនទឹកប្រាក់៖ **$${total}**\n` +
-                       `💳 ទូទាត់៖ **${chosenPaymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}**\n` +
-                       `👤 អតិថិជន៖ **${customerNameStr}** (ទិញលើកទី ${purchaseCountVal}) (${customerPhone})\n` +
-                       `📍 ទីតាំង៖ **${customerAddress || "-"}**\n\n` +
-                       `🛒 **ទំនិញកម្មង់៖**\n${itemsListText}`;
+    const directText = `✅ <b>ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!</b>\n` +
+                       `----------------------------------------\n` +
+                       (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
+                       `🧾 លេខវិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
+                       `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
+                       `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>\n` +
+                       (shipping > 0 ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>\n` : '') +
+                       `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
+                       `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) (<code>${escapedCustomerPhone}</code>)\n` +
+                       `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>\n` +
+                       `----------------------------------------\n` +
+                       `🛒 <b>ទំនិញកម្មង់៖</b>\n${itemsListText}`;
+
     await sendTelegram(token, "sendMessage", {
       chat_id: chatId,
-      text: directText
+      text: directText,
+      parse_mode: "HTML"
     });
 
     return res.status(200).json({ ok: true, invoiceNo: invoiceNo });
