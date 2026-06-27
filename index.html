@@ -634,6 +634,7 @@
           <div style="display:flex; gap:10px;">
             <button class="btn btn-secondary btn-sm" id="btn-stock-adj-modal" data-translate="stockAdjustment">Stock Adjustment</button>
             <button class="btn btn-outline btn-sm" id="btn-wh-transfer-modal" data-translate="transferStock">Transfer Stock</button>
+            <button class="btn btn-outline btn-sm" id="btn-split-pack-modal" data-translate="splitPack">Split Pack/Box</button>
           </div>
         </div>
         
@@ -2853,6 +2854,49 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" id="btn-cancel-wh-transfer" data-translate="cancel">Cancel</button>
           <button type="submit" class="btn btn-primary" data-translate="branchTransfer">Transfer Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 11: SPLIT PACK/BOX MODAL -->
+  <div class="modal-overlay" id="modal-split-pack">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 data-translate="splitPack">Split Pack/Box</h3>
+        <button class="qty-btn" id="btn-close-split-pack">×</button>
+      </div>
+      <form id="split-pack-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label data-translate="branch">Select Branch</label>
+            <select class="form-control" id="split-branch-id" required></select>
+          </div>
+          <div class="form-group">
+            <label>Source Product (e.g. Box)</label>
+            <select class="form-control" id="split-source-sku" required></select>
+          </div>
+          <div class="form-group">
+            <label>Target Product (e.g. Sheet/Unit)</label>
+            <select class="form-control" id="split-target-sku" required></select>
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label>Conversion Ratio (Qty per Box)</label>
+              <input type="number" class="form-control" id="split-ratio" min="1" required value="5" placeholder="e.g. 5">
+            </div>
+            <div class="form-group">
+              <label>Qty to Split (Boxes)</label>
+              <input type="number" class="form-control" id="split-qty" min="1" required value="1">
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--text-secondary); margin-top:8px; line-height:1.4;">
+            ℹ️ <span data-translate="splitHelp">Deducts X boxes from the Source Product and adds (X * Ratio) units to the Target Product at the selected branch. Logs to stock history.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-split-pack" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-translate="save">Confirm Split</button>
         </div>
       </form>
     </div>

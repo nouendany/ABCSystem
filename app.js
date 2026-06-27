@@ -1934,6 +1934,34 @@
         tfProdSelect.innerHTML += `<option value="${p.sku}">${text}</option>`;
       });
     }
+
+    // Split pack selectors
+    const splitBrSelect = document.getElementById('split-branch-id');
+    if (splitBrSelect) {
+      splitBrSelect.innerHTML = '';
+      state.branches.forEach(b => {
+        if (!filterBranch || b.id === filterBranch) {
+          splitBrSelect.innerHTML += `<option value="${b.id}">${state.lang === 'km' ? b.nameKh : b.name}</option>`;
+        }
+      });
+      if (filterBranch) {
+        splitBrSelect.disabled = true;
+      } else {
+        splitBrSelect.disabled = false;
+      }
+    }
+
+    const splitSrcSelect = document.getElementById('split-source-sku');
+    const splitTarSelect = document.getElementById('split-target-sku');
+    if (splitSrcSelect && splitTarSelect) {
+      splitSrcSelect.innerHTML = '';
+      splitTarSelect.innerHTML = '';
+      state.products.forEach(p => {
+        const text = `${p.sku} - ${state.lang === 'km' ? p.nameKh : p.nameEn}`;
+        splitSrcSelect.innerHTML += `<option value="${p.sku}">${text}</option>`;
+        splitTarSelect.innerHTML += `<option value="${p.sku}">${text}</option>`;
+      });
+    }
   }
 
   function populateExpenseCategories() {
@@ -9433,6 +9461,12 @@ CREATE TABLE sale_items (
       document.getElementById('modal-wh-transfer').classList.add('active-modal');
     });
 
+    document.getElementById('btn-split-pack-modal').addEventListener('click', () => {
+      if (!guardAction('edit')) return;
+      document.getElementById('split-pack-form').reset();
+      document.getElementById('modal-split-pack').classList.add('active-modal');
+    });
+
     // Close buttons logic
     const closeBtns = [
       { btn: 'btn-close-checkout', modal: 'modal-checkout' },
@@ -9457,6 +9491,8 @@ CREATE TABLE sale_items (
       { btn: 'btn-cancel-stock-adj', modal: 'modal-stock-adj' },
       { btn: 'btn-close-wh-transfer', modal: 'modal-wh-transfer' },
       { btn: 'btn-cancel-wh-transfer', modal: 'modal-wh-transfer' },
+      { btn: 'btn-close-split-pack', modal: 'modal-split-pack' },
+      { btn: 'btn-cancel-split-pack', modal: 'modal-split-pack' },
       { btn: 'btn-close-followup', modal: 'modal-followup' },
       { btn: 'btn-cancel-followup', modal: 'modal-followup' },
       { btn: 'btn-close-customer-history', modal: 'modal-customer-history' },
@@ -10200,6 +10236,103 @@ CREATE TABLE sale_items (
       document.getElementById('modal-wh-transfer').classList.remove('active-modal');
       renderInventory();
       alert(window.POS_TRANSLATIONS[state.lang].transferSuccess);
+    });
+
+    // Split Pack/Box Form Submission
+    document.getElementById('split-pack-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!guardAction('edit')) return;
+      
+      const brId = document.getElementById('split-branch-id').value;
+      const sourceSku = document.getElementById('split-source-sku').value;
+      const targetSku = document.getElementById('split-target-sku').value;
+      const ratio = parseInt(document.getElementById('split-ratio').value) || 0;
+      const qty = parseInt(document.getElementById('split-qty').value) || 0;
+
+      if (sourceSku === targetSku) {
+        alert(state.lang === 'km' ? 'ផលិតផលប្រភព និងគោលដៅត្រូវតែខុសគ្នា!' : 'Source and target products must be different!');
+        return;
+      }
+
+      if (ratio <= 0 || qty <= 0) {
+        alert(state.lang === 'km' ? 'ចំនួនសមាមាត្រ និងចំនួនលក់ត្រូវតែធំជាង ០!' : 'Ratio and quantity must be greater than 0!');
+        return;
+      }
+
+      const sourceProduct = state.products.find(p => p.sku === sourceSku);
+      const targetProduct = state.products.find(p => p.sku === targetSku);
+
+      if (!sourceProduct || !targetProduct) {
+        alert('Product not found!');
+        return;
+      }
+
+      const srcStock = sourceProduct.warehouseStock[brId] || 0;
+      if (qty > srcStock) {
+        alert(state.lang === 'km' 
+          ? `ស្តុកមិនគ្រប់គ្រាន់ទេ! ស្តុកប្រអប់បច្ចុប្បន្ននៅសាខានេះគឺ៖ ${srcStock}` 
+          : `Not enough stock! Current stock for source product at this branch is ${srcStock}`);
+        return;
+      }
+
+      // Perform stock splitting
+      sourceProduct.warehouseStock[brId] = srcStock - qty;
+      targetProduct.warehouseStock[brId] = (targetProduct.warehouseStock[brId] || 0) + (qty * ratio);
+
+      // Re-sum total stock qty for source
+      let sourceSum = 0;
+      for (const b in sourceProduct.warehouseStock) {
+        sourceSum += parseInt(sourceProduct.warehouseStock[b]) || 0;
+      }
+      sourceProduct.stockQty = sourceSum;
+
+      // Re-sum total stock qty for target
+      let targetSum = 0;
+      for (const b in targetProduct.warehouseStock) {
+        targetSum += parseInt(targetProduct.warehouseStock[b]) || 0;
+      }
+      targetProduct.stockQty = targetSum;
+
+      const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+
+      // Create negative log for source (decrease e.g. Box)
+      state.stockLogs.push({
+        id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+        date: new Date().toISOString(),
+        sku: sourceSku,
+        type: 'adjustment',
+        qty: -qty,
+        warehouseId: brId,
+        description: `Split Pack: Deduct ${qty} box(es) to split into ${qty * ratio} units of ${targetSku}`,
+        branchId: brId,
+        createdBy: state.currentUser ? state.currentUser.username : 'system',
+        updatedBy: state.currentUser ? state.currentUser.username : 'system',
+        timestamp: new Date().toISOString()
+      });
+
+      // Create positive log for target (increase e.g. Sheet)
+      state.stockLogs.push({
+        id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+        date: new Date().toISOString(),
+        sku: targetSku,
+        type: 'replenishment',
+        qty: qty * ratio,
+        warehouseId: brId,
+        description: `Split Pack: Add ${qty * ratio} units converted from ${qty} box(es) of ${sourceSku}`,
+        branchId: brId,
+        createdBy: state.currentUser ? state.currentUser.username : 'system',
+        updatedBy: state.currentUser ? state.currentUser.username : 'system',
+        timestamp: new Date().toISOString()
+      });
+
+      saveStateToLocalStorage();
+      updateLowStockAlertCount();
+      document.getElementById('modal-split-pack').classList.remove('active-modal');
+      renderInventory();
+
+      alert(state.lang === 'km' 
+        ? 'បំបែកកញ្ចប់/ប្រអប់ បានជោគជ័យ!' 
+        : 'Pack/Box split successfully!');
     });
 
     // Follow-Up details submission

@@ -84,6 +84,9 @@ window.POS_TRANSLATIONS = {
     branchManager: "Branch Manager",
     stockByBranch: "Branch Inventory",
     branchTransfer: "Branch Stock Transfer",
+    transferStock: "Transfer Stock",
+    splitPack: "Split Pack/Box",
+    splitHelp: "Deducts X boxes from the Source Product and adds (X * Ratio) units to the Target Product at the selected branch. Logs to stock history.",
     selectBranch: "Select Active Branch",
 
     // POS Screen
@@ -582,6 +585,9 @@ window.POS_TRANSLATIONS = {
     branchManager: "អ្នកគ្រប់គ្រងសាខា",
     stockByBranch: "ស្តុកទំនិញតាមសាខា",
     branchTransfer: "ផ្ទេរទំនិញរវាងសាខា",
+    transferStock: "ផ្ទេរស្តុក",
+    splitPack: "បំបែកកញ្ចប់/ប្រអប់",
+    splitHelp: "ដកចំនួនកញ្ចប់/ប្រអប់ចេញពី ទំនិញដើម រួចបម្លែងជាចំនួនសន្លឹក/ឯកតាលម្អិត បញ្ចូលទៅក្នុង ទំនិញគោលដៅ នៅក្នុងសាខាដែលបានជ្រើសរើស។ វានឹងកត់ត្រាចូលក្នុងប្រវត្តិនៃការផ្លាស់ប្តូរស្តុក។",
     selectBranch: "ជ្រើសរើសសាខាសកម្ម",
 
     // POS Screen
