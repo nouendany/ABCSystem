@@ -2114,7 +2114,7 @@
       return state.products.find(p => p.sku === parentSku);
     }
     if (unitSku === "HM-SHEET") {
-      return state.products.find(p => p.sku === "HM-BOX");
+      return state.products.find(p => p.sku === "ABC-008");
     }
     return null;
   }

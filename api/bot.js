@@ -183,7 +183,7 @@ async function handleWebAppOrder(req, res, body) {
         if (item.sku.endsWith("-SHEET")) {
           parentSku = item.sku.replace("-SHEET", "-BOX");
         } else if (item.sku === "HM-SHEET") {
-          parentSku = "HM-BOX";
+          parentSku = "ABC-008";
         }
 
         if (parentSku) {
