@@ -329,6 +329,7 @@ async function handleWebAppOrder(req, res, body) {
     let customerId = "CST-001";
     let customerNameStr = "General Customer";
     let purchaseCountVal = 1;
+    let isVipUser = false;
     
     if (customerPhone && customerPhone !== "-") {
       const customersRef = collection(db, "customers");
@@ -343,6 +344,7 @@ async function handleWebAppOrder(req, res, body) {
       if (existingCust) {
         customerId = existingCust.id;
         customerNameStr = existingCust.name;
+        isVipUser = existingCust.isVip || false;
         
         // Update purchase count
         const newCount = (existingCust.purchaseCount || 0) + 1;
@@ -378,6 +380,15 @@ async function handleWebAppOrder(req, res, body) {
         if (req.body.customerSource && (!existingCust.source || existingCust.source === "Telegram Bot")) {
           updatePayload.source = req.body.customerSource;
         }
+
+        // VIP Customer Auto-upgrade Automation
+        const totalQty = cart.reduce((sum, it) => sum + (parseInt(it.qty) || 0), 0);
+        if (totalQty >= 5 && customerId !== "CST-001" && !isVipUser) {
+          isVipUser = true;
+          updatePayload.isVip = true;
+          updatePayload.vipDate = new Date().toISOString().split('T')[0];
+          updatePayload.rank = 'Platinum VIP';
+        }
         
         await updateDoc(doc(db, "customers", existingCust.docId), updatePayload);
       } else {
@@ -388,6 +399,12 @@ async function handleWebAppOrder(req, res, body) {
         customerId = "CST-" + nextCustNum;
         customerNameStr = customerName || "New Customer";
         
+        // VIP Customer Auto-upgrade Automation
+        const totalQty = cart.reduce((sum, it) => sum + (parseInt(it.qty) || 0), 0);
+        if (totalQty >= 5 && customerId !== "CST-001") {
+          isVipUser = true;
+        }
+
         const newCustData = {
           id: customerId,
           name: customerNameStr,
@@ -398,15 +415,17 @@ async function handleWebAppOrder(req, res, body) {
           outstandingDebt: isDebt ? total : 0,
           status: "active",
           notes: req.body.customerNotes || "Registered via Telegram bot sales ordering",
-          rank: "Bronze",
+          rank: isVipUser ? "Platinum VIP" : "Bronze",
+          isVip: isVipUser,
+          vipDate: isVipUser ? new Date().toISOString().split('T')[0] : "",
           purchaseCount: 1,
           staffId: employee.id, // Assign the employee who created the customer!
           timeline: [
             {
               date: new Date().toISOString(),
-              status: 'Register & Purchase',
+              status: isVipUser ? 'Register & Purchase (VIP)' : 'Register & Purchase',
               staffName: employee.fullName,
-              feedback: 'Registered and ordered via Telegram Bot',
+              feedback: isVipUser ? 'Registered as VIP and ordered via Telegram Bot' : 'Registered and ordered via Telegram Bot',
               notes: `Registered via Telegram WebApp`
             }
           ]
@@ -487,7 +506,8 @@ async function handleWebAppOrder(req, res, body) {
     const escapedEmployeeName = esc(employee.fullName);
     const escapedEmployeeId = esc(employee.id);
     const escapedBranchName = esc(branchName);
-    const escapedCustomerName = esc(customerNameStr);
+    const vipSuffix = isVipUser ? " 👑 [VIP]" : "";
+    const escapedCustomerName = esc(customerNameStr) + vipSuffix;
     const escapedCustomerPhone = esc(customerPhone);
     const escapedCustomerAddress = esc(customerAddress || "-");
     const escapedFacebook = esc(req.body.customerFacebook);
