@@ -4226,8 +4226,15 @@
     });
 
     filteredTX.forEach(t => {
-      if (statsMap[t.staffId]) {
-        const stat = statsMap[t.staffId];
+      let stat = statsMap[t.staffId];
+      if (!stat) {
+        const s = getFilteredStaff().find(st => st.employeeId === t.staffId || st.id === t.staffId);
+        if (s) {
+          stat = statsMap[s.id];
+        }
+      }
+
+      if (stat) {
         stat.orders++;
         stat.revenue += t.total;
         
