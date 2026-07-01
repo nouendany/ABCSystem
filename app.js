@@ -4316,15 +4316,58 @@
       });
     }
 
+    // Populate commission month selector
+    const commMonthSelect = document.getElementById('perf-commission-month');
+    if (commMonthSelect && commMonthSelect.options.length === 0) {
+      const months = [];
+      const tempDate = new Date();
+      for (let i = 0; i < 12; i++) {
+        const y = tempDate.getFullYear();
+        const m = String(tempDate.getMonth() + 1).padStart(2, '0');
+        const label = tempDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+        months.push({ value: `${y}-${m}`, label });
+        tempDate.setMonth(tempDate.getMonth() - 1);
+      }
+      months.forEach(item => {
+        commMonthSelect.innerHTML += `<option value="${item.value}">${item.label}</option>`;
+      });
+      
+      let defaultMonth = new Date().toISOString().substring(0, 7);
+      const txs = getFilteredTransactions();
+      if (txs.length > 0) {
+        const sortedTxs = [...txs].sort((a,b) => new Date(b.date) - new Date(a.date));
+        const latestTxMonth = sortedTxs[0].date.substring(0, 7);
+        if (months.some(m => m.value === latestTxMonth)) {
+          defaultMonth = latestTxMonth;
+        }
+      }
+      
+      state.perfCommissionMonth = defaultMonth;
+      commMonthSelect.value = defaultMonth;
+
+      commMonthSelect.addEventListener('change', (e) => {
+        state.perfCommissionMonth = e.target.value;
+        renderPerformance();
+      });
+    }
+
+    const selectedCommMonth = state.perfCommissionMonth || new Date().toISOString().substring(0, 7);
+
     const commBody = document.getElementById('commission-report-rows');
     commBody.innerHTML = '';
 
     const unitsVolume = {};
     getFilteredTransactions().forEach(t => {
-      if (t.date.startsWith(monthStr)) {
+      if (t.date.startsWith(selectedCommMonth)) {
+        let matchedStaffId = t.staffId;
+        const s = getFilteredStaff().find(st => st.id === t.staffId || st.employeeId === t.staffId);
+        if (s) {
+          matchedStaffId = s.id;
+        }
+
         let uSum = 0;
         t.items.forEach(it => uSum += it.qty);
-        unitsVolume[t.staffId] = (unitsVolume[t.staffId] || 0) + uSum;
+        unitsVolume[matchedStaffId] = (unitsVolume[matchedStaffId] || 0) + uSum;
       }
     });
 
