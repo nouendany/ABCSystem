@@ -6085,7 +6085,10 @@
       const d = new Date(t.date);
       if (d >= start && d <= end) {
         if (fBranch !== 'all' && t.branchId !== fBranch) return;
-        if (fStaff !== 'all' && t.staffId !== fStaff) return;
+        if (fStaff !== 'all') {
+          const s = state.staff.find(st => st.id === fStaff);
+          if (!s || (t.staffId !== s.id && t.staffId !== s.employeeId)) return;
+        }
 
         t.items.forEach(item => {
           const p = state.products.find(pr => pr.sku === item.sku);
@@ -6220,7 +6223,8 @@
       transactions = transactions.filter(t => t.branchId === fBranch);
     }
     if (fStaff !== 'all') {
-      transactions = transactions.filter(t => t.staffId === fStaff);
+      const s = state.staff.find(st => st.id === fStaff);
+      transactions = transactions.filter(t => s && (t.staffId === s.id || t.staffId === s.employeeId));
     }
     if (fCategory !== 'all') {
       transactions = transactions.filter(t => {
@@ -6648,10 +6652,16 @@
     const salesVolume = {};
     const unitsVolume = {};
     getFilteredTransactions().forEach(t => {
-      salesVolume[t.staffId] = (salesVolume[t.staffId] || 0) + t.total;
+      let matchedStaffId = t.staffId;
+      const s = state.staff.find(st => st.id === t.staffId || st.employeeId === t.staffId);
+      if (s) {
+        matchedStaffId = s.id;
+      }
+
+      salesVolume[matchedStaffId] = (salesVolume[matchedStaffId] || 0) + t.total;
       let units = 0;
       t.items.forEach(it => units += it.qty);
-      unitsVolume[t.staffId] = (unitsVolume[t.staffId] || 0) + units;
+      unitsVolume[matchedStaffId] = (unitsVolume[matchedStaffId] || 0) + units;
     });
 
     const staffList = getFilteredStaff();
