@@ -2819,6 +2819,27 @@
               <input type="number" class="form-control" id="adj-qty" min="1" required value="5">
             </div>
           </div>
+          <!-- Auto-log Expense Section -->
+          <div id="adj-expense-section" style="padding: 10px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 6px; margin-top: 10px; margin-bottom: 10px; display: block;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: 700; color: #f87171;">កត់ត្រាចូលតារាងចំណាយ (Log as Financial Expense)</span>
+              <label class="switch-toggle">
+                <input type="checkbox" id="adj-log-expense" checked>
+                <span class="slider-toggle-round"></span>
+              </label>
+            </div>
+            <div id="adj-expense-inputs" style="display: flex; gap: 10px;">
+              <div class="form-group" style="margin: 0; flex: 1;">
+                <label style="font-size: 10px; margin-bottom: 2px;">តម្លៃដើម/ឯកតា Cost/Unit ($)</label>
+                <input type="number" class="form-control" id="adj-unit-cost" min="0" step="0.01" style="padding: 4px 8px; font-size: 11px; height: auto;">
+              </div>
+              <div class="form-group" style="margin: 0; flex: 1;">
+                <label style="font-size: 10px; margin-bottom: 2px;">តម្លៃទិញសរុប Total Cost ($)</label>
+                <input type="number" class="form-control" id="adj-total-cost" min="0" step="0.01" style="padding: 4px 8px; font-size: 11px; height: auto;">
+              </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label data-translate="description">Reason for Adjustment</label>
             <input type="text" class="form-control" id="adj-reason" required placeholder="e.g. Damaged items or count correction">

@@ -9412,6 +9412,55 @@ CREATE TABLE sale_items (
 
   // 12. MASTER DIALOG FORMS EVENT LISTENERS
   function setupEventListeners() {
+    function updateStockAdjExpenseFields() {
+      const type = document.getElementById('adj-type')?.value;
+      const expenseSection = document.getElementById('adj-expense-section');
+      if (type === 'decrease') {
+        if (expenseSection) expenseSection.style.display = 'none';
+        return;
+      }
+      if (expenseSection) expenseSection.style.display = 'block';
+
+      const sku = document.getElementById('adj-product-sku')?.value;
+      const product = state.products.find(p => p.sku === sku);
+      if (!product) return;
+
+      const unitCostEl = document.getElementById('adj-unit-cost');
+      if (unitCostEl && (unitCostEl.value === "" || unitCostEl.dataset.initializedSku !== sku)) {
+        unitCostEl.value = (product.costPrice !== undefined ? product.costPrice : 0).toFixed(2);
+        unitCostEl.dataset.initializedSku = sku;
+      }
+
+      const qty = parseInt(document.getElementById('adj-qty')?.value) || 0;
+      const unitCost = parseFloat(unitCostEl?.value) || 0;
+      const totalCostEl = document.getElementById('adj-total-cost');
+      if (totalCostEl) {
+        totalCostEl.value = (qty * unitCost).toFixed(2);
+      }
+    }
+
+    const adjTypeEl = document.getElementById('adj-type');
+    const adjProdSkuEl = document.getElementById('adj-product-sku');
+    const adjQtyEl = document.getElementById('adj-qty');
+    const adjUnitCostEl = document.getElementById('adj-unit-cost');
+
+    if (adjTypeEl) adjTypeEl.addEventListener('change', updateStockAdjExpenseFields);
+    if (adjProdSkuEl) adjProdSkuEl.addEventListener('change', () => {
+      if (adjUnitCostEl) delete adjUnitCostEl.dataset.initializedSku;
+      updateStockAdjExpenseFields();
+    });
+    if (adjQtyEl) adjQtyEl.addEventListener('input', updateStockAdjExpenseFields);
+    if (adjUnitCostEl) {
+      adjUnitCostEl.addEventListener('input', () => {
+        const qty = parseInt(document.getElementById('adj-qty')?.value) || 0;
+        const unitCost = parseFloat(document.getElementById('adj-unit-cost')?.value) || 0;
+        const totalCostEl = document.getElementById('adj-total-cost');
+        if (totalCostEl) {
+          totalCostEl.value = (qty * unitCost).toFixed(2);
+        }
+      });
+    }
+
     // Toggle Follow-Up Retention Roadmap
     const btnToggleRoadmap = document.getElementById('btn-toggle-roadmap');
     if (btnToggleRoadmap) {
@@ -9666,6 +9715,9 @@ CREATE TABLE sale_items (
     document.getElementById('btn-stock-adj-modal').addEventListener('click', () => {
       if (!guardAction('edit')) return;
       document.getElementById('stock-adj-form').reset();
+      const unitCostEl = document.getElementById('adj-unit-cost');
+      if (unitCostEl) delete unitCostEl.dataset.initializedSku;
+      updateStockAdjExpenseFields();
       document.getElementById('modal-stock-adj').classList.add('active-modal');
     });
 
@@ -10342,6 +10394,10 @@ CREATE TABLE sale_items (
       const qty = parseInt(document.getElementById('adj-qty').value) || 0;
       const reason = document.getElementById('adj-reason').value.trim();
 
+      const logExpense = document.getElementById('adj-log-expense')?.checked || false;
+      const unitCost = parseFloat(document.getElementById('adj-unit-cost')?.value) || 0;
+      const totalCost = parseFloat(document.getElementById('adj-total-cost')?.value) || 0;
+
       const product = state.products.find(p => p.sku === sku);
       if (!product) return;
 
@@ -10350,6 +10406,29 @@ CREATE TABLE sale_items (
       
       if (type === 'increase') {
         product.warehouseStock[brId] = currentQty + qty;
+
+        // Auto-log financial expense if checked
+        if (logExpense && totalCost > 0) {
+          const expenseDate = new Date().toISOString();
+          const newExp = {
+            id: 'EXP-' + (1000 + state.expenses.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+            date: expenseDate,
+            category: 'rawMaterials', // "ថ្លៃទិញទំនិញចូលស្តុក" (Product Procurement / Stock purchase fee)
+            amount: totalCost,
+            description: `Stock Purchase: ${product.sku} (${state.lang === 'km' ? product.nameKh : product.nameEn}) x ${qty} @ $${unitCost.toFixed(2)} (Ref: ${reason})`,
+            branchId: brId,
+            createdBy: state.currentUser ? state.currentUser.username : 'system',
+            updatedBy: state.currentUser ? state.currentUser.username : 'system',
+            timestamp: new Date().toISOString()
+          };
+          state.expenses.push(newExp);
+          logAuditEvent('expenseAdd', `Automatically logged expense ${newExp.id} of $${totalCost} for restocking ${sku}`);
+        }
+
+        // Auto-update product's cost price to the new unit cost if it changed
+        if (unitCost > 0 && product.costPrice !== unitCost) {
+          product.costPrice = unitCost;
+        }
       } else {
         if (qty > currentQty) {
           alert('Cannot adjust stock below 0 units!');
@@ -10383,6 +10462,7 @@ CREATE TABLE sale_items (
       updateLowStockAlertCount();
       document.getElementById('modal-stock-adj').classList.remove('active-modal');
       renderInventory();
+      renderFinance(); // Update financial ledger too
       alert('Stock adjustment saved successfully!');
     });
 
