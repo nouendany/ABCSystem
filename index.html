@@ -611,7 +611,7 @@
                   </div>
                 </div>
 
-                <div class="cart-total-box">
+                <div class="cart-total-box" style="margin-bottom: 8px;">
                   <span data-translate="total" class="total-label">Total Due</span>
                   <div class="total-values">
                     <span id="cart-total-usd" class="total-usd">$0.00</span>
@@ -619,7 +619,19 @@
                   </div>
                 </div>
 
-                <button class="btn btn-primary" id="btn-cart-checkout" style="width:100%; justify-content:center; padding:12px; font-weight:700; margin-top:10px;" data-translate="checkout">Checkout</button>
+                <!-- Owner Private Order Option -->
+                <div class="owner-private-option-box" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 6px; margin-bottom: 10px;">
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 11.5px; font-weight: 700; color: #f59e0b;">លក់ផ្ទាល់ខ្លួន (Owner Order)</span>
+                    <span style="font-size: 9px; color: var(--text-secondary);">មិនផ្ញើសារចូល Telegram (No Telegram notification)</span>
+                  </div>
+                  <label class="switch-toggle">
+                    <input type="checkbox" id="cart-owner-private">
+                    <span class="slider-toggle-round"></span>
+                  </label>
+                </div>
+
+                <button class="btn btn-primary" id="btn-cart-checkout" style="width:100%; justify-content:center; padding:12px; font-weight:700;" data-translate="checkout">Checkout</button>
               </div>
             </div>
           </div>

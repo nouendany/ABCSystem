@@ -2238,7 +2238,7 @@
     if (cartItem) {
       cartItem.qty++;
     } else {
-      state.cart.push({ sku: sku, qty: 1 });
+      state.cart.push({ sku: sku, qty: 1, price: product.sellingPrice });
     }
 
     renderCart();
@@ -2291,7 +2291,8 @@
       state.cart.forEach(item => {
         const p = state.products.find(prod => prod.sku === item.sku);
         if (p) {
-          const itemTotal = p.sellingPrice * item.qty;
+          const price = item.price !== undefined ? item.price : p.sellingPrice;
+          const itemTotal = price * item.qty;
           subtotal += itemTotal;
           itemCount += item.qty;
 
@@ -2300,7 +2301,10 @@
           itemEl.innerHTML = `
             <div>
               <h5 title="${state.lang === 'km' ? p.nameKh : p.nameEn}">${state.lang === 'km' ? p.nameKh : p.nameEn}</h5>
-              <div class="cart-item-price">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</div>
+              <div class="cart-item-price-edit" style="display:flex; align-items:center; gap:2px; margin-top:2px;">
+                <span style="font-size:10px; color:var(--text-secondary);">$</span>
+                <input type="number" class="item-price-input" min="0" step="0.01" value="${price.toFixed(2)}" style="width:55px; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-primary); border-radius:4px; font-size:11px; padding:1px 3px; text-align:right; font-weight:700;">
+              </div>
             </div>
             <div class="qty-controls">
               <button class="qty-btn btn-minus">-</button>
@@ -2314,6 +2318,15 @@
           itemEl.querySelector('.btn-minus').addEventListener('click', () => updateCartQty(item.sku, -1));
           itemEl.querySelector('.btn-plus').addEventListener('click', () => updateCartQty(item.sku, 1));
           itemEl.querySelector('.btn-del').addEventListener('click', () => deleteFromCart(item.sku));
+          
+          const priceInput = itemEl.querySelector('.item-price-input');
+          priceInput.addEventListener('change', (e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val >= 0) {
+              item.price = val;
+              renderCart();
+            }
+          });
 
           container.appendChild(itemEl);
         }
@@ -2622,6 +2635,7 @@
     const branchId = document.getElementById('cart-branch-select').value || "BR-001";
     const staffId = document.getElementById('cart-staff-select').value;
     const customerId = document.getElementById('cart-customer-select').value;
+    const isOwnerPrivate = document.getElementById('cart-owner-private')?.checked || false;
 
     const customDateVal = document.getElementById('checkout-date-input')?.value;
     let txDate = new Date().toISOString();
@@ -2655,7 +2669,8 @@
     state.cart.forEach(item => {
       const p = state.products.find(prod => prod.sku === item.sku);
       if (p) {
-        subtotal += p.sellingPrice * item.qty;
+        const price = item.price !== undefined ? item.price : p.sellingPrice;
+        subtotal += price * item.qty;
         totalQty += item.qty;
       }
     });
@@ -2837,14 +2852,15 @@
       branchId: branchId,
       items: state.cart.map(item => {
         const p = state.products.find(prod => prod.sku === item.sku);
+        const price = item.price !== undefined ? item.price : p.sellingPrice;
         return {
           sku: item.sku,
           nameEn: p.nameEn,
           nameKh: p.nameKh,
-          price: p.sellingPrice,
+          price: price,
           costPrice: p ? (p.costPrice !== undefined ? p.costPrice : 0) : 0,
           qty: item.qty,
-          total: p.sellingPrice * item.qty
+          total: price * item.qty
         };
       }),
       subtotal: subtotal,
@@ -2859,6 +2875,7 @@
       changeDue: changeDue,
       outstandingDebt: outstandingDebt,
       status: "completed",
+      isOwnerPrivate: isOwnerPrivate,
       createdBy: state.currentUser ? state.currentUser.username : 'system',
       updatedBy: state.currentUser ? state.currentUser.username : 'system',
       timestamp: new Date().toISOString()
@@ -2866,7 +2883,9 @@
 
     state.transactions.push(newTX);
     saveStateToLocalStorage();
-    sendTelegramCheckoutNotification(newTX);
+    if (!isOwnerPrivate) {
+      sendTelegramCheckoutNotification(newTX);
+    }
     updateLowStockAlertCount();
     checkCRMNotifications();
     playSound('success');
@@ -2877,8 +2896,10 @@
     // Trigger Print Receipt preview
     openReceiptModal(newTX);
 
-    // Reset shopping cart
+    // Reset shopping cart & owner private toggle
     state.cart = [];
+    const ownerPrivEl = document.getElementById('cart-owner-private');
+    if (ownerPrivEl) ownerPrivEl.checked = false;
     document.getElementById('cart-discount-percent').value = 0;
     document.getElementById('cart-discount-fixed').value = 0;
     document.getElementById('cart-shipping-fee').value = 0;
