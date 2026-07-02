@@ -9721,6 +9721,10 @@ CREATE TABLE sale_items (
     document.getElementById('btn-stock-adj-modal').addEventListener('click', () => {
       if (!guardAction('edit')) return;
       document.getElementById('stock-adj-form').reset();
+      const dateInput = document.getElementById('adj-date-input');
+      if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
       const unitCostEl = document.getElementById('adj-unit-cost');
       if (unitCostEl) delete unitCostEl.dataset.initializedSku;
       updateStockAdjExpenseFields();
@@ -10400,6 +10404,9 @@ CREATE TABLE sale_items (
       const qty = parseInt(document.getElementById('adj-qty').value) || 0;
       const reason = document.getElementById('adj-reason').value.trim();
 
+      const customDateVal = document.getElementById('adj-date-input')?.value;
+      const adjustmentDate = customDateVal ? new Date(customDateVal).toISOString() : new Date().toISOString();
+
       const logExpense = document.getElementById('adj-log-expense')?.checked || false;
       const unitCost = parseFloat(document.getElementById('adj-unit-cost')?.value) || 0;
       const totalCost = parseFloat(document.getElementById('adj-total-cost')?.value) || 0;
@@ -10415,10 +10422,9 @@ CREATE TABLE sale_items (
 
         // Auto-log financial expense if checked
         if (logExpense && totalCost > 0) {
-          const expenseDate = new Date().toISOString();
           const newExp = {
             id: 'EXP-' + (1000 + state.expenses.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
-            date: expenseDate,
+            date: adjustmentDate,
             category: 'rawMaterials', // "ថ្លៃទិញទំនិញចូលស្តុក" (Product Procurement / Stock purchase fee)
             amount: totalCost,
             description: `Stock Purchase: ${product.sku} (${state.lang === 'km' ? product.nameKh : product.nameEn}) x ${qty} @ $${unitCost.toFixed(2)} (Ref: ${reason})`,
@@ -10452,7 +10458,7 @@ CREATE TABLE sale_items (
       // Log Stock movement
       state.stockLogs.push({
         id: 'SLG-' + (1000 + state.stockLogs.length + 1),
-        date: new Date().toISOString(),
+        date: adjustmentDate,
         sku: sku,
         type: 'replenishment',
         qty: shift,
