@@ -268,6 +268,15 @@
     return state.staff.filter(s => s.branchId === state.currentUser.branchId);
   }
 
+  function getUnifiedStaffId(id) {
+    if (!id) return '';
+    const sById = state.staff.find(s => s.id === id);
+    if (sById) return sById.id;
+    const sByEmpId = state.staff.find(s => s.employeeId === id);
+    if (sByEmpId) return sByEmpId.id;
+    return id;
+  }
+
   function getFilteredFollowups() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.followups;
@@ -3273,8 +3282,8 @@
       });
       if (state.employees) {
         state.employees.forEach(emp => {
-          if (!state.staff.some(s => s.id === emp.id)) {
-            filterOpts += `<option value="${emp.id}">${emp.fullName || emp.name} (HR)</option>`;
+          if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+            filterOpts += `<option value="${emp.id}">${emp.fullName || emp.name}</option>`;
           }
         });
       }
@@ -3292,7 +3301,9 @@
 
       // Filter by Staff
       if (activeStaffFilter === 'unassigned' && c.staffId) return;
-      if (activeStaffFilter !== 'all' && activeStaffFilter !== 'unassigned' && c.staffId !== activeStaffFilter) return;
+      if (activeStaffFilter !== 'all' && activeStaffFilter !== 'unassigned') {
+        if (getUnifiedStaffId(c.staffId) !== activeStaffFilter) return;
+      }
 
       // Filter by Search Query
       if (searchQuery) {
@@ -3629,8 +3640,8 @@
       });
       if (state.employees) {
         state.employees.forEach(emp => {
-          if (!state.staff.some(s => s.id === emp.id)) {
-            modalStaffSelect.innerHTML += `<option value="${emp.id}">${emp.fullName || emp.name} (HR)</option>`;
+          if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+            modalStaffSelect.innerHTML += `<option value="${emp.id}">${emp.fullName || emp.name}</option>`;
           }
         });
       }
@@ -3663,7 +3674,7 @@
       document.getElementById('cust-notes').value = c.notes || '';
       document.getElementById('cust-birthday').value = c.birthday || '';
       if (modalStaffSelect) {
-        modalStaffSelect.value = c.staffId || '';
+        modalStaffSelect.value = getUnifiedStaffId(c.staffId) || '';
       }
       // Hide purchase section on edit
       const purchaseSection = document.getElementById('cust-purchase-section');
@@ -3765,6 +3776,13 @@
         getFilteredStaff().forEach(s => {
           filterStaffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
         });
+        if (state.employees) {
+          state.employees.forEach(emp => {
+            if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+              filterStaffSelect.innerHTML += `<option value="${emp.id}">${emp.fullName || emp.name}</option>`;
+            }
+          });
+        }
         filterStaffSelect.value = currentVal;
         filterStaffSelect.dataset.lang = state.lang;
       }
@@ -3787,7 +3805,9 @@
       const itemBranch = f.branchId || (tx ? tx.branchId : null);
       if (filterBranch && itemBranch && itemBranch !== filterBranch) return;
 
-      if (filterStaffId !== 'all' && f.salesStaffId !== filterStaffId) return;
+      if (filterStaffId !== 'all') {
+        if (getUnifiedStaffId(f.salesStaffId) !== getUnifiedStaffId(filterStaffId)) return;
+      }
 
       // Robust Search
       const custObj = state.customers.find(c => c.id === f.customerId);
@@ -6465,19 +6485,20 @@
   function getStaffSelectHtml(selectedStaffId, txId) {
     let selectOptions = '';
     let found = false;
+    const unifiedSelectedId = getUnifiedStaffId(selectedStaffId);
     
     state.staff.forEach(s => {
-      const isSel = s.id === selectedStaffId || s.employeeId === selectedStaffId;
+      const isSel = s.id === unifiedSelectedId || s.employeeId === unifiedSelectedId;
       if (isSel) found = true;
       selectOptions += `<option value="${s.id}" ${isSel ? 'selected' : ''}>${s.name}</option>`;
     });
     
     if (state.employees) {
       state.employees.forEach(emp => {
-        if (!state.staff.some(s => s.id === emp.id)) {
-          const isSel = emp.id === selectedStaffId;
+        if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+          const isSel = emp.id === unifiedSelectedId;
           if (isSel) found = true;
-          selectOptions += `<option value="${emp.id}" ${isSel ? 'selected' : ''}>${emp.fullName || emp.name} (HR)</option>`;
+          selectOptions += `<option value="${emp.id}" ${isSel ? 'selected' : ''}>${emp.fullName || emp.name}</option>`;
         }
       });
     }
