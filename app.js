@@ -1341,7 +1341,10 @@
 
     state.expenses.forEach(e => {
       if (!filterBranch || e.branchId === filterBranch) {
-        totalExpenses += e.amount;
+        // Exclude rawMaterials (procurement) from dashboard net profit deduction to prevent double-counting with totalCOGS
+        if (e.category !== 'rawMaterials') {
+          totalExpenses += e.amount;
+        }
       }
     });
 
@@ -6960,7 +6963,7 @@
       }
     });
 
-    const totalOpEx = rentExp + electricityExp + waterExp + marketingExp + materialsExp + salariesPaid + transportationExp + otherExp;
+    const totalOpEx = rentExp + electricityExp + waterExp + marketingExp + salariesPaid + transportationExp + otherExp;
     const netProfit = grossProfit - totalOpEx;
 
     container.innerHTML = `
@@ -7005,8 +7008,8 @@
             <span>Advertising & Marketing (ផ្សព្វផ្សាយ)</span>
             <span>${window.POS_HELPERS.formatUSD(marketingExp)}</span>
           </div>
-          <div style="display:flex; justify-content:space-between;">
-            <span>Procurements / Stock refills (ថ្លៃទិញទំនិញចូល)</span>
+          <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
+            <span>Procurements / Stock refills (ថ្លៃទិញទំនិញចូល)*</span>
             <span>${window.POS_HELPERS.formatUSD(materialsExp)}</span>
           </div>
           <div style="display:flex; justify-content:space-between;">
@@ -7017,6 +7020,9 @@
             <span>Miscellaneous Expenses (ផ្សេងៗ)</span>
             <span>${window.POS_HELPERS.formatUSD(otherExp)}</span>
           </div>
+        </div>
+        <div style="margin-top:8px; font-size:9.5px; color:var(--text-muted); font-style:italic; padding-left:10px;">
+          * ${state.lang === 'km' ? 'សម្គាល់៖ ថ្លៃទិញទំនិញចូលស្តុក ត្រូវបានដកចេញពីការគណនាចំណេញសុទ្ធ ដើម្បីកុំឱ្យស្ទួនគ្នាជាមួយថ្លៃដើមទំនិញលក់ (COGS)។' : 'Note: Stock refills expense is excluded from Net Profit to prevent double-counting with Cost of Goods Sold (COGS).'}
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:24px; font-size:13px; font-weight:750; border-top:1px dashed var(--border-color); padding-top:8px; margin-top:8px;">
           <span>Total Expenses (ចំណាយសរុប)</span>
