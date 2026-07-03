@@ -6867,12 +6867,66 @@
   }
 
   function renderExpenseReport(container, start, end) {
+    const fBranch = state.reportExpenseBranch || 'all';
+    const fCategory = state.reportExpenseCategory || 'all';
+    const fSearch = state.reportExpenseSearch || '';
+
+    // Branch Options
+    let branchOpts = `<option value="all">${state.lang === 'km' ? 'គ្រប់សាខាទាំងអស់' : 'All Branches'}</option>`;
+    state.branches.forEach(b => {
+      branchOpts += `<option value="${b.id}" ${fBranch === b.id ? 'selected' : ''}>${state.lang === 'km' ? b.nameKh : b.name}</option>`;
+    });
+
+    // Category Options
+    let catOpts = `<option value="all">${state.lang === 'km' ? 'គ្រប់ប្រភេទចំណាយទាំងអស់' : 'All Categories'}</option>`;
+    const standardCats = [
+      { value: 'rent', langKey: 'rent' },
+      { value: 'electricity', langKey: 'electricity' },
+      { value: 'water', langKey: 'water' },
+      { value: 'marketing', langKey: 'marketing' },
+      { value: 'rawMaterials', langKey: 'rawMaterials' },
+      { value: 'salaries', langKey: 'salaries' },
+      { value: 'transportation', langKey: 'transportation' },
+      { value: 'otherExpenses', langKey: 'otherExpenses' }
+    ];
+    standardCats.forEach(cat => {
+      const label = window.POS_TRANSLATIONS[state.lang][cat.langKey] || cat.value;
+      catOpts += `<option value="${cat.value}" ${fCategory === cat.value ? 'selected' : ''}>${label}</option>`;
+    });
+    if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
+      state.companySettings.customExpenseCategories.forEach(cat => {
+        catOpts += `<option value="${cat}" ${fCategory === cat ? 'selected' : ''}>${cat}</option>`;
+      });
+    }
+
+    const filterRowHtml = `
+      <div class="inner-report-filters" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:6px; align-items:center;">
+        <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">${state.lang === 'km' ? 'តម្រងស្វែងរក (Filters):' : 'Filter Log:'}</span>
+        <select id="rep-exp-branch" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
+        <select id="rep-exp-category" class="form-control" style="width:180px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
+        <input type="text" id="rep-exp-search" class="form-control" placeholder="${state.lang === 'km' ? 'ស្វែងរកតាមការពណ៌នា...' : 'Search description...'}" value="${fSearch}" style="width:200px; padding:4px 8px; font-size:11px; height:auto;">
+      </div>
+    `;
+
     let rowsHtml = '';
     let totalAmount = 0;
 
     const filtered = getFilteredExpenses().filter(e => {
       const d = new Date(e.date);
-      return d >= start && d <= end;
+      const matchesDate = d >= start && d <= end;
+      if (!matchesDate) return false;
+
+      if (fBranch !== 'all' && e.branchId !== fBranch) return false;
+      if (fCategory !== 'all' && e.category !== fCategory) return false;
+
+      if (fSearch !== '') {
+        const query = fSearch.toLowerCase();
+        const desc = (e.description || '').toLowerCase();
+        const catTranslated = (window.POS_TRANSLATIONS[state.lang][e.category] || e.category).toLowerCase();
+        if (!desc.includes(query) && !catTranslated.includes(query)) return false;
+      }
+
+      return true;
     }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
     filtered.forEach(exp => {
@@ -6901,6 +6955,7 @@
     ` : '';
 
     container.innerHTML = `
+      ${filterRowHtml}
       <div style="padding: 12px; background:rgba(239,68,68,0.05); border-radius:6px; margin-bottom:12px; font-weight:800; font-size:12px; color:var(--danger);">
         Total Period Expenses: ${window.POS_HELPERS.formatUSD(totalAmount)}
       </div>
@@ -6919,6 +6974,25 @@
         ${footerHtml}
       </table>
     `;
+
+    document.getElementById('rep-exp-branch').addEventListener('change', (e) => {
+      state.reportExpenseBranch = e.target.value;
+      triggerReportRender();
+    });
+    document.getElementById('rep-exp-category').addEventListener('change', (e) => {
+      state.reportExpenseCategory = e.target.value;
+      triggerReportRender();
+    });
+    document.getElementById('rep-exp-search').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        state.reportExpenseSearch = e.target.value;
+        triggerReportRender();
+      }
+    });
+    document.getElementById('rep-exp-search').addEventListener('change', (e) => {
+      state.reportExpenseSearch = e.target.value;
+      triggerReportRender();
+    });
   }
 
   function renderProfitLossReport(container, start, end) {
