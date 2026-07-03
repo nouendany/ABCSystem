@@ -1403,7 +1403,24 @@
     const textThemeColor = isLightTheme ? '#0f172a' : '#94a3b8';
     const gridThemeColor = isLightTheme ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
 
-    if (typeof Chart !== 'undefined') {
+    if (typeof Chart === 'undefined') {
+      if (!window._chartJsWaitList) {
+        window._chartJsWaitList = [];
+        const interval = setInterval(() => {
+          if (typeof Chart !== 'undefined') {
+            clearInterval(interval);
+            window._chartJsWaitList.forEach(fn => fn());
+            delete window._chartJsWaitList;
+          }
+        }, 300);
+      }
+      window._chartJsWaitList.push(() => {
+        if (state.activeView === 'view-dashboard') {
+          renderDashboard();
+        }
+      });
+      console.log("Chart.js is not loaded yet. Waiting to render charts...");
+    } else {
       // Line Chart: Revenue vs Expenses
       const ctxRev = document.getElementById('chart-revenue-expenses');
       if (ctxRev) {
@@ -4743,6 +4760,7 @@
             state.expenses = state.expenses.filter(e => e.id !== exp.id);
             saveStateToLocalStorage();
             renderFinance();
+            scheduleRender('renderCurrentView', renderCurrentView);
           }
         });
 
@@ -7271,6 +7289,21 @@
     document.body.removeChild(link);
   }
 
+  const renderDebouncers = {};
+  function scheduleRender(key, fn) {
+    if (renderDebouncers[key]) {
+      clearTimeout(renderDebouncers[key]);
+    }
+    renderDebouncers[key] = setTimeout(() => {
+      try {
+        fn();
+      } catch(e) {
+        console.error(`scheduleRender error on ${key}:`, e);
+      }
+      delete renderDebouncers[key];
+    }, 150); // 150ms debounce window
+  }
+
   // 11. SETTINGS & DEVELOPER DOCUMENTATION SCHEMAS
   function initFirebaseSync() {
     // Hardcoded production Firebase configuration for automatic sync
@@ -7425,14 +7458,11 @@
             // Save local cache
             safeSetItem('abc_' + (colName === 'stock_logs' ? 'stock_logs' : colName === 'payment_logs' ? 'payment_logs' : colName), JSON.stringify(list));
 
-            // Re-render UI views
+            // Re-render UI views (debounced to prevent rendering bottlenecks during synchronization)
             if (renderFns) {
               renderFns.forEach(fn => {
-                try {
-                  fn();
-                } catch(e) {
-                  console.error("Render error in " + (fn.name || "anonymous") + ":", e);
-                }
+                const fnName = fn.name || 'anonymous_fn';
+                scheduleRender(fnName, fn);
               });
             }
           }, err => {
@@ -7441,15 +7471,15 @@
         };
 
         setupListener('users', 'users', 'id', []);
-        setupListener('branches', 'branches', 'id', [populatePOSSelects]);
-        setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects, renderFinance]);
-        setupListener('products', 'products', 'sku', [renderPOS, renderInventory]);
-        setupListener('staff', 'staff', 'id', [populatePOSSelects]);
-        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects, renderFinance, renderCustomers]);
-        setupListener('expenses', 'expenses', 'id', [renderFinance]);
-        setupListener('stock_logs', 'stockLogs', 'id', []);
-        setupListener('payment_logs', 'paymentLogs', 'id', [renderFinance]);
-        setupListener('followups', 'followups', 'id', [renderFollowups]);
+        setupListener('branches', 'branches', 'id', [populatePOSSelects, renderCurrentView]);
+        setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects, renderFinance, renderCurrentView]);
+        setupListener('products', 'products', 'sku', [renderPOS, renderInventory, renderCurrentView]);
+        setupListener('staff', 'staff', 'id', [populatePOSSelects, renderCurrentView]);
+        setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects, renderFinance, renderCustomers, renderCurrentView]);
+        setupListener('expenses', 'expenses', 'id', [renderFinance, renderCurrentView]);
+        setupListener('stock_logs', 'stockLogs', 'id', [renderCurrentView]);
+        setupListener('payment_logs', 'paymentLogs', 'id', [renderFinance, renderCurrentView]);
+        setupListener('followups', 'followups', 'id', [renderFollowups, renderCurrentView]);
         setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
         setupListener('attendance', 'attendance', 'id', [cleanupOldSelfies, renderAttendanceLogs, renderHRDashboard]);
         setupListener('leave_requests', 'leaveRequests', 'id', [renderLeaveRequests, renderHRDashboard]);
@@ -10446,6 +10476,7 @@ CREATE TABLE sale_items (
       saveStateToLocalStorage();
       document.getElementById('modal-expense').classList.remove('active-modal');
       renderFinance();
+      scheduleRender('renderCurrentView', renderCurrentView);
     });
 
     // Staff Edit/Add Submission
@@ -10567,6 +10598,7 @@ CREATE TABLE sale_items (
       document.getElementById('modal-stock-adj').classList.remove('active-modal');
       renderInventory();
       renderFinance(); // Update financial ledger too
+      scheduleRender('renderCurrentView', renderCurrentView);
       alert('Stock adjustment saved successfully!');
     });
 
