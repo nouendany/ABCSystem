@@ -9467,6 +9467,22 @@ CREATE TABLE sale_items (
       });
     }
 
+    const expAmountUsd = document.getElementById('exp-amount');
+    const expAmountKhr = document.getElementById('exp-amount-khr');
+    const exchangeRate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
+
+    if (expAmountUsd && expAmountKhr) {
+      expAmountUsd.addEventListener('input', () => {
+        const usd = parseFloat(expAmountUsd.value) || 0;
+        expAmountKhr.value = Math.round(usd * exchangeRate);
+      });
+
+      expAmountKhr.addEventListener('input', () => {
+        const khr = parseFloat(expAmountKhr.value) || 0;
+        expAmountUsd.value = (khr / exchangeRate).toFixed(2);
+      });
+    }
+
     // Toggle Follow-Up Retention Roadmap
     const btnToggleRoadmap = document.getElementById('btn-toggle-roadmap');
     if (btnToggleRoadmap) {
@@ -9658,6 +9674,8 @@ CREATE TABLE sale_items (
     document.getElementById('btn-add-expense-modal').addEventListener('click', () => {
       if (!guardAction('add')) return;
       document.getElementById('expense-form').reset();
+      const expKhrEl = document.getElementById('exp-amount-khr');
+      if (expKhrEl) expKhrEl.value = '0';
       document.getElementById('modal-expense').classList.add('active-modal');
     });
 
