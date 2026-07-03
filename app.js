@@ -5354,6 +5354,38 @@
     `;
 
     // Staff sales performance
+    let staffSalesRowsHtml = '';
+    let totalInvoicesSum = 0;
+    let totalSalesSum = 0;
+
+    const staffKeys = Object.keys(staffStats);
+    if (staffKeys.length === 0) {
+      staffSalesRowsHtml = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+    } else {
+      staffKeys.forEach(staffName => {
+        const stats = staffStats[staffName];
+        totalInvoicesSum += stats.count;
+        totalSalesSum += stats.sales;
+        staffSalesRowsHtml += `
+          <tr>
+            <td><strong>${staffName}</strong></td>
+            <td style="text-align: center;">${stats.count}</td>
+            <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(stats.sales)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    const staffFooterHtml = staffKeys.length > 0 ? `
+      <tfoot>
+        <tr style="background:rgba(99,102,241,0.06); font-weight:800; border-top: 1.5px solid var(--border-color);">
+          <td><strong>${isKhmer ? "សរុប" : "Total"}</strong></td>
+          <td style="text-align: center; font-weight:800;">${totalInvoicesSum}</td>
+          <td style="text-align: right; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(totalSalesSum)}</td>
+        </tr>
+      </tfoot>
+    ` : '';
+
     let staffSalesHtml = `
       <div class="glass-card" style="padding: 16px; flex: 1; min-width: 280px; box-shadow: none;">
         <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--secondary); display:flex; align-items:center; gap:8px;">👥 ${isKhmer ? "ការលក់របស់បុគ្គលិក" : "Employee Sales Summary"}</h4>
@@ -5366,24 +5398,9 @@
             </tr>
           </thead>
           <tbody>
-    `;
-    const staffKeys = Object.keys(staffStats);
-    if (staffKeys.length === 0) {
-      staffSalesHtml += `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
-    } else {
-      staffKeys.forEach(staffName => {
-        const stats = staffStats[staffName];
-        staffSalesHtml += `
-          <tr>
-            <td><strong>${staffName}</strong></td>
-            <td style="text-align: center;">${stats.count}</td>
-            <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(stats.sales)}</td>
-          </tr>
-        `;
-      });
-    }
-    staffSalesHtml += `
+            ${staffSalesRowsHtml}
           </tbody>
+          ${staffFooterHtml}
         </table>
       </div>
     `;
