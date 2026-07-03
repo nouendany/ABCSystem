@@ -6842,7 +6842,7 @@
 
       rowsHtml += `
         <tr>
-          <td><strong>${s.name}</strong></td>
+          <td><strong>${getStaffDisplayName(s.id, s.name)}</strong></td>
           <td>${s.role}</td>
           <td style="text-align:center; font-weight:800; color:var(--secondary);">${units}</td>
           <td style="font-weight:750;">${window.POS_HELPERS.formatUSD(sales)}</td>
