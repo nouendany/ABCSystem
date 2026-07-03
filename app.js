@@ -374,7 +374,7 @@
      const defaultCommissionRules = {
        monthlyTargetUnits: 300,
        tiers: [
-         { minUnits: 1, maxUnits: 299, ratePercent: 1.5 },
+         { minUnits: 1, maxUnits: 299, ratePercent: 0.5 },
          { minUnits: 300, maxUnits: 500, ratePercent: 3.0 },
          { minUnits: 501, maxUnits: 700, ratePercent: 5.0 },
          { minUnits: 701, maxUnits: 9999, ratePercent: 7.5 }
@@ -4458,14 +4458,14 @@
           rate = t.ratePercent;
         }
       });
-      const commAmount = sales * (rate / 100);
+      const commAmount = units * rate;
 
       commBody.innerHTML += `
         <tr>
           <td><strong>${st.name}</strong></td>
           <td style="text-align:center; font-weight:800; color:var(--secondary);">${units}</td>
           <td style="text-align:right; font-weight:750;">${window.POS_HELPERS.formatUSD(sales)}</td>
-          <td style="text-align:center; font-weight:750; color:var(--warning);">${rate}%</td>
+          <td style="text-align:center; font-weight:750; color:var(--warning);">${window.POS_HELPERS.formatUSD(rate)}</td>
           <td style="text-align:right; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(commAmount)}</td>
         </tr>
       `;
@@ -4861,7 +4861,7 @@
           rate = t.ratePercent;
         }
       });
-      const commEarned = sales * (rate / 100);
+      const commEarned = units * rate;
 
       const br = state.branches.find(b => b.id === s.branchId);
       const brName = br ? (state.lang === 'km' ? br.nameKh : br.name) : 'HQ';
@@ -6834,7 +6834,7 @@
           rate = t.ratePercent;
         }
       });
-      const commAmount = sales * (rate / 100);
+      const commAmount = units * rate;
 
       sumUnits += units;
       sumSales += sales;
@@ -6846,7 +6846,7 @@
           <td>${s.role}</td>
           <td style="text-align:center; font-weight:800; color:var(--secondary);">${units}</td>
           <td style="font-weight:750;">${window.POS_HELPERS.formatUSD(sales)}</td>
-          <td style="text-align:center; font-weight:750; color:var(--warning);">${rate}%</td>
+          <td style="text-align:center; font-weight:750; color:var(--warning);">${window.POS_HELPERS.formatUSD(rate)}</td>
           <td style="font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(commAmount)}</td>
         </tr>
       `;

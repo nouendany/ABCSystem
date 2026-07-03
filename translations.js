@@ -232,7 +232,7 @@ window.POS_TRANSLATIONS = {
     commissionEarned: "Commission Earned ($)",
     totalSalesVal: "Sales Volume ($)",
     unitTarget: "Unit Target (Units)",
-    tierRates: "Tier Commission Rates",
+    tierRates: "Tier Commission Rates ($)",
     saveRules: "Save Target Rules",
     monthlyReport: "Monthly Commission Report",
 
@@ -732,7 +732,7 @@ window.POS_TRANSLATIONS = {
     commissionEarned: "Commission ទទួលបាន ($)",
     totalSalesVal: "តម្លៃលក់សរុប ($)",
     unitTarget: "គោលដៅលក់ (ដុំ/កំប៉ុង)",
-    tierRates: "អត្រា Commission តាមកម្រិតលក់",
+    tierRates: "អត្រា Commission តាមកម្រិតលក់ ($)",
     saveRules: "រក្សាក្បួនគោលដៅលក់",
     monthlyReport: "របាយការណ៍ Commission ប្រចាំខែ",
 

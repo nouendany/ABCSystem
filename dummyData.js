@@ -300,7 +300,7 @@ window.POS_DUMMY_DATA = {
   commissionRules: {
     monthlyTargetUnits: 300,
     tiers: [
-      { minUnits: 1, maxUnits: 299, ratePercent: 1.5 },
+      { minUnits: 1, maxUnits: 299, ratePercent: 0.5 },
       { minUnits: 300, maxUnits: 500, ratePercent: 3.0 },
       { minUnits: 501, maxUnits: 700, ratePercent: 5.0 },
       { minUnits: 701, maxUnits: 9999, ratePercent: 7.5 }
