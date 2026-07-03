@@ -4991,7 +4991,7 @@
         renderCustomerPaymentsReport(container, start, end);
         break;
       case 'commReport':
-        renderStaffCommissionReport(container);
+        renderStaffCommissionReport(container, start, end);
         break;
       case 'debtReport':
         renderCustomerDebtReport(container);
@@ -6778,7 +6778,7 @@
     `;
   }
 
-  function renderStaffCommissionReport(container) {
+  function renderStaffCommissionReport(container, start, end) {
     let rowsHtml = '';
     let sumUnits = 0;
     let sumSales = 0;
@@ -6787,7 +6787,14 @@
     // Calculates
     const salesVolume = {};
     const unitsVolume = {};
-    getFilteredTransactions().forEach(t => {
+    
+    const transactions = getFilteredTransactions().filter(t => {
+      if (!t.date) return false;
+      const d = new Date(t.date);
+      return (!start || d >= start) && (!end || d <= end);
+    });
+
+    transactions.forEach(t => {
       let matchedStaffId = t.staffId;
       const s = state.staff.find(st => st.id === t.staffId || st.employeeId === t.staffId);
       if (s) {
