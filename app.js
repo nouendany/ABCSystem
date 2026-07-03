@@ -1545,8 +1545,13 @@
         getFilteredStaff().forEach(s => empSales[s.name] = 0);
         
         getFilteredTransactions().forEach(t => {
-          if (empSales[t.staffName] !== undefined) {
-            empSales[t.staffName] += t.total;
+          let staffName = t.staffName || 'System';
+          const s = getFilteredStaff().find(st => st.id === t.staffId || st.employeeId === t.staffId);
+          if (s) {
+            staffName = s.name;
+          }
+          if (empSales[staffName] !== undefined) {
+            empSales[staffName] += t.total;
           }
         });
 
@@ -5223,7 +5228,11 @@
       }
 
       // Staff grouping
-      const staffName = t.staffName || 'System';
+      let staffName = t.staffName || 'System';
+      const s = state.staff.find(st => st.id === t.staffId || st.employeeId === t.staffId);
+      if (s) {
+        staffName = s.name;
+      }
       if (!staffStats[staffName]) {
         staffStats[staffName] = { sales: 0, count: 0, units: 0 };
       }
@@ -5444,11 +5453,14 @@
         const custObj = state.customers.find(c => c.id === t.customerId);
         const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (t.customerName || 'General Customer');
 
+        const s = state.staff.find(st => st.id === t.staffId || st.employeeId === t.staffId);
+        const displayStaffName = s ? s.name : (t.staffName || 'System');
+
         txChecklistHtml += `
           <tr>
             <td><strong style="color:var(--secondary); font-family:monospace;">${t.invoiceNo || t.id}</strong></td>
             <td><strong>${displayCustName}</strong></td>
-            <td>${t.staffName || 'System'}</td>
+            <td>${displayStaffName}</td>
             <td style="text-align: right; font-weight:700; color:var(--text-primary);">${window.POS_HELPERS.formatUSD(t.total)}</td>
             <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(paid)}</td>
             <td style="text-align: right; font-weight:700; color:${debt > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${window.POS_HELPERS.formatUSD(debt)}</td>
