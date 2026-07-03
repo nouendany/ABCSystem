@@ -277,6 +277,20 @@
     return id;
   }
 
+  function getStaffDisplayName(staffId, defaultName) {
+    if (!staffId) return defaultName || 'System';
+    const s = state.staff.find(st => st.id === staffId || st.employeeId === staffId);
+    const empId = s ? (s.employeeId || s.id) : staffId;
+    if (state.employees) {
+      const emp = state.employees.find(e => e.id === empId || e.employeeId === empId || e.id === staffId);
+      if (emp) {
+        return emp.name || emp.fullName;
+      }
+    }
+    if (s) return s.name;
+    return defaultName || 'System';
+  }
+
   function getFilteredFollowups() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.followups;
@@ -1542,14 +1556,13 @@
         if (state.employeeChart) state.employeeChart.destroy();
         
         const empSales = {};
-        getFilteredStaff().forEach(s => empSales[s.name] = 0);
+        getFilteredStaff().forEach(s => {
+          const officialName = getStaffDisplayName(s.id, s.name);
+          empSales[officialName] = 0;
+        });
         
         getFilteredTransactions().forEach(t => {
-          let staffName = t.staffName || 'System';
-          const s = getFilteredStaff().find(st => st.id === t.staffId || st.employeeId === t.staffId);
-          if (s) {
-            staffName = s.name;
-          }
+          const staffName = getStaffDisplayName(t.staffId, t.staffName || 'System');
           if (empSales[staffName] !== undefined) {
             empSales[staffName] += t.total;
           }
@@ -4281,7 +4294,7 @@
       const u = state.users.find(user => user.name === s.name || user.username === s.id);
       statsMap[s.id] = {
         id: s.id,
-        name: s.name,
+        name: getStaffDisplayName(s.id, s.name),
         pageName: u ? (u.pageName || 'Direct Sales') : 'Direct Sales',
         orders: 0,
         revenue: 0,
@@ -5228,11 +5241,7 @@
       }
 
       // Staff grouping
-      let staffName = t.staffName || 'System';
-      const s = state.staff.find(st => st.id === t.staffId || st.employeeId === t.staffId);
-      if (s) {
-        staffName = s.name;
-      }
+      const staffName = getStaffDisplayName(t.staffId, t.staffName || 'System');
       if (!staffStats[staffName]) {
         staffStats[staffName] = { sales: 0, count: 0, units: 0 };
       }
@@ -5452,9 +5461,7 @@
         const methodLabel = window.POS_TRANSLATIONS[state.lang][t.paymentMethod] || t.paymentMethod;
         const custObj = state.customers.find(c => c.id === t.customerId);
         const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (t.customerName || 'General Customer');
-
-        const s = state.staff.find(st => st.id === t.staffId || st.employeeId === t.staffId);
-        const displayStaffName = s ? s.name : (t.staffName || 'System');
+        const displayStaffName = getStaffDisplayName(t.staffId, t.staffName || 'System');
 
         txChecklistHtml += `
           <tr>
