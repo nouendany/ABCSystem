@@ -4418,6 +4418,7 @@
     commBody.innerHTML = '';
 
     const unitsVolume = {};
+    const salesVolume = {};
     getFilteredTransactions().forEach(t => {
       if (t.date.startsWith(selectedCommMonth)) {
         let matchedStaffId = t.staffId;
@@ -4429,24 +4430,26 @@
         let uSum = 0;
         t.items.forEach(it => uSum += it.qty);
         unitsVolume[matchedStaffId] = (unitsVolume[matchedStaffId] || 0) + uSum;
+        salesVolume[matchedStaffId] = (salesVolume[matchedStaffId] || 0) + t.total;
       }
     });
 
     displayedStats.forEach(st => {
       const units = unitsVolume[st.id] || 0;
+      const sales = salesVolume[st.id] || 0;
       let rate = 0;
       state.commissionRules.tiers.forEach(t => {
         if (units >= t.minUnits && units <= t.maxUnits) {
           rate = t.ratePercent;
         }
       });
-      const commAmount = st.revenue * (rate / 100);
+      const commAmount = sales * (rate / 100);
 
       commBody.innerHTML += `
         <tr>
           <td><strong>${st.name}</strong></td>
           <td style="text-align:center; font-weight:800; color:var(--secondary);">${units}</td>
-          <td style="text-align:right; font-weight:750;">${window.POS_HELPERS.formatUSD(st.revenue)}</td>
+          <td style="text-align:right; font-weight:750;">${window.POS_HELPERS.formatUSD(sales)}</td>
           <td style="text-align:center; font-weight:750; color:var(--warning);">${rate}%</td>
           <td style="text-align:right; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(commAmount)}</td>
         </tr>
