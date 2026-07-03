@@ -4377,42 +4377,39 @@
       });
     }
 
-    // Populate commission month selector
+    // Populate commission month selector and synchronize with state
     const commMonthSelect = document.getElementById('perf-commission-month');
-    if (commMonthSelect && commMonthSelect.options.length === 0) {
-      const months = [];
-      const tempDate = new Date();
-      for (let i = 0; i < 12; i++) {
-        const y = tempDate.getFullYear();
-        const m = String(tempDate.getMonth() + 1).padStart(2, '0');
-        const label = tempDate.toLocaleString('default', { month: 'short', year: 'numeric' });
-        months.push({ value: `${y}-${m}`, label });
-        tempDate.setMonth(tempDate.getMonth() - 1);
-      }
-      months.forEach(item => {
-        commMonthSelect.innerHTML += `<option value="${item.value}">${item.label}</option>`;
-      });
-      
-      let defaultMonth = new Date().toISOString().substring(0, 7);
-      const txs = getFilteredTransactions();
-      if (txs.length > 0) {
-        const sortedTxs = [...txs].sort((a,b) => new Date(b.date) - new Date(a.date));
-        const latestTxMonth = sortedTxs[0].date.substring(0, 7);
-        if (months.some(m => m.value === latestTxMonth)) {
-          defaultMonth = latestTxMonth;
-        }
-      }
-      
-      state.perfCommissionMonth = defaultMonth;
-      commMonthSelect.value = defaultMonth;
+    const currentMonthStr = new Date().toISOString().substring(0, 7);
 
-      commMonthSelect.addEventListener('change', (e) => {
-        state.perfCommissionMonth = e.target.value;
-        renderPerformance();
-      });
+    if (commMonthSelect) {
+      if (commMonthSelect.options.length === 0) {
+        const months = [];
+        const tempDate = new Date();
+        for (let i = 0; i < 12; i++) {
+          const y = tempDate.getFullYear();
+          const m = String(tempDate.getMonth() + 1).padStart(2, '0');
+          const label = tempDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+          months.push({ value: `${y}-${m}`, label });
+          tempDate.setMonth(tempDate.getMonth() - 1);
+        }
+        months.forEach(item => {
+          commMonthSelect.innerHTML += `<option value="${item.value}">${item.label}</option>`;
+        });
+        
+        if (!state.perfCommissionMonth) {
+          state.perfCommissionMonth = currentMonthStr;
+        }
+
+        commMonthSelect.addEventListener('change', (e) => {
+          state.perfCommissionMonth = e.target.value;
+          renderPerformance();
+        });
+      }
+      
+      commMonthSelect.value = state.perfCommissionMonth || currentMonthStr;
     }
 
-    const selectedCommMonth = state.perfCommissionMonth || new Date().toISOString().substring(0, 7);
+    const selectedCommMonth = state.perfCommissionMonth || currentMonthStr;
 
     const commBody = document.getElementById('commission-report-rows');
     commBody.innerHTML = '';
