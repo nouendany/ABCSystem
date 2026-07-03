@@ -5181,6 +5181,7 @@
     let totalDebt = 0;
     let totalCost = 0;
     let totalOrders = transactions.length;
+    let totalUnitsSold = 0;
 
     // Payment methods
     const paymentMethods = {
@@ -5201,12 +5202,15 @@
       totalPaid += paid;
       totalDebt += debt;
 
-      // Cost price
+      // Cost price & Units sold
       let txCost = 0;
+      let txUnits = 0;
       t.items.forEach(item => {
         const p = state.products.find(prod => prod.sku === item.sku);
         const costPrice = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
         txCost += costPrice * item.qty;
+        totalUnitsSold += item.qty;
+        txUnits += item.qty;
       });
       totalCost += txCost;
 
@@ -5221,10 +5225,11 @@
       // Staff grouping
       const staffName = t.staffName || 'System';
       if (!staffStats[staffName]) {
-        staffStats[staffName] = { sales: 0, count: 0 };
+        staffStats[staffName] = { sales: 0, count: 0, units: 0 };
       }
       staffStats[staffName].sales += t.total;
       staffStats[staffName].count += 1;
+      staffStats[staffName].units += txUnits;
     });
 
     let totalExpenses = 0;
@@ -5254,7 +5259,7 @@
           <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">${labelTotalSales}</div>
           <div style="font-size: 20px; font-weight: 800; color: #3b82f6; margin-top: 4px;">${window.POS_HELPERS.formatUSD(totalSales)}</div>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${window.POS_HELPERS.formatKHR(totalSales)}</div>
-          <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${totalOrders} ${isKhmer ? 'ការលក់' : 'Orders'}</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${totalOrders} ${isKhmer ? 'ការលក់ (Orders)' : 'Orders'} | ${totalUnitsSold} ${isKhmer ? 'ឯកតា (Units)' : 'Units'}</div>
         </div>
         <div class="summary-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%); border-left: 4px solid #10b981;">
           <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
@@ -5356,20 +5361,23 @@
     // Staff sales performance
     let staffSalesRowsHtml = '';
     let totalInvoicesSum = 0;
+    let totalUnitsSum = 0;
     let totalSalesSum = 0;
 
     const staffKeys = Object.keys(staffStats);
     if (staffKeys.length === 0) {
-      staffSalesRowsHtml = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+      staffSalesRowsHtml = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
     } else {
       staffKeys.forEach(staffName => {
         const stats = staffStats[staffName];
         totalInvoicesSum += stats.count;
+        totalUnitsSum += stats.units || 0;
         totalSalesSum += stats.sales;
         staffSalesRowsHtml += `
           <tr>
             <td><strong>${staffName}</strong></td>
             <td style="text-align: center;">${stats.count}</td>
+            <td style="text-align: center; font-weight:700; color:var(--secondary);">${stats.units || 0}</td>
             <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(stats.sales)}</td>
           </tr>
         `;
@@ -5381,6 +5389,7 @@
         <tr style="background:rgba(99,102,241,0.06); font-weight:800; border-top: 1.5px solid var(--border-color);">
           <td><strong>${isKhmer ? "សរុប" : "Total"}</strong></td>
           <td style="text-align: center; font-weight:800;">${totalInvoicesSum}</td>
+          <td style="text-align: center; font-weight:800; color:var(--secondary);">${totalUnitsSum}</td>
           <td style="text-align: right; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(totalSalesSum)}</td>
         </tr>
       </tfoot>
@@ -5394,6 +5403,7 @@
             <tr>
               <th>${isKhmer ? "ឈ្មោះបុគ្គលិក" : "Employee"}</th>
               <th style="text-align: center;">${isKhmer ? "ចំនួនវិក្កយបត្រ" : "Invoices"}</th>
+              <th style="text-align: center;">${isKhmer ? "ចំនួនលក់ (ឯកតា)" : "Units Sold"}</th>
               <th style="text-align: right;">${isKhmer ? "លក់សរុប" : "Total Sold"}</th>
             </tr>
           </thead>
