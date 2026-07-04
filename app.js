@@ -5432,7 +5432,7 @@
 
     const staffKeys = Object.keys(staffStats);
     if (staffKeys.length === 0) {
-      staffSalesRowsHtml = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+      staffSalesRowsHtml = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
     } else {
       staffKeys.forEach(staffName => {
         const stats = staffStats[staffName];
@@ -5445,6 +5445,11 @@
             <td style="text-align: center;">${stats.count}</td>
             <td style="text-align: center; font-weight:700; color:var(--secondary);">${stats.units || 0}</td>
             <td style="text-align: right; font-weight:700; color:var(--primary);">${window.POS_HELPERS.formatUSD(stats.sales)}</td>
+            <td style="text-align: center;">
+              <button class="btn btn-secondary btn-sm btn-view-staff-items" data-staff="${staffName}" style="padding: 2px 6px; font-size: 10px; display:inline-flex; align-items:center; gap:4px;">
+                👁️ ${isKhmer ? 'មើល' : 'View'}
+              </button>
+            </td>
           </tr>
         `;
       });
@@ -5457,6 +5462,7 @@
           <td style="text-align: center; font-weight:800;">${totalInvoicesSum}</td>
           <td style="text-align: center; font-weight:800; color:var(--secondary);">${totalUnitsSum}</td>
           <td style="text-align: right; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(totalSalesSum)}</td>
+          <td></td>
         </tr>
       </tfoot>
     ` : '';
@@ -5471,6 +5477,7 @@
               <th style="text-align: center;">${isKhmer ? "ចំនួនវិក្កយបត្រ" : "Invoices"}</th>
               <th style="text-align: center;">${isKhmer ? "ចំនួនលក់ (ឯកតា)" : "Units Sold"}</th>
               <th style="text-align: right;">${isKhmer ? "លក់សរុប" : "Total Sold"}</th>
+              <th style="text-align: center;">${isKhmer ? "ទំនិញលក់បាន" : "Items"}</th>
             </tr>
           </thead>
           <tbody>
@@ -5755,6 +5762,93 @@
       ${transfersHtml}
       ${txChecklistHtml}
     `;
+
+    // Hook click listeners for btn-view-staff-items
+    container.querySelectorAll('.btn-view-staff-items').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffName = btn.getAttribute('data-staff');
+        openStaffSoldItemsModal(staffName, start, end);
+      });
+    });
+  }
+
+  function openStaffSoldItemsModal(staffName, start, end) {
+    const isKhmer = state.lang === 'km';
+    
+    // Set Period string
+    const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
+    const startStr = start ? start.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
+    const endStr = end ? end.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
+    const dateRangeStr = (start && end) ? `${startStr} ${isKhmer ? 'ដល់' : 'to'} ${endStr}` : '';
+    document.getElementById('staff-items-period').innerText = `${isKhmer ? 'កាលបរិច្ឆេទសាកសួរ៖' : 'Period:'} ${dateRangeStr}`;
+    
+    // Set Title
+    document.getElementById('staff-items-title').innerText = isKhmer ? `ទំនិញលក់បានដោយ៖ ${staffName}` : `Products Sold by: ${staffName}`;
+
+    // Get period transactions filtered for this staff
+    const filterBranch = getActiveBranchFilter();
+    const periodTX = getFilteredTransactions().filter(t => {
+      const d = new Date(t.date);
+      if (filterBranch && t.branchId !== filterBranch) return false;
+      return (!start || d >= start) && (!end || d <= end);
+    });
+
+    const staffTX = periodTX.filter(t => {
+      const displayStaffName = getStaffDisplayName(t.staffId, t.staffName || 'System');
+      return displayStaffName === staffName;
+    });
+
+    // Aggregate product sales
+    const staffProdSales = {};
+    staffTX.forEach(t => {
+      t.items.forEach(item => {
+        if (!staffProdSales[item.sku]) {
+          const p = state.products.find(prod => prod.sku === item.sku);
+          const pName = p ? (isKhmer ? p.nameKh : p.nameEn) : (item.nameKh || item.nameEn || item.name || 'Deleted Product');
+          staffProdSales[item.sku] = {
+            sku: item.sku,
+            name: pName,
+            qty: 0,
+            revenue: 0
+          };
+        }
+        staffProdSales[item.sku].qty += item.qty;
+        staffProdSales[item.sku].revenue += item.total || (item.qty * item.price);
+      });
+    });
+
+    const tbody = document.getElementById('staff-items-table-body');
+    tbody.innerHTML = '';
+    const salesList = Object.values(staffProdSales).sort((a,b) => b.qty - a.qty);
+    
+    if (salesList.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:var(--text-muted); font-style:italic;">${isKhmer ? 'គ្មានទិន្នន័យលក់ទេ' : 'No products sold.'}</td></tr>`;
+    } else {
+      let sumQty = 0;
+      let sumRev = 0;
+      salesList.forEach((item, idx) => {
+        sumQty += item.qty;
+        sumRev += item.revenue;
+        tbody.innerHTML += `
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="text-align:center; padding:8px 4px;">${idx + 1}</td>
+            <td style="padding: 8px 4px;"><strong style="font-family:monospace; color:var(--secondary);">${item.sku}</strong></td>
+            <td style="padding: 8px 4px;"><strong>${item.name}</strong></td>
+            <td style="text-align:center; padding: 8px 4px; font-weight:800; color:var(--secondary);">${item.qty}</td>
+            <td style="text-align:right; padding: 8px 4px; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(item.revenue)}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML += `
+        <tr style="font-weight:bold; border-top:1.5px solid var(--border-color); background:rgba(255,255,255,0.02);">
+          <td colspan="3" style="padding:8px 4px; text-align:right;">${isKhmer ? 'សរុប' : 'Total'}</td>
+          <td style="text-align:center; padding:8px 4px; font-weight:800; color:var(--secondary);">${sumQty}</td>
+          <td style="text-align:right; padding:8px 4px; font-weight:800; color:var(--primary);">${window.POS_HELPERS.formatUSD(sumRev)}</td>
+        </tr>
+      `;
+    }
+
+    document.getElementById('modal-staff-sold-items').classList.add('active-modal');
   }
 
   function downloadActiveReportPDF() {
@@ -10113,7 +10207,9 @@ CREATE TABLE sale_items (
       { btn: 'btn-close-followup', modal: 'modal-followup' },
       { btn: 'btn-cancel-followup', modal: 'modal-followup' },
       { btn: 'btn-close-customer-history', modal: 'modal-customer-history' },
-      { btn: 'btn-close-customer-history-footer', modal: 'modal-customer-history' }
+      { btn: 'btn-close-customer-history-footer', modal: 'modal-customer-history' },
+      { btn: 'btn-close-staff-items', modal: 'modal-staff-sold-items' },
+      { btn: 'btn-close-staff-items-footer', modal: 'modal-staff-sold-items' }
     ];
 
     closeBtns.forEach(c => {
