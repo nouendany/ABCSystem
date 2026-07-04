@@ -975,6 +975,15 @@
     branchEl.innerText = branchName;
     branchBannerEl.innerText = branchName;
 
+    const editMarqueeBtn = document.getElementById('btn-edit-marquee');
+    if (editMarqueeBtn) {
+      if (state.currentUser && state.currentUser.role === 'super_admin') {
+        editMarqueeBtn.style.display = 'flex';
+      } else {
+        editMarqueeBtn.style.display = 'none';
+      }
+    }
+
     applyFeatureToggles();
   }
 
@@ -14214,7 +14223,10 @@ CREATE TABLE sale_items (
 
     // Show settings dialog
     btnEdit.addEventListener('click', () => {
-      if (!guardAction('edit')) return;
+      if (!state.currentUser || state.currentUser.role !== 'super_admin') {
+        alert(window.POS_TRANSLATIONS[state.lang].permissionError || "Access Denied!");
+        return;
+      }
       
       const settings = state.companySettings.marquee || {
         text: "ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងការលក់ ABC System! / Welcome to ABC System!",
