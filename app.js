@@ -463,6 +463,14 @@
     if (!state.companySettings.stickyNotes || !Array.isArray(state.companySettings.stickyNotes)) {
       state.companySettings.stickyNotes = [];
     }
+    if (!state.companySettings.marquee) {
+      state.companySettings.marquee = {
+        text: "ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងការលក់ ABC System! / Welcome to ABC System!",
+        speed: "medium",
+        theme: "alert-gold-glow",
+        mode: "marquee"
+      };
+    }
     if (!state.companySettings.companyName || 
         state.companySettings.companyName === 'GEDA Distribution Co., Ltd.' || 
         state.companySettings.companyName === 'GEDA System' || 
@@ -1318,6 +1326,9 @@
     } else {
       document.body.classList.remove('lang-km');
       document.body.removeAttribute('lang');
+    }
+    if (typeof updateMarqueeUI === 'function') {
+      updateMarqueeUI();
     }
   }
 
@@ -10411,7 +10422,9 @@ CREATE TABLE sale_items (
       { btn: 'btn-close-customer-history', modal: 'modal-customer-history' },
       { btn: 'btn-close-customer-history-footer', modal: 'modal-customer-history' },
       { btn: 'btn-close-staff-items', modal: 'modal-staff-sold-items' },
-      { btn: 'btn-close-staff-items-footer', modal: 'modal-staff-sold-items' }
+      { btn: 'btn-close-staff-items-footer', modal: 'modal-staff-sold-items' },
+      { btn: 'btn-close-marquee-settings', modal: 'modal-marquee-settings' },
+      { btn: 'btn-cancel-marquee-settings', modal: 'modal-marquee-settings' }
     ];
 
     closeBtns.forEach(c => {
@@ -14137,6 +14150,144 @@ CREATE TABLE sale_items (
     renderStickyNotes();
   }
 
+  function updateMarqueeUI() {
+    const marqueeContainer = document.getElementById('header-marquee-container');
+    const marqueeTextEl = document.getElementById('header-marquee-text');
+    if (!marqueeContainer || !marqueeTextEl) return;
+
+    const marqueeSettings = state.companySettings.marquee || {
+      text: "ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងការលក់ ABC System! / Welcome to ABC System!",
+      speed: "medium",
+      theme: "alert-gold-glow",
+      mode: "marquee"
+    };
+
+    // Map text to current language if it matches a preset
+    let displayText = marqueeSettings.text;
+    if (displayText === window.POS_TRANSLATIONS.km.marqueePresetWelcome || displayText === window.POS_TRANSLATIONS.en.marqueePresetWelcome) {
+      displayText = window.POS_TRANSLATIONS[state.lang].marqueePresetWelcome;
+    } else if (displayText === window.POS_TRANSLATIONS.km.marqueePresetPromo || displayText === window.POS_TRANSLATIONS.en.marqueePresetPromo) {
+      displayText = window.POS_TRANSLATIONS[state.lang].marqueePresetPromo;
+    } else if (displayText === window.POS_TRANSLATIONS.km.marqueePresetMaintenance || displayText === window.POS_TRANSLATIONS.en.marqueePresetMaintenance) {
+      displayText = window.POS_TRANSLATIONS[state.lang].marqueePresetMaintenance;
+    } else if (displayText === window.POS_TRANSLATIONS.km.marqueePresetSuccess || displayText === window.POS_TRANSLATIONS.en.marqueePresetSuccess) {
+      displayText = window.POS_TRANSLATIONS[state.lang].marqueePresetSuccess;
+    }
+
+    marqueeTextEl.innerText = displayText;
+
+    // Remove existing classes
+    marqueeTextEl.className = 'marquee-text';
+
+    // Apply speed or static mode
+    if (marqueeSettings.speed === 'static') {
+      marqueeTextEl.classList.add('static-mode');
+      marqueeTextEl.style.animation = 'none';
+      marqueeTextEl.style.paddingLeft = '0';
+    } else {
+      marqueeTextEl.classList.remove('static-mode');
+      let duration = '20s';
+      if (marqueeSettings.speed === 'slow') duration = '35s';
+      if (marqueeSettings.speed === 'fast') duration = '8s';
+      marqueeTextEl.style.animationDuration = duration;
+      marqueeTextEl.style.animationName = 'marquee-running';
+      marqueeTextEl.style.paddingLeft = '100%';
+    }
+
+    // Apply theme
+    marqueeTextEl.classList.add(marqueeSettings.theme);
+  }
+
+  function setupMarquee() {
+    const btnEdit = document.getElementById('btn-edit-marquee');
+    const modalSettings = document.getElementById('modal-marquee-settings');
+    const presetSelect = document.getElementById('marquee-preset-select');
+    const textInput = document.getElementById('marquee-text-input');
+    const speedSelect = document.getElementById('marquee-speed-select');
+    const themeSelect = document.getElementById('marquee-theme-select');
+    const btnSave = document.getElementById('btn-save-marquee-settings');
+
+    if (!btnEdit || !modalSettings) return;
+
+    // Load initial UI
+    updateMarqueeUI();
+
+    // Show settings dialog
+    btnEdit.addEventListener('click', () => {
+      if (!guardAction('edit')) return;
+      
+      const settings = state.companySettings.marquee || {
+        text: "ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងការលក់ ABC System! / Welcome to ABC System!",
+        speed: "medium",
+        theme: "alert-gold-glow",
+        mode: "marquee"
+      };
+
+      textInput.value = settings.text;
+      speedSelect.value = settings.speed;
+      themeSelect.value = settings.theme;
+      
+      // Attempt to map back to preset dropdown if matched
+      let foundPreset = 'custom';
+      if (settings.text === window.POS_TRANSLATIONS.km.marqueePresetWelcome || settings.text === window.POS_TRANSLATIONS.en.marqueePresetWelcome) {
+        foundPreset = 'welcome';
+      } else if (settings.text === window.POS_TRANSLATIONS.km.marqueePresetPromo || settings.text === window.POS_TRANSLATIONS.en.marqueePresetPromo) {
+        foundPreset = 'promo';
+      } else if (settings.text === window.POS_TRANSLATIONS.km.marqueePresetMaintenance || settings.text === window.POS_TRANSLATIONS.en.marqueePresetMaintenance) {
+        foundPreset = 'maintenance';
+      } else if (settings.text === window.POS_TRANSLATIONS.km.marqueePresetSuccess || settings.text === window.POS_TRANSLATIONS.en.marqueePresetSuccess) {
+        foundPreset = 'success';
+      }
+      presetSelect.value = foundPreset;
+
+      modalSettings.classList.add('active-modal');
+    });
+
+    // Handle template changes
+    presetSelect.addEventListener('change', () => {
+      const val = presetSelect.value;
+      if (val === 'custom') {
+        textInput.value = '';
+        textInput.focus();
+        return;
+      }
+      
+      // Set translated preset text
+      const translationKey = 'marqueePreset' + val.charAt(0).toUpperCase() + val.slice(1);
+      const text = window.POS_TRANSLATIONS[state.lang][translationKey] || '';
+      textInput.value = text;
+    });
+
+    // Save configuration
+    btnSave.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      if (!textInput.value.trim()) {
+        alert(state.lang === 'km' ? 'សូមបញ្ចូលសារប្រកាស!' : 'Please enter an announcement message!');
+        return;
+      }
+
+      state.companySettings.marquee = {
+        text: textInput.value.trim(),
+        speed: speedSelect.value,
+        theme: themeSelect.value,
+        mode: speedSelect.value === 'static' ? 'static' : 'marquee'
+      };
+
+      saveStateToLocalStorage();
+      updateMarqueeUI();
+      modalSettings.classList.remove('active-modal');
+
+      // Trigger Audit log
+      logAuditEvent('settingsEdit', 'Update Header Announcement Marquee: ' + state.companySettings.marquee.theme);
+
+      // If firebase is enabled, sync
+      if (typeof debounceCloudSync === 'function') {
+        debounceCloudSync();
+      }
+    });
+  }
+
   // ==================== END HRMS UPGRADE LOGIC ====================
 
   // Bind main DOM event
@@ -14158,6 +14309,7 @@ CREATE TABLE sale_items (
     setupKpiEventListeners();
     setupSecurityEventListeners();
     setupStickyNotes();
+    setupMarquee();
     
     translateApp();
     renderCurrentView();

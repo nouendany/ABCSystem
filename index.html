@@ -306,6 +306,15 @@
         <div class="header-left">
           <h1 id="page-title" data-translate="dashboard">Dashboard Analytics</h1>
         </div>
+        <!-- Middle section for Marquee / Alerts -->
+        <div class="header-middle" id="header-marquee-container">
+          <div class="marquee-wrapper" id="marquee-wrapper">
+            <span id="header-marquee-text" class="marquee-text"></span>
+          </div>
+          <button id="btn-edit-marquee" class="btn-edit-marquee" title="Edit Announcement / Alert">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+        </div>
         <div class="header-right">
           <!-- Active Branch Banner -->
           <div id="active-branch-banner" class="active-branch-pill">
@@ -2014,6 +2023,68 @@
   </div>
 
   <!-- ==================== MODALS INJECTION ==================== -->
+
+  <!-- MODAL: HEADER MARQUEE & ALERT SETTINGS -->
+  <div class="modal-overlay" id="modal-marquee-settings">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 data-translate="marqueeTitle">Header Announcement / Alert</h3>
+        <button class="qty-btn" id="btn-close-marquee-settings">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="marquee-settings-form" onsubmit="return false;">
+          
+          <!-- Preset Message Select -->
+          <div class="form-group">
+            <label data-translate="marqueePresetLabel">Or Choose Preset Template</label>
+            <select class="form-control" id="marquee-preset-select">
+              <option value="custom" data-translate="marqueePresetCustom">-- Write Custom Message --</option>
+              <option value="welcome" data-translate="marqueePresetWelcome">Welcome to ABC System! Have a successful sales day!</option>
+              <option value="promo" data-translate="marqueePresetPromo">🔥 SPECIAL PROMOTION: Buy 1 Get 1 Free on selected products today!</option>
+              <option value="maintenance" data-translate="marqueePresetMaintenance">⚠️ SYSTEM UPDATE: The system will undergo maintenance at 12:00 AM tonight.</option>
+              <option value="success" data-translate="marqueePresetSuccess">🎉 CONGRATULATIONS: This month's branch sales target has been reached 100%!</option>
+            </select>
+          </div>
+
+          <!-- Custom Message Text Input -->
+          <div class="form-group">
+            <label data-translate="marqueeTextLabel">Announcement Message (Khmer / English)</label>
+            <textarea class="form-control" id="marquee-text-input" rows="3" data-translate="marqueeTextPlaceholder" placeholder="Enter custom message to display in header..." required></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Animation Mode & Speed -->
+            <div class="form-group">
+              <label data-translate="marqueeSpeedLabel">Scrolling Speed</label>
+              <select class="form-control" id="marquee-speed-select">
+                <option value="static" data-translate="marqueeSpeedStatic">Static (No Scrolling)</option>
+                <option value="slow" data-translate="marqueeSpeedSlow">Slow Motion</option>
+                <option value="medium" data-translate="marqueeSpeedMedium">Medium Pace</option>
+                <option value="fast" data-translate="marqueeSpeedFast">Fast Scrolling</option>
+              </select>
+            </div>
+
+            <!-- Style Theme -->
+            <div class="form-group">
+              <label data-translate="marqueeThemeLabel">Visual Design & Glow Effect</label>
+              <select class="form-control" id="marquee-theme-select">
+                <option value="alert-gold-glow" data-translate="marqueeThemeGold">Golden Glow (Promo & Campaign)</option>
+                <option value="alert-danger-glow" data-translate="marqueeThemeDanger">Neon Red (System Alert / Urgent)</option>
+                <option value="alert-emerald-glow" data-translate="marqueeThemeEmerald">Emerald Green (Success Announcement)</option>
+                <option value="alert-ocean-glow" data-translate="marqueeThemeOcean">Cyan Wave (General Info)</option>
+                <option value="alert-purple-glow" data-translate="marqueeThemePurple">Royal Purple (Premium/Featured)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <button class="btn btn-secondary" id="btn-cancel-marquee-settings" type="button" data-translate="cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-save-marquee-settings" type="submit" data-translate="marqueeSave">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL 1: POS CHECKOUT DIALOG -->
   <div class="modal-overlay" id="modal-checkout">
