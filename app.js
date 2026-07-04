@@ -1822,6 +1822,47 @@
     }
   }
 
+  function getShippingCarriers() {
+    const carriers = new Set();
+    
+    // 1. Defaults
+    carriers.add("J&T Express");
+    carriers.add("Virak Buntham (វីរៈប៊ុនថាំ)");
+    carriers.add("Cambodia Post");
+    carriers.add("Capitol Express");
+    carriers.add("VET Express");
+    
+    // 2. Custom Categories from settings
+    if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
+      state.companySettings.customExpenseCategories.forEach(cat => {
+        if (cat && typeof cat === 'string') {
+          carriers.add(cat.trim());
+        }
+      });
+    }
+
+    // 3. From recorded expenses
+    if (state.expenses && Array.isArray(state.expenses)) {
+      state.expenses.forEach(e => {
+        if (e.shippingCarrier) {
+          carriers.add(e.shippingCarrier.trim());
+        }
+        if (e.category === 'transportation' && e.description) {
+          const desc = e.description.trim();
+          if (desc.length > 0 && desc.length < 25) {
+            carriers.add(desc);
+          }
+        }
+        const standardCats = ['rent', 'electricity', 'water', 'marketing', 'rawMaterials', 'salaries', 'transportation', 'otherExpenses', 'other'];
+        if (e.category && !standardCats.includes(e.category)) {
+          carriers.add(e.category.trim());
+        }
+      });
+    }
+
+    return Array.from(carriers);
+  }
+
   function populatePOSSelects() {
     const filterBranch = getActiveBranchFilter();
     
@@ -1833,6 +1874,19 @@
         brSelect.innerHTML += `<option value="${b.id}">${state.lang === 'km' ? b.nameKh : b.name}</option>`;
       }
     });
+
+    // Shipping Carrier POS Select dropdown
+    const carrierSelect = document.getElementById('cart-shipping-carrier');
+    if (carrierSelect) {
+      const currentSelected = carrierSelect.value;
+      carrierSelect.innerHTML = `<option value="">-- ${state.lang === 'km' ? 'ជ្រើសរើសក្រុមហ៊ុនដឹកជញ្ជូន' : 'Select Carrier'} --</option>`;
+      getShippingCarriers().forEach(carrier => {
+        carrierSelect.innerHTML += `<option value="${carrier}">${carrier}</option>`;
+      });
+      if (currentSelected) {
+        carrierSelect.value = currentSelected;
+      }
+    }
     if (filterBranch) {
       brSelect.disabled = true;
     } else {
@@ -7247,6 +7301,7 @@
   function renderExpenseReport(container, start, end) {
     const fBranch = state.reportExpenseBranch || 'all';
     const fCategory = state.reportExpenseCategory || 'all';
+    const fCarrier = state.reportExpenseCarrier || 'all';
     const fSearch = state.reportExpenseSearch || '';
 
     // Branch Options
@@ -7277,17 +7332,25 @@
       });
     }
 
+    // Carrier Options
+    let carrierOpts = `<option value="all">${state.lang === 'km' ? 'គ្រប់ក្រុមហ៊ុនដឹកជញ្ជូន' : 'All Carriers'}</option>`;
+    getShippingCarriers().forEach(carrier => {
+      carrierOpts += `<option value="${carrier}" ${fCarrier === carrier ? 'selected' : ''}>🚚 ${carrier}</option>`;
+    });
+
     const filterRowHtml = `
       <div class="inner-report-filters" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:6px; align-items:center;">
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">${state.lang === 'km' ? 'តម្រងស្វែងរក (Filters):' : 'Filter Log:'}</span>
         <select id="rep-exp-branch" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
         <select id="rep-exp-category" class="form-control" style="width:180px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
+        <select id="rep-exp-carrier" class="form-control" style="width:180px; padding:4px 8px; font-size:11px; height:auto;">${carrierOpts}</select>
         <input type="text" id="rep-exp-search" class="form-control" placeholder="${state.lang === 'km' ? 'ស្វែងរកតាមការពណ៌នា...' : 'Search description...'}" value="${fSearch}" style="width:200px; padding:4px 8px; font-size:11px; height:auto;">
       </div>
     `;
 
     let rowsHtml = '';
     let totalAmount = 0;
+    const carrierSummary = {};
 
     const filtered = getFilteredExpenses().filter(e => {
       const d = new Date(e.date);
@@ -7296,6 +7359,13 @@
 
       if (fBranch !== 'all' && e.branchId !== fBranch) return false;
       if (fCategory !== 'all' && e.category !== fCategory) return false;
+
+      if (fCarrier !== 'all') {
+        const expenseCarrier = e.shippingCarrier || '';
+        const descMatches = (e.description || '').toLowerCase().includes(fCarrier.toLowerCase());
+        const catMatches = (e.category || '').toLowerCase() === fCarrier.toLowerCase();
+        if (expenseCarrier !== fCarrier && !descMatches && !catMatches) return false;
+      }
 
       if (fSearch !== '') {
         const query = fSearch.toLowerCase();
@@ -7312,11 +7382,23 @@
       const catName = window.POS_TRANSLATIONS[state.lang][exp.category] || exp.category;
       const br = state.branches.find(b => b.id === exp.branchId);
       const brText = br ? (state.lang === 'km' ? br.nameKh : br.name) : 'HQ';
+      const carrierBadge = exp.shippingCarrier ? `<br><span class="badge badge-warning" style="font-size:9px; padding:1px 4px; background:#f59e0b; color:#fff; display:inline-block; margin-top:2px;">🚚 ${exp.shippingCarrier}</span>` : '';
+
+      // Tally shipping carrier breakdown (for transportation expenses or matching descriptions)
+      if (exp.category === 'transportation' || exp.shippingCarrier) {
+        let cName = exp.shippingCarrier || '';
+        if (!cName) {
+          const lowerDesc = (exp.description || '').toLowerCase();
+          const found = getShippingCarriers().find(c => lowerDesc.includes(c.toLowerCase()));
+          cName = found || (state.lang === 'km' ? 'ផ្សេងៗ / មិនបានបញ្ជាក់' : 'Other / Unspecified');
+        }
+        carrierSummary[cName] = (carrierSummary[cName] || 0) + exp.amount;
+      }
 
       rowsHtml += `
         <tr>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(exp.date, state.lang)}</td>
-          <td><span class="badge badge-warning" style="text-transform:none;">${catName}</span><br><span style="font-size:8px;color:var(--text-muted);">${brText}</span></td>
+          <td><span class="badge badge-warning" style="text-transform:none;">${catName}</span>${carrierBadge}<br><span style="font-size:8px;color:var(--text-muted);">${brText}</span></td>
           <td>${exp.description}</td>
           <td style="font-weight:750; color:var(--danger);">${window.POS_HELPERS.formatUSD(exp.amount)}</td>
         </tr>
@@ -7332,10 +7414,35 @@
       </tfoot>
     ` : '';
 
+    let breakdownHtml = '';
+    const carrierKeys = Object.keys(carrierSummary);
+    if (carrierKeys.length > 0) {
+      let breakdownRows = '';
+      carrierKeys.forEach(carrier => {
+        breakdownRows += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border-color); font-size:11px;">
+            <span style="font-weight:700; color:var(--text-primary);">🚚 ${carrier}</span>
+            <span style="font-weight:850; color:var(--danger);">${window.POS_HELPERS.formatUSD(carrierSummary[carrier])}</span>
+          </div>
+        `;
+      });
+
+      breakdownHtml = `
+        <div class="glass-card" style="margin-top: 15px; padding: 15px; border-radius: 8px; background: rgba(239, 68, 68, 0.02); border: 1.5px solid rgba(239, 68, 68, 0.1);">
+          <div style="font-size:12px; font-weight:850; color:var(--danger); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            📊 ${state.lang === 'km' ? 'ការចំណាយលើការដឹកជញ្ជូនតាមក្រុមហ៊ុននីមួយៗ (Shipping Cost by Carrier)' : 'Shipping Cost Breakdown by Carrier'}
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+            ${breakdownRows}
+          </div>
+        </div>
+      `;
+    }
+
     container.innerHTML = `
       ${filterRowHtml}
       <div style="padding: 12px; background:rgba(239,68,68,0.05); border-radius:6px; margin-bottom:12px; font-weight:800; font-size:12px; color:var(--danger);">
-        Total Period Expenses: ${window.POS_HELPERS.formatUSD(totalAmount)}
+        ${state.lang === 'km' ? 'សរុបការចំណាយក្នុងកំឡុងពេលនេះ៖' : 'Total Period Expenses:'} ${window.POS_HELPERS.formatUSD(totalAmount)}
       </div>
       <table class="pos-table">
         <thead>
@@ -7351,6 +7458,7 @@
         </tbody>
         ${footerHtml}
       </table>
+      ${breakdownHtml}
     `;
 
     document.getElementById('rep-exp-branch').addEventListener('change', (e) => {
@@ -7359,6 +7467,10 @@
     });
     document.getElementById('rep-exp-category').addEventListener('change', (e) => {
       state.reportExpenseCategory = e.target.value;
+      triggerReportRender();
+    });
+    document.getElementById('rep-exp-carrier').addEventListener('change', (e) => {
+      state.reportExpenseCarrier = e.target.value;
       triggerReportRender();
     });
     document.getElementById('rep-exp-search').addEventListener('keydown', (e) => {
@@ -10141,8 +10253,32 @@ CREATE TABLE sale_items (
       document.getElementById('expense-form').reset();
       const expKhrEl = document.getElementById('exp-amount-khr');
       if (expKhrEl) expKhrEl.value = '0';
+      const carrierGroup = document.getElementById('exp-carrier-group');
+      if (carrierGroup) carrierGroup.style.display = 'none';
       document.getElementById('modal-expense').classList.add('active-modal');
     });
+
+    const expCatSelect = document.getElementById('exp-category');
+    if (expCatSelect) {
+      expCatSelect.addEventListener('change', () => {
+        const val = expCatSelect.value;
+        const carrierGroup = document.getElementById('exp-carrier-group');
+        const carrierSelect = document.getElementById('exp-shipping-carrier');
+        
+        if (val === 'transportation') {
+          if (carrierGroup && carrierSelect) {
+            carrierGroup.style.display = 'block';
+            carrierSelect.innerHTML = `<option value="">-- ${state.lang === 'km' ? 'ជ្រើសរើសក្រុមហ៊ុនដឹកជញ្ជូន' : 'Select Carrier'} --</option>`;
+            getShippingCarriers().forEach(carrier => {
+              carrierSelect.innerHTML += `<option value="${carrier}">${carrier}</option>`;
+            });
+          }
+        } else {
+          if (carrierGroup) carrierGroup.style.display = 'none';
+          if (carrierSelect) carrierSelect.innerHTML = '';
+        }
+      });
+    }
 
     const btnManageExpCats = document.getElementById('btn-manage-exp-cats');
     if (btnManageExpCats) {
@@ -10825,11 +10961,13 @@ CREATE TABLE sale_items (
       const description = document.getElementById('exp-desc').value.trim();
       const customDateInput = document.getElementById('exp-date-input').value;
       const expenseDate = customDateInput ? new Date(customDateInput).toISOString() : new Date().toISOString();
+      const shippingCarrier = (category === 'transportation') ? (document.getElementById('exp-shipping-carrier')?.value || '') : '';
 
       const newExp = {
         id: 'EXP-' + (1000 + state.expenses.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
         date: expenseDate,
         category, amount, description, branchId,
+        shippingCarrier,
         createdBy: state.currentUser ? state.currentUser.username : 'system',
         updatedBy: state.currentUser ? state.currentUser.username : 'system',
         timestamp: new Date().toISOString()

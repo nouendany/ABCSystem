@@ -977,14 +977,8 @@
         <label for="shipping-carrier">ក្រុមហ៊ុនដឹកជញ្ជូន (Carrier / Shipping Carrier)</label>
         <div class="input-icon-wrapper">
           <span class="input-icon-prefix" style="color: var(--secondary); padding-left: 6px;">🚚</span>
-          <input type="text" list="telegram-shipping-carriers" id="shipping-carrier" placeholder="ជ្រើសរើស ឬវាយបញ្ចូលឈ្មោះក្រុមហ៊ុន (J&T, វីរៈប៊ុនថាំ...)" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--secondary) !important; background-color: rgba(245, 158, 11, 0.05) !important; border-color: rgba(245, 158, 11, 0.2) !important;">
-          <datalist id="telegram-shipping-carriers">
-            <option value="J&T Express"></option>
-            <option value="Virak Buntham (វីរៈប៊ុនថាំ)"></option>
-            <option value="Cambodia Post"></option>
-            <option value="Capitol Express"></option>
-            <option value="VET Express (វីរៈប៊ុនថាំ / វីរៈត្រេនស្ព័ត)"></option>
-          </datalist>
+          <select id="shipping-carrier" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--secondary) !important; background-color: rgba(245, 158, 11, 0.05) !important; border-color: rgba(245, 158, 11, 0.2) !important;">
+          </select>
         </div>
       </div>
 
@@ -1392,6 +1386,24 @@
       btnOverlayClose.innerText = 'Close';
     }
 
+    function getShippingCarriers(settings) {
+      const carriers = new Set();
+      // Defaults
+      carriers.add("J&T Express");
+      carriers.add("Virak Buntham (វីរៈប៊ុនថាំ)");
+      carriers.add("Cambodia Post");
+      carriers.add("Capitol Express");
+      carriers.add("VET Express");
+      
+      // Custom categories from settings
+      if (settings && Array.isArray(settings.customExpenseCategories)) {
+        settings.customExpenseCategories.forEach(cat => {
+          if (cat) carriers.add(cat.trim());
+        });
+      }
+      return Array.from(carriers);
+    }
+
     // Fetch master data on load
     async function loadData() {
       showOverlay("Loading configurations...");
@@ -1400,6 +1412,15 @@
         // 0. Fetch Company Settings
         const settingsSnap = await db.collection('company_settings').doc('global').get();
         companySettings = settingsSnap.exists ? settingsSnap.data() : {};
+
+        // Populate Shipping Carrier select dropdown
+        const carrierSelect = document.getElementById('shipping-carrier');
+        if (carrierSelect) {
+          carrierSelect.innerHTML = `<option value="">-- ជ្រើសរើសក្រុមហ៊ុនដឹកជញ្ជូន (Select Carrier) --</option>`;
+          getShippingCarriers(companySettings).forEach(carrier => {
+            carrierSelect.innerHTML += `<option value="${carrier}">${carrier}</option>`;
+          });
+        }
 
         // 1. Fetch Branches
         const branchSnap = await db.collection('branches').get();
