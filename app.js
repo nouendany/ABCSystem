@@ -1825,39 +1825,57 @@
   function getShippingCarriers() {
     const carriers = new Set();
     
-    // 1. Defaults
-    carriers.add("J&T Express");
-    carriers.add("Virak Buntham (វីរៈប៊ុនថាំ)");
-    carriers.add("Cambodia Post");
-    carriers.add("Capitol Express");
-    carriers.add("VET Express");
-    
-    // 2. Custom Categories from settings
+    const isCarrier = (name) => {
+      if (!name || typeof name !== 'string') return false;
+      const lower = name.toLowerCase();
+      return lower.includes("ដឹកជញ្ជូន") || 
+             lower.includes("j&t") || 
+             lower.includes("express") || 
+             lower.includes("post") || 
+             lower.includes("វីរៈប៊ុនថាំ") || 
+             lower.includes("vet") || 
+             lower.includes("buntham") || 
+             lower.includes("carrier") || 
+             lower.includes("cargo") || 
+             lower.includes("delivery") || 
+             lower.includes("logistics") || 
+             lower.includes("ship") || 
+             lower.includes("transport");
+    };
+
+    // 1. Custom Categories from settings
     if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
       state.companySettings.customExpenseCategories.forEach(cat => {
-        if (cat && typeof cat === 'string') {
+        if (cat && typeof cat === 'string' && isCarrier(cat)) {
           carriers.add(cat.trim());
         }
       });
     }
 
-    // 3. From recorded expenses
+    // 2. From recorded expenses
     if (state.expenses && Array.isArray(state.expenses)) {
       state.expenses.forEach(e => {
-        if (e.shippingCarrier) {
+        if (e.shippingCarrier && isCarrier(e.shippingCarrier)) {
           carriers.add(e.shippingCarrier.trim());
         }
-        if (e.category === 'transportation' && e.description) {
+        if (e.category === 'transportation' && e.description && isCarrier(e.description)) {
           const desc = e.description.trim();
           if (desc.length > 0 && desc.length < 25) {
             carriers.add(desc);
           }
         }
         const standardCats = ['rent', 'electricity', 'water', 'marketing', 'rawMaterials', 'salaries', 'transportation', 'otherExpenses', 'other'];
-        if (e.category && !standardCats.includes(e.category)) {
+        if (e.category && !standardCats.includes(e.category) && isCarrier(e.category)) {
           carriers.add(e.category.trim());
         }
       });
+    }
+
+    // Fallback to the exact carriers circled by the user if nothing is configured yet
+    if (carriers.size === 0) {
+      carriers.add("ដឹកជញ្ជូន វីរៈប៊ុនថាំ VET");
+      carriers.add("ដឹកជញ្ជូន J&T");
+      carriers.add("ដឹកជញ្ជូន នៅភ្នំពេញ");
     }
 
     return Array.from(carriers);
