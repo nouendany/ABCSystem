@@ -87,7 +87,7 @@ function getSalesMenuMarkup(req, empId, chatId) {
 }
 
 async function handleWebAppOrder(req, res, body) {
-  const { employeeId, chatId, branchId, cart, customerName, customerPhone, customerAddress, discountPercent, shippingFee } = body;
+  const { employeeId, chatId, branchId, cart, customerName, customerPhone, customerAddress, discountPercent, shippingFee, shippingCarrier } = body;
 
   try {
     const db = getFirestore(app);
@@ -452,6 +452,7 @@ async function handleWebAppOrder(req, res, body) {
       discountPercent: discPercent,
       discountFixed: discAmount,
       shippingFee: shipping,
+      shippingCarrier: shippingCarrier || "",
       taxRate: vatRate,
       taxAmount: tax,
       total: total,
@@ -513,6 +514,7 @@ async function handleWebAppOrder(req, res, body) {
     const escapedFacebook = esc(req.body.customerFacebook);
     const escapedSource = esc(req.body.customerSource);
     const escapedNotes = esc(req.body.customerNotes);
+    const escapedCarrier = esc(shippingCarrier);
 
     const itemsListText = items.map(it => `- <b>${esc(it.nameKh || it.nameEn)}</b> x ${it.qty} (<code>$${it.price}</code>)`).join("\n");
 
@@ -543,8 +545,8 @@ async function handleWebAppOrder(req, res, body) {
                             `----------------------------------------\n` +
                             `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + `\n`;
       
-      if (shipping > 0) {
-        orderNotifyText += `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>\n`;
+      if (shipping > 0 || shippingCarrier) {
+        orderNotifyText += `🚚 ដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n`;
       }
 
       orderNotifyText += `💳 ស្ថានភាពទូទាត់៖ <b>${paymentStatusText}</b>\n` +
@@ -578,7 +580,7 @@ async function handleWebAppOrder(req, res, body) {
                        `🧾 លេខវិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
                        `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
                        `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>\n` +
-                       (shipping > 0 ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>\n` : '') +
+                       (shipping > 0 || shippingCarrier ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n` : '') +
                        `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
                        `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) (<code>${escapedCustomerPhone}</code>)\n` +
                        `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>\n` +

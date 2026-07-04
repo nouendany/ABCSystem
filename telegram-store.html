@@ -972,6 +972,22 @@
         </div>
       </div>
 
+      <!-- Shipping Carrier -->
+      <div class="form-group" style="margin-top: 10px;">
+        <label for="shipping-carrier">ក្រុមហ៊ុនដឹកជញ្ជូន (Carrier / Shipping Carrier)</label>
+        <div class="input-icon-wrapper">
+          <span class="input-icon-prefix" style="color: var(--secondary); padding-left: 6px;">🚚</span>
+          <input type="text" list="telegram-shipping-carriers" id="shipping-carrier" placeholder="ជ្រើសរើស ឬវាយបញ្ចូលឈ្មោះក្រុមហ៊ុន (J&T, វីរៈប៊ុនថាំ...)" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--secondary) !important; background-color: rgba(245, 158, 11, 0.05) !important; border-color: rgba(245, 158, 11, 0.2) !important;">
+          <datalist id="telegram-shipping-carriers">
+            <option value="J&T Express"></option>
+            <option value="Virak Buntham (វីរៈប៊ុនថាំ)"></option>
+            <option value="Cambodia Post"></option>
+            <option value="Capitol Express"></option>
+            <option value="VET Express (វីរៈប៊ុនថាំ / វីរៈត្រេនស្ព័ត)"></option>
+          </datalist>
+        </div>
+      </div>
+
       <!-- Pricing summaries -->
       <div class="bill-summary-card">
         <div class="bill-row label-muted">
@@ -1868,7 +1884,8 @@
         customerNotes: cNotes,
         paymentMethod: document.getElementById('payment-method').value,
         discountPercent: calculatedPercent,
-        shippingFee: parseFloat(shippingFee.value) || 0
+        shippingFee: parseFloat(shippingFee.value) || 0,
+        shippingCarrier: document.getElementById('shipping-carrier').value.trim() || ''
       };
 
       try {

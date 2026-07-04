@@ -2716,6 +2716,7 @@
     const discPercent = parseFloat(document.getElementById('cart-discount-percent').value) || 0;
     const discFixed = parseFloat(document.getElementById('cart-discount-fixed').value) || 0;
     const shipping = parseFloat(document.getElementById('cart-shipping-fee').value) || 0;
+    const shippingCarrier = document.getElementById('cart-shipping-carrier')?.value.trim() || '';
     
     const discFromPercent = subtotal * (discPercent / 100);
     const totalDiscount = discFromPercent + discFixed;
@@ -2905,6 +2906,7 @@
       discountPercent: discPercent,
       discountFixed: discFixed,
       shippingFee: shipping,
+      shippingCarrier: shippingCarrier,
       taxRate: vatRate,
       taxAmount: tax,
       total: total,
@@ -2941,6 +2943,8 @@
     document.getElementById('cart-discount-percent').value = 0;
     document.getElementById('cart-discount-fixed').value = 0;
     document.getElementById('cart-shipping-fee').value = 0;
+    const carrierEl = document.getElementById('cart-shipping-carrier');
+    if (carrierEl) carrierEl.value = '';
     
     renderPOS();
     populatePOSSelects();
@@ -3032,10 +3036,10 @@
             <span>-${window.POS_HELPERS.formatUSD((tx.subtotal * (tx.discountPercent / 100)) + tx.discountFixed)}</span>
           </div>
         ` : ''}
-        ${tx.shippingFee > 0 ? `
+        ${(tx.shippingFee > 0 || tx.shippingCarrier) ? `
           <div style="display:flex; justify-content:space-between; color:#444;">
-            <span>Shipping:</span>
-            <span>${window.POS_HELPERS.formatUSD(tx.shippingFee)}</span>
+            <span>Shipping${tx.shippingCarrier ? ` (${tx.shippingCarrier})` : ''}:</span>
+            <span>${window.POS_HELPERS.formatUSD(tx.shippingFee || 0)}</span>
           </div>
         ` : ''}
         <div style="display:flex; justify-content:space-between;">
@@ -6728,9 +6732,11 @@
         statusBadge = `<span class="badge badge-danger" style="font-size: 9px; padding: 2px 6px;">${state.lang === 'km' ? 'ជំពាក់ទាំងស្រុង' : 'Unpaid'}</span>`;
       }
 
+      const carrierBadge = tx.shippingCarrier ? `<br><span class="badge badge-warning" style="font-size:9px; padding:1px 4px; background:#f59e0b; color:#fff; display:inline-block; margin-top:2px;">🚚 ${tx.shippingCarrier}</span>` : '';
+
       rowsHtml += `
         <tr>
-          <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span></td>
+          <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span>${carrierBadge}</td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
           <td><strong>${displayCustName}</strong><br>${repDisplay}</td>
           <td style="font-size:10px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
@@ -9772,6 +9778,7 @@ CREATE TABLE sales (
   discount_percent DECIMAL(5,2),
   discount_fixed DECIMAL(10,2),
   shipping_fee DECIMAL(10,2),
+  shipping_carrier VARCHAR(100),
   tax_rate DECIMAL(5,2),
   tax_amount DECIMAL(10,2),
   total DECIMAL(10,2),
