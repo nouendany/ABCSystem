@@ -5842,6 +5842,24 @@
       });
     });
 
+    // 3. Aggregate total adjustments (Gross Subtotal, Discounts, Net Sales, Shipping, Tax)
+    let periodSubtotal = 0;
+    let periodDiscounts = 0;
+    let periodShipping = 0;
+    let periodTax = 0;
+    let periodTotalNet = 0;
+
+    periodTX.forEach(t => {
+      periodSubtotal += t.subtotal || 0;
+      const discPercentVal = t.discountPercent || 0;
+      const discFixedVal = t.discountFixed || 0;
+      const discountAmt = (t.subtotal * (discPercentVal / 100)) + discFixedVal;
+      periodDiscounts += discountAmt;
+      periodShipping += t.shippingFee || 0;
+      periodTax += t.taxAmount || 0;
+      periodTotalNet += t.total || 0;
+    });
+
     // Initial translations & labels
     const tSearch = window.POS_TRANSLATIONS[state.lang].searchPlaceholder || "Search by name or SKU...";
     const tAllCats = window.POS_TRANSLATIONS[state.lang].allCategories || "All Categories";
@@ -6044,6 +6062,39 @@
               <!-- Dynamically populated -->
             </tbody>
           </table>
+        </div>
+
+        <!-- Reconciliation / Financial Summary Breakdown -->
+        <div class="financial-reconciliation-block" style="margin-top: 25px; padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; max-width: 450px; margin-left: auto; display: flex; flex-direction: column;">
+          <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+            📊 ${isKhmer ? 'សេចក្តីសង្ខេបហិរញ្ញវត្ថុវិក្កយបត្រ (Invoice Summary Reconciliation)' : 'Invoice Summary Reconciliation'}
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+            <div style="display: flex; justify-content: space-between; color: var(--text-secondary);">
+              <span>${isKhmer ? 'តម្លៃលក់ទំនិញសរុប (Gross Sales)' : 'Gross Product Sales'}:</span>
+              <strong style="color: var(--text-primary);">$${periodSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: var(--text-secondary);">
+              <span>${isKhmer ? 'សរុបការបញ្ចុះតម្លៃ (Discounts)' : 'Total Discounts'}:</span>
+              <strong style="color: var(--danger);">-$${periodDiscounts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            ${periodShipping > 0 ? `
+            <div style="display: flex; justify-content: space-between; color: var(--text-secondary);">
+              <span>${isKhmer ? 'សរុបថ្លៃដឹកជញ្ជូន (Shipping Fees)' : 'Total Shipping Fees'}:</span>
+              <strong style="color: var(--secondary);">+$${periodShipping.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            ` : ''}
+            ${periodTax > 0 ? `
+            <div style="display: flex; justify-content: space-between; color: var(--text-secondary);">
+              <span>${isKhmer ? 'សរុបពន្ធ (VAT/Tax)' : 'Total Tax'}:</span>
+              <strong style="color: var(--warning);">+$${periodTax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            ` : ''}
+            <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px dashed var(--border-color); padding-top: 8px; font-size: 13.5px;">
+              <span>${isKhmer ? 'តម្លៃលក់សរុបពិតប្រាកដ (Net Sales)' : 'Net Revenue (Actual Sales)'}:</span>
+              <span style="color: var(--primary);">$${periodTotalNet.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Official Signature Footer -->
