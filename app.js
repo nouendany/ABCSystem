@@ -6485,6 +6485,9 @@
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">Filter Report:</span>
         <select id="rep-filter-branch" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
         <select id="rep-filter-staff" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${staffOpts}</select>
+        <button id="btn-view-filtered-staff-items" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px; height: 26px; display: ${fStaff !== 'all' ? 'inline-flex' : 'none'}; align-items: center; justify-content: center; gap: 4px;">
+          👁️ ${state.lang === 'km' ? 'មើលទំនិញលក់បាន' : 'View Sold Items'}
+        </button>
         <select id="rep-filter-category" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
       </div>
     `;
@@ -6585,6 +6588,17 @@
       state.reportFilterCategory = e.target.value;
       triggerReportRender();
     });
+
+    const viewStaffItemsBtn = document.getElementById('btn-view-filtered-staff-items');
+    if (viewStaffItemsBtn) {
+      viewStaffItemsBtn.addEventListener('click', () => {
+        const staffId = document.getElementById('rep-filter-staff').value;
+        const sObj = state.staff.find(s => s.id === staffId);
+        if (sObj) {
+          openStaffSoldItemsModal(sObj.name, start, end);
+        }
+      });
+    }
   }
 
   function renderSalesDetailsReport(container, start, end) {
@@ -6619,6 +6633,9 @@
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">Filter Report:</span>
         <select id="rep-filter-branch" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
         <select id="rep-filter-staff" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${staffOpts}</select>
+        <button id="btn-view-filtered-staff-items" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px; height: 26px; display: ${fStaff !== 'all' ? 'inline-flex' : 'none'}; align-items: center; justify-content: center; gap: 4px;">
+          👁️ ${state.lang === 'km' ? 'មើលទំនិញលក់បាន' : 'View Sold Items'}
+        </button>
         <select id="rep-filter-category" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${catOpts}</select>
         <select id="rep-filter-paystatus" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${payStatusOpts}</select>
         <input type="text" id="rep-filter-search" class="form-control" placeholder="${state.lang === 'km' ? 'ស្វែងរកលេខវិក្កយបត្រ / អតិថិជន...' : 'Search Invoice / Customer...'}" value="${state.reportSearchQuery || ''}" style="width:200px; padding:4px 8px; font-size:11px; height:auto; margin-left:auto; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px;">
@@ -6786,6 +6803,17 @@
       state.reportFilterPayStatus = e.target.value;
       triggerReportRender();
     });
+
+    const viewStaffItemsBtn = document.getElementById('btn-view-filtered-staff-items');
+    if (viewStaffItemsBtn) {
+      viewStaffItemsBtn.addEventListener('click', () => {
+        const staffId = document.getElementById('rep-filter-staff').value;
+        const sObj = state.staff.find(s => s.id === staffId);
+        if (sObj) {
+          openStaffSoldItemsModal(sObj.name, start, end);
+        }
+      });
+    }
 
     const searchInput = document.getElementById('rep-filter-search');
     if (searchInput) {
@@ -7102,7 +7130,12 @@
 
       rowsHtml += `
         <tr>
-          <td><strong>${getStaffDisplayName(s.id, s.name)}</strong></td>
+          <td>
+            <strong>${getStaffDisplayName(s.id, s.name)}</strong>
+            <button class="btn btn-secondary btn-sm btn-view-staff-items" data-staff="${getStaffDisplayName(s.id, s.name)}" style="padding: 1px 4px; font-size: 9px; margin-left: 6px;">
+              👁️
+            </button>
+          </td>
           <td>${s.role}</td>
           <td style="text-align:center; font-weight:800; color:var(--secondary);">${units}</td>
           <td style="font-weight:750;">${window.POS_HELPERS.formatUSD(sales)}</td>
@@ -7142,6 +7175,14 @@
         ${footerHtml}
       </table>
     `;
+
+    // Hook click listeners for btn-view-staff-items
+    container.querySelectorAll('.btn-view-staff-items').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffName = btn.getAttribute('data-staff');
+        openStaffSoldItemsModal(staffName, start, end);
+      });
+    });
   }
 
   function renderCustomerDebtReport(container) {
