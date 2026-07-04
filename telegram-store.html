@@ -789,6 +789,25 @@
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
       transition: all 0.2s ease-in-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .checkout-drawer-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 30%;
+      height: 200%;
+      background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      transform: rotate(25deg);
+      animation: shimmer-light 3.5s infinite ease-in-out;
     }
 
     .checkout-drawer-btn:hover {
@@ -800,6 +819,18 @@
     .checkout-drawer-btn:active {
       transform: translateY(1px);
       box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    }
+
+    @keyframes shimmer-light {
+      0% {
+        left: -60%;
+      }
+      35% {
+        left: 140%;
+      }
+      100% {
+        left: 140%;
+      }
     }
 
     /* Screen Overlay states */
