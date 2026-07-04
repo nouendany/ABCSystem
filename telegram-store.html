@@ -791,6 +791,7 @@
       transition: all 0.2s ease-in-out;
       position: relative;
       overflow: hidden;
+      margin-bottom: 24px;
     }
 
     .checkout-drawer-btn::after {
@@ -807,7 +808,7 @@
         rgba(255, 255, 255, 0) 100%
       );
       transform: rotate(25deg);
-      animation: shimmer-light 3.5s infinite ease-in-out;
+      animation: shimmer-light 1.2s infinite linear;
     }
 
     .checkout-drawer-btn:hover {
@@ -824,9 +825,6 @@
     @keyframes shimmer-light {
       0% {
         left: -60%;
-      }
-      35% {
-        left: 140%;
       }
       100% {
         left: 140%;
