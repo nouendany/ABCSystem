@@ -4988,7 +4988,7 @@
         renderSummaryClosingReport(container, start, end);
         break;
       case 'prodReport':
-        renderProductReport(container);
+        renderProductReport(container, start, end);
         break;
       case 'stockLogReport':
         renderStockLogReport(container, start, end);
@@ -5112,21 +5112,55 @@
 
   function exportStockReportToExcel() {
     const isKhmer = state.lang === 'km';
-    const title = isKhmer ? 'របាយការណ៍ទំនិញក្នុងស្តុក' : 'Inventory Stock Report';
+    const title = isKhmer ? 'របាយការណ៍ទំនិញក្នុងស្តុក & ការលក់' : 'Inventory Valuation & Sales Report';
+    
+    // Parse date filters
+    const start = state.reportStartDate ? new Date(state.reportStartDate + 'T00:00:00Z') : null;
+    const end = state.reportEndDate ? new Date(state.reportEndDate + 'T23:59:59Z') : null;
+    const filterBranch = getActiveBranchFilter();
+
+    // Get period transactions
+    const periodTX = getFilteredTransactions().filter(t => {
+      const d = new Date(t.date);
+      if (filterBranch && t.branchId !== filterBranch) return false;
+      return (!start || d >= start) && (!end || d <= end);
+    });
+
+    // Aggregate sales per SKU
+    const salesBySku = {};
+    periodTX.forEach(t => {
+      t.items.forEach(item => {
+        if (!salesBySku[item.sku]) {
+          salesBySku[item.sku] = { qty: 0, revenue: 0 };
+        }
+        salesBySku[item.sku].qty += item.qty;
+        salesBySku[item.sku].revenue += item.qty * item.price;
+      });
+    });
+
     const headersList = isKhmer 
-      ? ["ល.រ", "បាកូដទំនិញ", "ឈ្មោះទំនិញ", "ប្រភេទទំនិញ", "ចំនួន", "បរិមាណត្រូវជូនដំណឹង", "តម្លៃដើម", "តម្លៃលក់ចេញ", "សរុបតម្លៃដើម", "សរុបតម្លៃលក់ចេញ"]
-      : ["No.", "Barcode/SKU", "Product Name", "Category", "Qty", "Alert Qty", "Cost Price", "Selling Price", "Total Cost", "Total Selling"];
+      ? ["ល.រ", "បាកូដទំនិញ", "ឈ្មោះទំនិញ", "ប្រភេទទំនិញ", "លក់ចេញ (ឯកតា)", "តម្លៃលក់ចេញសរុប", "ចំនួនក្នុងស្តុក", "បរិមាណត្រូវជូនដំណឹង", "តម្លៃដើម", "តម្លៃលក់ចេញ", "តម្លៃដើមស្តុកសរុប", "តម្លៃលក់ស្តុកសរុប"]
+      : ["No.", "Barcode/SKU", "Product Name", "Category", "Sold Qty", "Total Sales ($)", "Stock Qty", "Alert Qty", "Cost Price", "Selling Price", "Total Cost Value", "Total Retail Value"];
 
     let csvContent = '\uFEFF'; // UTF-8 BOM
     csvContent += `"${title}"\n`;
-    csvContent += `"${isKhmer ? 'របាយការណ៍គិតត្រឹមថ្ងៃ៖' : 'Report Date:'} ${new Date().toLocaleDateString('en-GB')}"\n\n`;
+    
+    const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
+    const startStr = start ? start.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
+    const endStr = end ? end.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
+    const dateRangeStr = (start && end) ? `${startStr} ${isKhmer ? 'ដល់' : 'to'} ${endStr}` : new Date().toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-');
+    csvContent += `"${isKhmer ? 'កាលបរិច្ឆេទរបាយការណ៍៖' : 'Report Period:'} ${dateRangeStr}"\n\n`;
+    
     csvContent += headersList.map(h => `"${h}"`).join(',') + '\n';
 
     let sumCostPrice = 0;
     let sumSellingPrice = 0;
     let sumTotalCost = 0;
     let sumTotalSelling = 0;
-    const filterBranch = getActiveBranchFilter();
+    let sumPeriodSoldQty = 0;
+    let sumPeriodSoldRevenue = 0;
+    let totalStockUnits = 0;
+    
     const productsToExport = state.lastFilteredProducts || state.products;
 
     productsToExport.forEach((p, idx) => {
@@ -5134,10 +5168,18 @@
       const totalCostVal = qtyVal * p.costPrice;
       const totalSellingVal = qtyVal * p.sellingPrice;
 
+      const soldInfo = salesBySku[p.sku] || { qty: 0, revenue: 0 };
+      const pSoldQty = soldInfo.qty;
+      const pSoldRevenue = soldInfo.revenue;
+
+      sumPeriodSoldQty += pSoldQty;
+      sumPeriodSoldRevenue += pSoldRevenue;
+
       sumCostPrice += p.costPrice;
       sumSellingPrice += p.sellingPrice;
       sumTotalCost += totalCostVal;
       sumTotalSelling += totalSellingVal;
+      totalStockUnits += qtyVal;
 
       const name = isKhmer ? p.nameKh : p.nameEn;
 
@@ -5146,6 +5188,8 @@
         `"${p.sku}"`,
         `"${name.replace(/"/g, '""')}"`,
         `"${p.category.replace(/"/g, '""')}"`,
+        pSoldQty,
+        pSoldRevenue.toFixed(2),
         qtyVal,
         p.minStock || 0,
         p.costPrice.toFixed(2),
@@ -5158,7 +5202,11 @@
 
     const summaryRow = [
       `"${isKhmer ? 'សរុប' : 'Total'}"`,
-      "", "", "", "", "",
+      "", "", "",
+      sumPeriodSoldQty,
+      sumPeriodSoldRevenue.toFixed(2),
+      totalStockUnits,
+      "",
       sumCostPrice.toFixed(2),
       sumSellingPrice.toFixed(2),
       sumTotalCost.toFixed(2),
@@ -5771,10 +5819,29 @@
     });
   }
 
-  function renderProductReport(container) {
+  function renderProductReport(container, start, end) {
     const isKhmer = state.lang === 'km';
     const filterBranch = getActiveBranchFilter();
     
+    // 1. Get transactions in date range & branch
+    const periodTX = getFilteredTransactions().filter(t => {
+      const d = new Date(t.date);
+      if (filterBranch && t.branchId !== filterBranch) return false;
+      return (!start || d >= start) && (!end || d <= end);
+    });
+
+    // 2. Aggregate sales per product SKU
+    const salesBySku = {};
+    periodTX.forEach(t => {
+      t.items.forEach(item => {
+        if (!salesBySku[item.sku]) {
+          salesBySku[item.sku] = { qty: 0, revenue: 0 };
+        }
+        salesBySku[item.sku].qty += item.qty;
+        salesBySku[item.sku].revenue += item.qty * item.price;
+      });
+    });
+
     // Initial translations & labels
     const tSearch = window.POS_TRANSLATIONS[state.lang].searchPlaceholder || "Search by name or SKU...";
     const tAllCats = window.POS_TRANSLATIONS[state.lang].allCategories || "All Categories";
@@ -5786,35 +5853,41 @@
       barcode: "បាកូដទំនិញ",
       name: "ឈ្មោះទំនិញ",
       category: "ប្រភេទទំនិញ",
-      qty: "ចំនួន",
+      soldQty: "លក់ចេញ (ឯកតា)",
+      soldVol: "តម្លៃលក់ចេញសរុប",
+      qty: "ចំនួនក្នុងស្តុក",
       alertQty: "បរិមាណត្រូវជូនដំណឹង",
       costPrice: "តម្លៃដើម",
       sellingPrice: "តម្លៃលក់ចេញ",
-      totalCost: "សរុបតម្លៃដើម",
-      totalSelling: "សរុបតម្លៃលក់ចេញ",
+      totalCost: "តម្លៃដើមស្តុកសរុប",
+      totalSelling: "តម្លៃលក់ស្តុកសរុប",
       total: "សរុប",
-      subtitle: "របាយការណ៍គិតត្រឹមថ្ងៃ៖",
-      title: "របាយការណ៍ទំនិញក្នុងស្តុក",
+      subtitle: "របាយការណ៍ចាប់ពីថ្ងៃ៖",
+      title: "របាយការណ៍ទំនិញក្នុងស្តុក & ការលក់",
       signature: "ប្រតិបត្តិការនៅ សែនសុខ ភ្នំពេញ ថ្ងៃទី..........ខែ...........ឆ្នាំ ២០២...."
     } : {
       no: "No.",
       barcode: "Barcode/SKU",
       name: "Product Name",
       category: "Category",
-      qty: "Qty",
+      soldQty: "Sold Qty",
+      soldVol: "Total Sales ($)",
+      qty: "Stock Qty",
       alertQty: "Alert Qty",
       costPrice: "Cost Price",
       sellingPrice: "Selling Price",
-      totalCost: "Total Cost",
-      totalSelling: "Total Selling",
+      totalCost: "Total Cost Value",
+      totalSelling: "Total Retail Value",
       total: "Total",
-      subtitle: "Report as of date:",
-      title: "Inventory Stock Report",
+      subtitle: "Report Period:",
+      title: "Inventory Valuation & Sales Report",
       signature: "Operation at Sen Sok, Phnom Penh, Date:..............................."
     };
 
     const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
-    const formattedToday = new Date().toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-');
+    const startStr = start ? start.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
+    const endStr = end ? end.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
+    const dateRangeStr = (start && end) ? `${startStr} ${isKhmer ? 'ដល់' : 'to'} ${endStr}` : new Date().toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-');
 
     container.innerHTML = `
       <!-- 1. Print & Export Action Buttons -->
@@ -5876,6 +5949,28 @@
           </div>
         </div>
 
+        <!-- Total Units Sold Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(16, 185, 129, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--success);">
+            🛍️
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;">${isKhmer ? 'លក់ចេញសរុប (ក្នុងវគ្គ)' : 'Total Sold (Period)'}</div>
+            <div id="kpi-period-sold-qty" style="font-size:20px; font-weight:800; color:var(--success); margin-top:2px;">0</div>
+          </div>
+        </div>
+
+        <!-- Total Sales Revenue Card -->
+        <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(99, 102, 241, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--primary);">
+            💰
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600;">${isKhmer ? 'ចំណូលលក់សរុប (ក្នុងវគ្គ)' : 'Total Sales Revenue'}</div>
+            <div id="kpi-period-sold-revenue" style="font-size:20px; font-weight:800; color:var(--primary); margin-top:2px;">$0.00</div>
+          </div>
+        </div>
+
         <!-- Low Stock Alert Card -->
         <div class="glass-card" style="padding:16px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden;">
           <div style="width:40px; height:40px; border-radius:50%; background:rgba(239, 68, 68, 0.15); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--danger);">
@@ -5917,13 +6012,13 @@
       <div id="report-content-area" class="glass-card" style="padding: 24px; position:relative;">
         <div style="text-align: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px dashed var(--border-color);">
           <h2 style="font-size: 18px; color:var(--text-primary); margin: 0 0 4px 0; font-weight:700;">
-            របាយការណ៍ទំនិញក្នុងស្តុក
+            ${isKhmer ? 'របាយការណ៍ទំនិញក្នុងស្តុក & ការលក់' : 'Inventory Valuation & Sales Report'}
           </h2>
           <h3 style="font-size: 13.5px; color:var(--text-secondary); margin: 0 0 10px 0; font-weight:600; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px;">
-            Inventory Stock Report
+            Inventory Stock & Sales Performance
           </h3>
           <span style="font-size: 12px; color: var(--text-muted); font-weight:500;">
-            ${isKhmer ? 'របាយការណ៍គិតត្រឹមថ្ងៃ៖' : 'Report Date:'} ${formattedToday}
+            ${headers.subtitle} ${dateRangeStr}
           </span>
         </div>
 
@@ -5935,6 +6030,8 @@
                 <th style="padding:10px 6px; text-align:left;">${headers.barcode}</th>
                 <th style="padding:10px 6px; text-align:left;">${headers.name}</th>
                 <th style="padding:10px 6px; text-align:left; width:120px;">${headers.category}</th>
+                <th style="padding:10px 6px; text-align:center; width:95px;">${headers.soldQty}</th>
+                <th style="padding:10px 6px; text-align:right; width:110px;">${headers.soldVol}</th>
                 <th style="padding:10px 6px; text-align:center; width:80px;">${headers.qty}</th>
                 <th style="padding:10px 6px; text-align:center; width:85px;">${headers.alertQty}</th>
                 <th style="padding:10px 6px; text-align:right; width:90px;">${headers.costPrice}</th>
@@ -6007,11 +6104,21 @@
       let sumTotalSelling = 0;
       let totalStockUnits = 0;
       let lowAlertCount = 0;
+      
+      let sumPeriodSoldQty = 0;
+      let sumPeriodSoldRevenue = 0;
 
       filtered.forEach((p, idx) => {
         const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
         const totalCostVal = qtyVal * p.costPrice;
         const totalSellingVal = qtyVal * p.sellingPrice;
+
+        const soldInfo = salesBySku[p.sku] || { qty: 0, revenue: 0 };
+        const pSoldQty = soldInfo.qty;
+        const pSoldRevenue = soldInfo.revenue;
+
+        sumPeriodSoldQty += pSoldQty;
+        sumPeriodSoldRevenue += pSoldRevenue;
 
         sumCostPrice += p.costPrice;
         sumSellingPrice += p.sellingPrice;
@@ -6037,6 +6144,8 @@
               ${lowBadge}
             </td>
             <td style="padding:10px 6px; color:var(--text-secondary);">${catName}</td>
+            <td style="text-align:center; padding:10px 6px; font-weight:700; color:var(--success);">${pSoldQty}</td>
+            <td style="text-align:right; padding:10px 6px; font-weight:700; color:var(--primary);">$${pSoldRevenue.toFixed(2)}</td>
             <td style="text-align:center; padding:10px 6px;"><span style="${qtyStyle}">${qtyVal}</span></td>
             <td style="text-align:center; padding:10px 6px; color:var(--text-muted);">${p.minStock || 0}</td>
             <td style="font-weight:600; text-align:right; padding:10px 6px;">$${p.costPrice.toFixed(2)}</td>
@@ -6049,13 +6158,17 @@
 
       const tableBody = document.getElementById('stock-report-table-body');
       if (filtered.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--text-muted); font-style:italic;">${isKhmer ? 'គ្មានទិន្នន័យទំនិញស្របតាមការជ្រើសរើសទេ' : 'No matching products found.'}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color:var(--text-muted); font-style:italic;">${isKhmer ? 'គ្មានទិន្នន័យទំនិញស្របតាមការជ្រើសរើសទេ' : 'No matching products found.'}</td></tr>`;
       } else {
         tableBody.innerHTML = rowsHtml + `
           <tr style="font-weight:bold; border-top:2px solid var(--border-color); background:rgba(255,255,255,0.02);">
-            <td colspan="6" style="padding:12px 8px; text-align:right; font-weight:800; border-right: 1px solid var(--border-color);">
+            <td colspan="4" style="padding:12px 8px; text-align:right; font-weight:800; border-right: 1px solid var(--border-color);">
               ${headers.total}
             </td>
+            <td style="padding:12px 8px; text-align:center; font-weight:800; color:var(--success);">${sumPeriodSoldQty}</td>
+            <td style="padding:12px 8px; text-align:right; font-weight:800; color:var(--primary);">$${sumPeriodSoldRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="padding:12px 8px; text-align:center; font-weight:800;">${totalStockUnits}</td>
+            <td style="padding:12px 8px; text-align:center; font-weight:800;"></td>
             <td style="padding:12px 8px; text-align:right; font-weight:800;">$${sumCostPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td style="padding:12px 8px; text-align:right; font-weight:800;">$${sumSellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td style="padding:12px 8px; text-align:right; font-weight:800; color:#f59e0b;">$${sumTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -6069,6 +6182,8 @@
       document.getElementById('kpi-total-qty').innerText = totalStockUnits;
       document.getElementById('kpi-total-cost').innerText = '$' + sumTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('kpi-total-retail').innerText = '$' + sumTotalSelling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('kpi-period-sold-qty').innerText = sumPeriodSoldQty;
+      document.getElementById('kpi-period-sold-revenue').innerText = '$' + sumPeriodSoldRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('kpi-low-alerts').innerText = lowAlertCount;
     };
 
