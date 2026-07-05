@@ -4706,9 +4706,8 @@
           `;
         }
 
-        // Determine staff display name (use transaction staffName directly, editable if permitted)
-        const canEdit = checkPermission('edit');
-        const staffNameDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : (tx.staffName || 'System');
+        // Determine staff display name (show as static name badge)
+        const staffNameDisplay = `<span style="font-size: 11px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--text-primary); font-weight: 600; display: inline-block;">REP: ${tx.staffName || 'System'}</span>`;
 
         // Calculate cost price and profit for this transaction
         let txCost = 0;
@@ -6812,8 +6811,7 @@
       const custObj = state.customers.find(c => c.id === tx.customerId);
       const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (tx.customerName || 'General Customer');
 
-      const canEdit = checkPermission('edit');
-      const repDisplay = canEdit ? getStaffSelectHtml(tx.staffId || tx.staffName, tx.id) : `<span style="font-size:9px;color:var(--text-muted);">Rep: <strong>${tx.staffName || 'System'}</strong></span>`;
+      const repDisplay = `<span style="font-size: 11px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--text-primary); font-weight: 600; display: inline-block; margin-top: 4px;">REP: ${tx.staffName || 'System'}</span>`;
 
       let statusBadge = '';
       if (txDebt === 0) {
