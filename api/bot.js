@@ -468,6 +468,62 @@ async function handleWebAppOrder(req, res, body) {
 
     await setDoc(doc(db, "transactions", txId), newTX);
 
+    // Restart or Create CRM Auto-Followups in Firestore
+    const followUpDays = [3, 5, 7, 22, 37, 52, 82, 112, 142];
+    const types = ['satisfaction', 'feedback', 'satisfaction', 'promo', 'engagement', 'engagement', 'engagement', 'promo', 'engagement'];
+    const schedules = [];
+    const txDateObj = new Date();
+
+    followUpDays.forEach((day, idx) => {
+      const d = new Date(txDateObj);
+      d.setDate(d.getDate() + day);
+      schedules.push({
+        day: day,
+        date: d.toISOString(),
+        type: types[idx],
+        status: 'pending',
+        notes: ''
+      });
+    });
+
+    try {
+      const followupsRef = collection(db, "followups");
+      const flpQuery = query(followupsRef, where("customerId", "==", customerId));
+      const flpSnap = await getDocs(flpQuery);
+      
+      let existingFlp = null;
+      flpSnap.forEach(d => {
+        existingFlp = { docId: d.id, ...d.data() };
+      });
+
+      if (existingFlp) {
+        await updateDoc(doc(db, "followups", existingFlp.docId), {
+          saleId: txId,
+          salesStaffId: employee.id,
+          salesStaffName: employee.fullName,
+          branchId: branchId,
+          schedules: schedules
+        });
+      } else {
+        const flpCountSnap = await getCountFromServer(followupsRef);
+        const nextFlpNum = 1000 + flpCountSnap.data().count + 1;
+        const flpId = "FLP-" + String(nextFlpNum).padStart(3, '0') + "-" + randSuffix;
+        
+        await setDoc(doc(db, "followups", flpId), {
+          id: flpId,
+          saleId: txId,
+          customerId: customerId,
+          customerName: customerNameStr,
+          salesStaffId: employee.id,
+          salesStaffName: employee.fullName,
+          branchId: branchId,
+          schedules: schedules
+        });
+      }
+    } catch (flpErr) {
+      console.error("Error creating/updating CRM follow-up for Telegram order:", flpErr);
+    }
+
     // Helpers for Khmer numerals, HTML escaping, and Date formatting
     const khmerNumbers = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
     const toKhmerNum = (num) => String(num).split('').map(char => khmerNumbers[parseInt(char)] || char).join('');
