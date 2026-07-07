@@ -38,6 +38,7 @@ window.POS_TRANSLATIONS = {
     prevPage: "Prev",
     nextPage: "Next",
     customers_count: "customers",
+    saveImage: "Save Image",
     
     // Theme Toggles
     themeToggle: "Theme Mode",
@@ -566,6 +567,7 @@ window.POS_TRANSLATIONS = {
     prevPage: "មុន",
     nextPage: "បន្ទាប់",
     customers_count: "អតិថិជន",
+    saveImage: "ទាញយករូបភាព",
     
     // Theme Toggles
     themeToggle: "របៀបអេក្រង់",

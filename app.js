@@ -3624,6 +3624,69 @@
     }
   }
 
+  async function downloadCustomerProfileImage() {
+    const modalOverlay = document.getElementById('modal-customer-history');
+    if (!modalOverlay) return;
+    const modalCard = modalOverlay.querySelector('.modal-card');
+    if (!modalCard) return;
+
+    showOverlay(state.lang === 'km' ? 'កំពុងបង្កើតរូបភាព...' : 'Generating image...');
+
+    try {
+      const modalBody = modalCard.querySelector('.modal-body');
+      const originalMaxHeight = modalBody ? modalBody.style.maxHeight : '';
+      const originalOverflow = modalBody ? modalBody.style.overflowY : '';
+      const originalBg = modalCard.style.background;
+
+      if (modalBody) {
+        modalBody.style.maxHeight = 'none';
+        modalBody.style.overflowY = 'visible';
+      }
+      
+      modalCard.style.background = 'var(--card-bg, #0f172a)';
+
+      await new Promise(resolve => setTimeout(resolve, 250));
+
+      const canvas = await html2canvas(modalCard, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: null,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          const clonedCard = clonedDoc.querySelector('.modal-card');
+          if (clonedCard) {
+            const closeBtn = clonedCard.querySelector('#btn-close-customer-history');
+            if (closeBtn) closeBtn.style.display = 'none';
+            const footer = clonedCard.querySelector('.modal-footer');
+            if (footer) footer.style.display = 'none';
+            clonedCard.style.borderRadius = '16px';
+            clonedCard.style.border = '1px solid var(--border)';
+            clonedCard.style.boxShadow = 'none';
+          }
+        }
+      });
+
+      if (modalBody) {
+        modalBody.style.maxHeight = originalMaxHeight;
+        modalBody.style.overflowY = originalOverflow;
+      }
+      modalCard.style.background = originalBg;
+
+      const customerName = document.getElementById('cust-profile-name')?.innerText || 'Customer';
+      const link = document.createElement('a');
+      link.download = `customer_profile_${customerName.replace(/\s+/g, '_')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      hideOverlay();
+    } catch (err) {
+      console.error('Image capture error:', err);
+      hideOverlay();
+      alert(state.lang === 'km' ? 'បរាជ័យក្នុងការទាញយករូបភាព!' : 'Failed to generate image!');
+    }
+  }
+
   function openCustomerHistoryModal(customerId) {
     const customer = state.customers.find(c => c.id === customerId);
     if (!customer) return;
@@ -10545,6 +10608,13 @@ CREATE TABLE sale_items (
         });
       }
     });
+
+    const btnSaveCrmImg = document.getElementById('btn-save-customer-history-img');
+    if (btnSaveCrmImg) {
+      btnSaveCrmImg.addEventListener('click', () => {
+        downloadCustomerProfileImage();
+      });
+    }
 
     // CRM Notifications toggle and closing behaviour
     const bellBtn = document.getElementById('btn-crm-notifications');

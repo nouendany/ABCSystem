@@ -3211,8 +3211,11 @@
         </div>
 
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="btn-close-customer-history-footer" style="width: 100%; justify-content: center;">Close</button>
+      <div class="modal-footer" style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-outline" id="btn-save-customer-history-img" style="flex: 1; justify-content: center; font-weight: 700; gap: 6px; display: inline-flex; align-items: center;">
+          📸 <span data-translate="saveImage">Save Image</span>
+        </button>
+        <button type="button" class="btn btn-primary" id="btn-close-customer-history-footer" style="flex: 1; justify-content: center;">Close</button>
       </div>
     </div>
   </div>
@@ -3310,6 +3313,9 @@
   
   <!-- PDF Generator library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- HTML to Image canvas library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Core logic engine application file -->
   <script src="app.js?v=1.5.4"></script>
