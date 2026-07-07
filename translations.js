@@ -33,6 +33,11 @@ window.POS_TRANSLATIONS = {
     exportBtn: "Export CSV",
     approveBtn: "Approve",
     details: "Details",
+    showing: "Showing",
+    of: "of",
+    prevPage: "Prev",
+    nextPage: "Next",
+    customers_count: "customers",
     
     // Theme Toggles
     themeToggle: "Theme Mode",
@@ -556,6 +561,11 @@ window.POS_TRANSLATIONS = {
     exportBtn: "ទាញយក CSV",
     approveBtn: "អនុម័ត",
     details: "លម្អិត",
+    showing: "កំពុងបង្ហាញ",
+    of: "នៃ",
+    prevPage: "មុន",
+    nextPage: "បន្ទាប់",
+    customers_count: "អតិថិជន",
     
     // Theme Toggles
     themeToggle: "របៀបអេក្រង់",

@@ -81,6 +81,8 @@
     activeSettingTab: 'company',
     activeReportTab: 'summaryClosingReport',
     hideFollowupRoadmap: safeGetItem('abc_hide_followup_roadmap') === 'true',
+    crmCurrentPage: 1,
+    crmPageSize: 10,
     
     // DB Collections
     users: [],
@@ -1259,6 +1261,7 @@
         renderBranches();
         break;
       case 'view-customers':
+        state.crmCurrentPage = 1;
         renderCustomers();
         break;
       case 'view-followups':
@@ -3451,13 +3454,14 @@
     const searchInput = document.getElementById('search-customer-input');
     const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-    state.customers.forEach((c, idx) => {
-      if (filterBranch && c.branchId && c.branchId !== filterBranch && c.id !== 'CST-001') return;
+    // Filter matching customers first
+    const filteredCustomers = state.customers.filter(c => {
+      if (filterBranch && c.branchId && c.branchId !== filterBranch && c.id !== 'CST-001') return false;
 
       // Filter by Staff
-      if (activeStaffFilter === 'unassigned' && c.staffId) return;
+      if (activeStaffFilter === 'unassigned' && c.staffId) return false;
       if (activeStaffFilter !== 'all' && activeStaffFilter !== 'unassigned') {
-        if (getUnifiedStaffId(c.staffId) !== activeStaffFilter) return;
+        if (getUnifiedStaffId(c.staffId) !== activeStaffFilter) return false;
       }
 
       // Filter by Search Query
@@ -3465,9 +3469,24 @@
         const matchesName = c.name && c.name.toLowerCase().includes(searchQuery);
         const matchesPhone = c.phone && c.phone.includes(searchQuery);
         const matchesId = c.id && c.id.toLowerCase().includes(searchQuery);
-        if (!matchesName && !matchesPhone && !matchesId) return;
+        if (!matchesName && !matchesPhone && !matchesId) return false;
       }
+      return true;
+    });
 
+    // Calculate Pagination
+    const totalCount = filteredCustomers.length;
+    const totalPages = Math.ceil(totalCount / state.crmPageSize) || 1;
+    if (state.crmCurrentPage > totalPages) {
+      state.crmCurrentPage = totalPages;
+    }
+    const startIndex = (state.crmCurrentPage - 1) * state.crmPageSize;
+    const endIndex = Math.min(startIndex + state.crmPageSize, totalCount);
+
+    const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+    paginatedCustomers.forEach(c => {
+      const originalIdx = state.customers.findIndex(cust => cust.id === c.id);
       let badgeColor = 'badge-success';
       if (c.rank === 'Silver') badgeColor = 'badge-warning';
       else if (c.rank === 'Gold') badgeColor = 'badge-primary';
@@ -3538,10 +3557,10 @@
         <td style="text-align:right; font-weight:750; color:#10b981;">${window.POS_HELPERS.formatUSD(totalPaid)}</td>
         <td style="font-size:11px; color:var(--text-secondary); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.notes || '-'}</td>
         <td>
-          <button class="btn btn-outline btn-sm btn-edit-c" data-idx="${idx}" style="padding:2px 6px;">✏️</button>
+          <button class="btn btn-outline btn-sm btn-edit-c" data-idx="${originalIdx}" style="padding:2px 6px;">✏️</button>
           <button class="btn btn-outline btn-sm btn-history-c" data-id="${c.id}" style="padding:2px 6px;" title="View History">📜</button>
-          ${c.outstandingDebt > 0 ? `<button class="btn btn-secondary btn-sm btn-pay-debt" data-idx="${idx}" style="padding:2px 6px;" data-translate="payDebt">Pay Debt</button>` : ''}
-          <button class="btn btn-danger btn-sm btn-del-c" data-idx="${idx}" style="padding:2px 6px;">🗑️</button>
+          ${c.outstandingDebt > 0 ? `<button class="btn btn-secondary btn-sm btn-pay-debt" data-idx="${originalIdx}" style="padding:2px 6px;" data-translate="payDebt">Pay Debt</button>` : ''}
+          <button class="btn btn-danger btn-sm btn-del-c" data-idx="${originalIdx}" style="padding:2px 6px;">🗑️</button>
         </td>
       `;
 
@@ -3563,6 +3582,46 @@
 
       tbody.appendChild(tr);
     });
+
+    // Update pagination UI controls
+    const crmPageStart = document.getElementById('crm-page-start');
+    const crmPageEnd = document.getElementById('crm-page-end');
+    const crmTotalCount = document.getElementById('crm-total-count');
+    const btnPrev = document.getElementById('btn-crm-prev-page');
+    const btnNext = document.getElementById('btn-crm-next-page');
+
+    if (crmPageStart) crmPageStart.innerText = totalCount === 0 ? 0 : startIndex + 1;
+    if (crmPageEnd) crmPageEnd.innerText = endIndex;
+    if (crmTotalCount) crmTotalCount.innerText = totalCount;
+    if (btnPrev) btnPrev.disabled = (state.crmCurrentPage === 1);
+    if (btnNext) btnNext.disabled = (state.crmCurrentPage === totalPages);
+
+    const pageNumbersContainer = document.getElementById('crm-page-numbers');
+    if (pageNumbersContainer) {
+      pageNumbersContainer.innerHTML = '';
+      
+      // Calculate start and end page to display (sliding window of max 5 pages)
+      let startPage = Math.max(1, state.crmCurrentPage - 2);
+      let endPage = Math.min(totalPages, startPage + 4);
+      if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.className = `btn btn-sm ${i === state.crmCurrentPage ? 'btn-secondary' : 'btn-outline'}`;
+        btn.style.padding = '4px 10px';
+        btn.style.minWidth = '32px';
+        btn.style.fontWeight = '700';
+        btn.style.cursor = 'pointer';
+        btn.innerText = i;
+        btn.addEventListener('click', () => {
+          state.crmCurrentPage = i;
+          renderCustomers();
+        });
+        pageNumbersContainer.appendChild(btn);
+      }
+    }
   }
 
   function openCustomerHistoryModal(customerId) {
@@ -10273,6 +10332,7 @@ CREATE TABLE sale_items (
     const filterCustomerStaff = document.getElementById('filter-customer-staff');
     if (filterCustomerStaff) {
       filterCustomerStaff.addEventListener('change', () => {
+        state.crmCurrentPage = 1;
         renderCustomers();
       });
     }
@@ -10280,7 +10340,50 @@ CREATE TABLE sale_items (
     const searchCustomerInput = document.getElementById('search-customer-input');
     if (searchCustomerInput) {
       searchCustomerInput.addEventListener('input', () => {
+        state.crmCurrentPage = 1;
         renderCustomers();
+      });
+    }
+
+    // CRM Pagination Listeners
+    const btnCrmPrev = document.getElementById('btn-crm-prev-page');
+    if (btnCrmPrev) {
+      btnCrmPrev.addEventListener('click', () => {
+        if (state.crmCurrentPage > 1) {
+          state.crmCurrentPage--;
+          renderCustomers();
+        }
+      });
+    }
+
+    const btnCrmNext = document.getElementById('btn-crm-next-page');
+    if (btnCrmNext) {
+      btnCrmNext.addEventListener('click', () => {
+        // Calculate dynamic totalPages
+        const filterBranch = getActiveBranchFilter();
+        const activeStaffFilter = filterCustomerStaff ? filterCustomerStaff.value : 'all';
+        const searchQuery = searchCustomerInput ? searchCustomerInput.value.toLowerCase().trim() : '';
+
+        const totalCount = state.customers.filter(c => {
+          if (filterBranch && c.branchId && c.branchId !== filterBranch && c.id !== 'CST-001') return false;
+          if (activeStaffFilter === 'unassigned' && c.staffId) return false;
+          if (activeStaffFilter !== 'all' && activeStaffFilter !== 'unassigned') {
+            if (getUnifiedStaffId(c.staffId) !== activeStaffFilter) return false;
+          }
+          if (searchQuery) {
+            const matchesName = c.name && c.name.toLowerCase().includes(searchQuery);
+            const matchesPhone = c.phone && c.phone.includes(searchQuery);
+            const matchesId = c.id && c.id.toLowerCase().includes(searchQuery);
+            if (!matchesName && !matchesPhone && !matchesId) return false;
+          }
+          return true;
+        }).length;
+
+        const totalPages = Math.ceil(totalCount / state.crmPageSize) || 1;
+        if (state.crmCurrentPage < totalPages) {
+          state.crmCurrentPage++;
+          renderCustomers();
+        }
       });
     }
 

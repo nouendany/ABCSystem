@@ -827,6 +827,17 @@
               </tbody>
             </table>
           </div>
+          <!-- Pagination Controls -->
+          <div id="crm-pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">
+              <span data-translate="showing">Showing</span> <span id="crm-page-start" style="color:var(--text-primary);">0</span>-<span id="crm-page-end" style="color:var(--text-primary);">0</span> <span data-translate="of">of</span> <span id="crm-total-count" style="color:var(--primary-light);">0</span> <span data-translate="customers_count">customers</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-outline btn-sm" id="btn-crm-prev-page" style="padding: 6px 12px; font-weight: 800; cursor: pointer;">⬅️ <span data-translate="prevPage">Prev</span></button>
+              <div id="crm-page-numbers" style="display: flex; gap: 6px; align-items: center;"></div>
+              <button class="btn btn-outline btn-sm" id="btn-crm-next-page" style="padding: 6px 12px; font-weight: 800; cursor: pointer;"><span data-translate="nextPage">Next</span> ➡️</button>
+            </div>
+          </div>
         </div>
       </div>
 
