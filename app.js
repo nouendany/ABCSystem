@@ -83,6 +83,9 @@
     hideFollowupRoadmap: safeGetItem('abc_hide_followup_roadmap') === 'true',
     crmCurrentPage: 1,
     crmPageSize: 10,
+    finSalesPage: 1,
+    finExpensePage: 1,
+    finPageSize: 10,
     
     // DB Collections
     users: [],
@@ -1271,6 +1274,8 @@
         renderPerformance();
         break;
       case 'view-finance':
+        state.finSalesPage = 1;
+        state.finExpensePage = 1;
         renderFinance();
         break;
       case 'view-staff':
@@ -4819,6 +4824,19 @@
 
     if (sortedTX.length === 0) {
       incomeBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+      
+      const salesPageStart = document.getElementById('fin-sales-page-start');
+      const salesPageEnd = document.getElementById('fin-sales-page-end');
+      const salesTotalCount = document.getElementById('fin-sales-total-count');
+      const btnSalesPrev = document.getElementById('btn-fin-sales-prev');
+      const btnSalesNext = document.getElementById('btn-fin-sales-next');
+      const salesPageNumbers = document.getElementById('fin-sales-page-numbers');
+      if (salesPageStart) salesPageStart.innerText = 0;
+      if (salesPageEnd) salesPageEnd.innerText = 0;
+      if (salesTotalCount) salesTotalCount.innerText = 0;
+      if (btnSalesPrev) btnSalesPrev.disabled = true;
+      if (btnSalesNext) btnSalesNext.disabled = true;
+      if (salesPageNumbers) salesPageNumbers.innerHTML = '';
     } else {
       let sumSubtotal = 0;
       let sumDiscount = 0;
@@ -4826,22 +4844,8 @@
       let sumCost = 0;
       let sumProfit = 0;
 
+      // Calculate sum aggregates based on all filtered transactions
       sortedTX.forEach(tx => {
-        // Find customer details
-        const customer = state.customers.find(c => c.id === tx.customerId);
-        let custDisplay = `<strong>${tx.customerName || 'General Customer'}</strong>`;
-        if (customer && customer.id !== 'CST-001') {
-          custDisplay = `
-            <strong>${customer.name}</strong><br>
-            <span style="font-size:10px; color:var(--text-muted); font-family:monospace;">📞 ${customer.phone || '-'}</span>
-            ${customer.source ? `<br><span style="font-size:9px; color:#10b981; font-weight:600;">🌐 ${customer.source}</span>` : ''}
-          `;
-        }
-
-        // Determine staff display name (show as static name badge)
-        const staffNameDisplay = `<span style="font-size: 11px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--text-primary); font-weight: 600; display: inline-block;">${tx.staffName || 'System'}</span>`;
-
-        // Calculate cost price and profit for this transaction
         let txCost = 0;
         tx.items.forEach(item => {
           const p = state.products.find(prod => prod.sku === item.sku);
@@ -4854,12 +4858,51 @@
           (tx.discountPercent ? (txSubtotal * tx.discountPercent / 100) : 0);
         const txProfit = tx.total - txCost;
 
-        // Accumulate totals for footer
         sumSubtotal += txSubtotal;
         sumDiscount += txDiscount;
         sumTotal += tx.total;
         sumCost += txCost;
         sumProfit += txProfit;
+      });
+
+      // Calculate Slices
+      const totalSalesCount = sortedTX.length;
+      const totalSalesPages = Math.ceil(totalSalesCount / state.finPageSize) || 1;
+      if (state.finSalesPage > totalSalesPages) {
+        state.finSalesPage = totalSalesPages;
+      }
+      const salesStartIndex = (state.finSalesPage - 1) * state.finPageSize;
+      const salesEndIndex = Math.min(salesStartIndex + state.finPageSize, totalSalesCount);
+
+      const paginatedTX = sortedTX.slice(salesStartIndex, salesEndIndex);
+
+      paginatedTX.forEach(tx => {
+        // Find customer details
+        const customer = state.customers.find(c => c.id === tx.customerId);
+        let custDisplay = `<strong>${tx.customerName || 'General Customer'}</strong>`;
+        if (customer && customer.id !== 'CST-001') {
+          custDisplay = `
+            <strong>${customer.name}</strong><br>
+            <span style="font-size:10px; color:var(--text-muted); font-family:monospace;">📞 ${customer.phone || '-'}</span>
+            ${customer.source ? `<br><span style="font-size:9px; color:#10b981; font-weight:600;">🌐 ${customer.source}</span>` : ''}
+          `;
+        }
+
+        // Determine staff display name
+        const staffNameDisplay = `<span style="font-size: 11px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--text-primary); font-weight: 600; display: inline-block;">${tx.staffName || 'System'}</span>`;
+
+        // Calculate cost price and profit for this transaction row
+        let txCost = 0;
+        tx.items.forEach(item => {
+          const p = state.products.find(prod => prod.sku === item.sku);
+          const cPrice = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
+          txCost += cPrice * item.qty;
+        });
+
+        const txSubtotal = tx.subtotal !== undefined ? tx.subtotal : tx.total;
+        const txDiscount = tx.discountFixed !== undefined ? tx.discountFixed : 
+          (tx.discountPercent ? (txSubtotal * tx.discountPercent / 100) : 0);
+        const txProfit = tx.total - txCost;
 
         // Render main row and sub-table row
         const trMain = document.createElement('tr');
@@ -4934,7 +4977,6 @@
           </td>
         `;
 
-        // Add toggle expand/collapse logic
         const toggle = () => {
           const isCollapsed = trDetail.style.display === 'none';
           trDetail.style.display = isCollapsed ? 'table-row' : 'none';
@@ -4973,6 +5015,43 @@
           </tr>
         `;
       }
+
+      // Update Sales Pagination UI
+      const salesPageStart = document.getElementById('fin-sales-page-start');
+      const salesPageEnd = document.getElementById('fin-sales-page-end');
+      const salesTotalCount = document.getElementById('fin-sales-total-count');
+      const btnSalesPrev = document.getElementById('btn-fin-sales-prev');
+      const btnSalesNext = document.getElementById('btn-fin-sales-next');
+
+      if (salesPageStart) salesPageStart.innerText = totalSalesCount === 0 ? 0 : salesStartIndex + 1;
+      if (salesPageEnd) salesPageEnd.innerText = salesEndIndex;
+      if (salesTotalCount) salesTotalCount.innerText = totalSalesCount;
+      if (btnSalesPrev) btnSalesPrev.disabled = (state.finSalesPage === 1);
+      if (btnSalesNext) btnSalesNext.disabled = (state.finSalesPage === totalSalesPages);
+
+      const salesPageNumbers = document.getElementById('fin-sales-page-numbers');
+      if (salesPageNumbers) {
+        salesPageNumbers.innerHTML = '';
+        let startPage = Math.max(1, state.finSalesPage - 2);
+        let endPage = Math.min(totalSalesPages, startPage + 4);
+        if (endPage - startPage < 4) {
+          startPage = Math.max(1, endPage - 4);
+        }
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.className = `btn btn-sm ${i === state.finSalesPage ? 'btn-secondary' : 'btn-outline'}`;
+          btn.style.padding = '2px 6px';
+          btn.style.minWidth = '24px';
+          btn.style.fontWeight = '700';
+          btn.style.cursor = 'pointer';
+          btn.innerText = i;
+          btn.addEventListener('click', () => {
+            state.finSalesPage = i;
+            renderFinance();
+          });
+          salesPageNumbers.appendChild(btn);
+        }
+      }
     }
 
     // Expense ledger
@@ -4982,8 +5061,32 @@
 
     if (sortedExp.length === 0) {
       expenseBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">${window.POS_TRANSLATIONS[state.lang].noData}</td></tr>`;
+      
+      const expPageStart = document.getElementById('fin-exp-page-start');
+      const expPageEnd = document.getElementById('fin-exp-page-end');
+      const expTotalCount = document.getElementById('fin-exp-total-count');
+      const btnExpPrev = document.getElementById('btn-fin-exp-prev');
+      const btnExpNext = document.getElementById('btn-fin-exp-next');
+      const expensePageNumbers = document.getElementById('fin-expense-page-numbers');
+      if (expPageStart) expPageStart.innerText = 0;
+      if (expPageEnd) expPageEnd.innerText = 0;
+      if (expTotalCount) expTotalCount.innerText = 0;
+      if (btnExpPrev) btnExpPrev.disabled = true;
+      if (btnExpNext) btnExpNext.disabled = true;
+      if (expensePageNumbers) expensePageNumbers.innerHTML = '';
     } else {
-      sortedExp.forEach((exp) => {
+      // Calculate Slices
+      const totalExpCount = sortedExp.length;
+      const totalExpPages = Math.ceil(totalExpCount / state.finPageSize) || 1;
+      if (state.finExpensePage > totalExpPages) {
+        state.finExpensePage = totalExpPages;
+      }
+      const expStartIndex = (state.finExpensePage - 1) * state.finPageSize;
+      const expEndIndex = Math.min(expStartIndex + state.finPageSize, totalExpCount);
+
+      const paginatedExp = sortedExp.slice(expStartIndex, expEndIndex);
+
+      paginatedExp.forEach((exp) => {
         const catName = window.POS_TRANSLATIONS[state.lang][exp.category] || exp.category;
         const br = state.branches.find(b => b.id === exp.branchId);
         const brText = br ? (state.lang === 'km' ? br.nameKh : br.name) : 'HQ';
@@ -5011,6 +5114,43 @@
 
         expenseBody.appendChild(tr);
       });
+
+      // Update Expense Pagination UI
+      const expPageStart = document.getElementById('fin-exp-page-start');
+      const expPageEnd = document.getElementById('fin-exp-page-end');
+      const expTotalCount = document.getElementById('fin-exp-total-count');
+      const btnExpPrev = document.getElementById('btn-fin-exp-prev');
+      const btnExpNext = document.getElementById('btn-fin-exp-next');
+
+      if (expPageStart) expPageStart.innerText = totalExpCount === 0 ? 0 : expStartIndex + 1;
+      if (expPageEnd) expPageEnd.innerText = expEndIndex;
+      if (expTotalCount) expTotalCount.innerText = totalExpCount;
+      if (btnExpPrev) btnExpPrev.disabled = (state.finExpensePage === 1);
+      if (btnExpNext) btnExpNext.disabled = (state.finExpensePage === totalExpPages);
+
+      const expensePageNumbers = document.getElementById('fin-expense-page-numbers');
+      if (expensePageNumbers) {
+        expensePageNumbers.innerHTML = '';
+        let startPage = Math.max(1, state.finExpensePage - 2);
+        let endPage = Math.min(totalExpPages, startPage + 4);
+        if (endPage - startPage < 4) {
+          startPage = Math.max(1, endPage - 4);
+        }
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.className = `btn btn-sm ${i === state.finExpensePage ? 'btn-secondary' : 'btn-outline'}`;
+          btn.style.padding = '2px 6px';
+          btn.style.minWidth = '24px';
+          btn.style.fontWeight = '700';
+          btn.style.cursor = 'pointer';
+          btn.innerText = i;
+          btn.addEventListener('click', () => {
+            state.finExpensePage = i;
+            renderFinance();
+          });
+          expensePageNumbers.appendChild(btn);
+        }
+      }
     }
   }
 
@@ -10460,6 +10600,127 @@ CREATE TABLE sale_items (
       });
     }
 
+    // Financial Ledger Pagination Listeners
+    const btnFinSalesPrev = document.getElementById('btn-fin-sales-prev');
+    if (btnFinSalesPrev) {
+      btnFinSalesPrev.addEventListener('click', () => {
+        if (state.finSalesPage > 1) {
+          state.finSalesPage--;
+          renderFinance();
+        }
+      });
+    }
+
+    const btnFinSalesNext = document.getElementById('btn-fin-sales-next');
+    if (btnFinSalesNext) {
+      btnFinSalesNext.addEventListener('click', () => {
+        const dateFilterVal = document.getElementById('finance-date-filter')?.value || 'all';
+        const startDateVal = document.getElementById('finance-start-date')?.value || '';
+        const endDateVal = document.getElementById('finance-end-date')?.value || '';
+
+        const filterByDateRange = (dateStr) => {
+          if (dateFilterVal === 'all') return true;
+          const tDate = new Date(dateStr);
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const itemDate = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+          
+          if (dateFilterVal === 'today') {
+            return itemDate.getTime() === today.getTime();
+          }
+          if (dateFilterVal === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            return itemDate.getTime() === yesterday.getTime();
+          }
+          if (dateFilterVal === 'this_week') {
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            return itemDate >= startOfWeek && itemDate <= today;
+          }
+          if (dateFilterVal === 'this_month') {
+            return tDate.getFullYear() === now.getFullYear() && tDate.getMonth() === now.getMonth();
+          }
+          if (dateFilterVal === 'custom') {
+            if (!startDateVal) return true;
+            const start = new Date(startDateVal);
+            start.setHours(0,0,0,0);
+            const end = endDateVal ? new Date(endDateVal) : new Date(today);
+            end.setHours(23,59,59,999);
+            return tDate >= start && tDate <= end;
+          }
+          return true;
+        };
+
+        const txList = getFilteredTransactions().filter(t => filterByDateRange(t.date));
+        const totalSalesPages = Math.ceil(txList.length / state.finPageSize) || 1;
+        if (state.finSalesPage < totalSalesPages) {
+          state.finSalesPage++;
+          renderFinance();
+        }
+      });
+    }
+
+    const btnFinExpPrev = document.getElementById('btn-fin-exp-prev');
+    if (btnFinExpPrev) {
+      btnFinExpPrev.addEventListener('click', () => {
+        if (state.finExpensePage > 1) {
+          state.finExpensePage--;
+          renderFinance();
+        }
+      });
+    }
+
+    const btnFinExpNext = document.getElementById('btn-fin-exp-next');
+    if (btnFinExpNext) {
+      btnFinExpNext.addEventListener('click', () => {
+        const dateFilterVal = document.getElementById('finance-date-filter')?.value || 'all';
+        const startDateVal = document.getElementById('finance-start-date')?.value || '';
+        const endDateVal = document.getElementById('finance-end-date')?.value || '';
+
+        const filterByDateRange = (dateStr) => {
+          if (dateFilterVal === 'all') return true;
+          const tDate = new Date(dateStr);
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const itemDate = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+          
+          if (dateFilterVal === 'today') {
+            return itemDate.getTime() === today.getTime();
+          }
+          if (dateFilterVal === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            return itemDate.getTime() === yesterday.getTime();
+          }
+          if (dateFilterVal === 'this_week') {
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            return itemDate >= startOfWeek && itemDate <= today;
+          }
+          if (dateFilterVal === 'this_month') {
+            return tDate.getFullYear() === now.getFullYear() && tDate.getMonth() === now.getMonth();
+          }
+          if (dateFilterVal === 'custom') {
+            if (!startDateVal) return true;
+            const start = new Date(startDateVal);
+            start.setHours(0,0,0,0);
+            const end = endDateVal ? new Date(endDateVal) : new Date(today);
+            end.setHours(23,59,59,999);
+            return tDate >= start && tDate <= end;
+          }
+          return true;
+        };
+
+        const expenseList = getFilteredExpenses().filter(e => filterByDateRange(e.date));
+        const totalExpPages = Math.ceil(expenseList.length / state.finPageSize) || 1;
+        if (state.finExpensePage < totalExpPages) {
+          state.finExpensePage++;
+          renderFinance();
+        }
+      });
+    }
+
     document.getElementById('btn-add-expense-modal').addEventListener('click', () => {
       if (!guardAction('add')) return;
       document.getElementById('expense-form').reset();
@@ -11704,18 +11965,24 @@ CREATE TABLE sale_items (
         } else {
           if (finCustomInputs) finCustomInputs.style.display = 'none';
         }
+        state.finSalesPage = 1;
+        state.finExpensePage = 1;
         renderFinance();
       });
     }
 
     if (finStartDate) {
       finStartDate.addEventListener('change', () => {
+        state.finSalesPage = 1;
+        state.finExpensePage = 1;
         renderFinance();
       });
     }
 
     if (finEndDate) {
       finEndDate.addEventListener('change', () => {
+        state.finSalesPage = 1;
+        state.finExpensePage = 1;
         renderFinance();
       });
     }

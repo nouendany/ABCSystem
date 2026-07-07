@@ -1309,6 +1309,17 @@
                 </tfoot>
               </table>
             </div>
+            <!-- Sales Pagination Controls -->
+            <div id="fin-sales-pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">
+                <span data-translate="showing">Showing</span> <span id="fin-sales-page-start" style="color:var(--text-primary);">0</span>-<span id="fin-sales-page-end" style="color:var(--text-primary);">0</span> <span data-translate="of">of</span> <span id="fin-sales-total-count" style="color:var(--primary-light);">0</span>
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="btn btn-outline btn-sm" id="btn-fin-sales-prev" style="padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer;">⬅️</button>
+                <div id="fin-sales-page-numbers" style="display: flex; gap: 4px; align-items: center;"></div>
+                <button class="btn btn-outline btn-sm" id="btn-fin-sales-next" style="padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer;">➡️</button>
+              </div>
+            </div>
           </div>
 
           <!-- Expenses Log -->
@@ -1331,6 +1342,17 @@
                   <!-- JS Injected -->
                 </tbody>
               </table>
+            </div>
+            <!-- Expense Pagination Controls -->
+            <div id="fin-expense-pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">
+                <span data-translate="showing">Showing</span> <span id="fin-exp-page-start" style="color:var(--text-primary);">0</span>-<span id="fin-exp-page-end" style="color:var(--text-primary);">0</span> <span data-translate="of">of</span> <span id="fin-exp-total-count" style="color:var(--primary-light);">0</span>
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="btn btn-outline btn-sm" id="btn-fin-exp-prev" style="padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer;">⬅️</button>
+                <div id="fin-expense-page-numbers" style="display: flex; gap: 4px; align-items: center;"></div>
+                <button class="btn btn-outline btn-sm" id="btn-fin-exp-next" style="padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer;">➡️</button>
+              </div>
             </div>
           </div>
         </div>
