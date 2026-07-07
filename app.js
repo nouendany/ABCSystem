@@ -3630,7 +3630,11 @@
     const modalCard = modalOverlay.querySelector('.modal-card');
     if (!modalCard) return;
 
-    showOverlay(state.lang === 'km' ? 'កំពុងបង្កើតរូបភាព...' : 'Generating image...');
+    const btnSaveImg = document.getElementById('btn-save-customer-history-img');
+    if (btnSaveImg) {
+      btnSaveImg.disabled = true;
+      btnSaveImg.innerText = state.lang === 'km' ? '⌛ កំពុងទាញយក...' : '⌛ Generating...';
+    }
 
     try {
       const modalBody = modalCard.querySelector('.modal-body');
@@ -3679,10 +3683,16 @@
       link.href = canvas.toDataURL('image/png');
       link.click();
       
-      hideOverlay();
+      if (btnSaveImg) {
+        btnSaveImg.disabled = false;
+        btnSaveImg.innerHTML = `📸 <span>${window.POS_TRANSLATIONS[state.lang].saveImage || 'Save Image'}</span>`;
+      }
     } catch (err) {
       console.error('Image capture error:', err);
-      hideOverlay();
+      if (btnSaveImg) {
+        btnSaveImg.disabled = false;
+        btnSaveImg.innerHTML = `📸 <span>${window.POS_TRANSLATIONS[state.lang].saveImage || 'Save Image'}</span>`;
+      }
       alert(state.lang === 'km' ? 'បរាជ័យក្នុងការទាញយករូបភាព!' : 'Failed to generate image!');
     }
   }
