@@ -946,7 +946,34 @@
     return !!(state.currentUser.permissions && state.currentUser.permissions[action]);
   }
 
+  function checkCurrentUserActiveStatus() {
+    if (!state.currentUser) return true;
+    const freshUserObj = state.users.find(u => u.id === state.currentUser.id);
+    if (!freshUserObj || freshUserObj.status === 'suspended') {
+      alert(state.lang === 'km' ? 'គណនីរបស់អ្នកត្រូវបានផ្អាកដំណើរការ ឬត្រូវបានលុប! ប្រព័ន្ធនឹងចាកចេញដោយស្វ័យប្រវត្ត។' : 'Your account has been suspended or deleted! Logging out automatically.');
+      performSystemLogout();
+      return false;
+    }
+    if (freshUserObj.forceLogout) {
+      freshUserObj.forceLogout = false;
+      saveStateToLocalStorage();
+      alert(state.lang === 'km' ? 'គណនីរបស់អ្នកត្រូវបានទាត់ចេញពីប្រព័ន្ធដោយ Super Admin!' : 'Your session has been terminated by the Super Admin!');
+      performSystemLogout();
+      return false;
+    }
+    return true;
+  }
+
+  function performSystemLogout() {
+    state.currentUser = null;
+    safeRemoveSessionItem('abc_current_user');
+    document.getElementById('login-screen').classList.add('active-login');
+    state.activeView = 'view-dashboard';
+    renderCurrentView();
+  }
+
   function guardAction(action) {
+    if (!checkCurrentUserActiveStatus()) return false;
     if (!checkPermission(action)) {
       alert(window.POS_TRANSLATIONS[state.lang].permissionError);
       return false;
@@ -1249,6 +1276,7 @@
   }
 
   function renderCurrentView() {
+    if (!checkCurrentUserActiveStatus()) return;
     console.log("renderCurrentView: Rendering activeView =", state.activeView);
     switch(state.activeView) {
       case 'view-dashboard':
@@ -8838,6 +8866,7 @@
             <td><span class="badge ${statusClass}">${statusTranslate}</span></td>
             <td>
               <button class="btn btn-outline btn-sm btn-edit-user" data-idx="${idx}" style="padding:2px 6px;">✏️</button>
+              <button class="btn btn-outline btn-sm btn-logout-user" data-idx="${idx}" style="padding:2px 6px;" title="${state.lang === 'km' ? 'កាត់ផ្តាច់ការតភ្ជាប់' : 'Force Logout'}">🔌</button>
               <button class="btn btn-danger btn-sm btn-del-user" data-idx="${idx}" style="padding:2px 6px;">🗑️</button>
             </td>
           </tr>
@@ -8947,6 +8976,24 @@
           document.getElementById('u-role').value = u.role;
           document.getElementById('u-position').value = u.position || '';
           document.getElementById('u-status').value = u.status || 'active';
+        });
+      });
+
+      container.querySelectorAll('.btn-logout-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!guardAction('edit')) return;
+          const idx = btn.getAttribute('data-idx');
+          const u = state.users[idx];
+          if (state.currentUser && u.id === state.currentUser.id) {
+            alert(state.lang === 'km' ? 'មិនអាចបង្ខំឱ្យខ្លួនឯងចាកចេញបានទេ! សូមប្រើប៊ូតុង Logout នៅ Sidebar វិញ។' : 'Cannot force logout yourself! Please use the sidebar Logout button.');
+            return;
+          }
+          if (confirm(state.lang === 'km' ? `តើអ្នកពិតជាចង់កាត់ផ្តាច់គណនី ${u.name} ចេញពីប្រព័ន្ធមែនទេ?` : `Are you sure you want to force logout ${u.name}?`)) {
+            u.forceLogout = true;
+            saveStateToLocalStorage();
+            alert(state.lang === 'km' ? `បានផ្ញើបញ្ជាកាត់ផ្តាច់គណនី ${u.name} រួចរាល់!` : `Force logout command sent for ${u.name}!`);
+            renderSettings();
+          }
         });
       });
 
