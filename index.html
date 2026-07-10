@@ -144,7 +144,11 @@
       </div>
         
         <h2 id="login-system-title" style="font-weight: 850; margin-top: 10px; letter-spacing: 0.5px; text-align: center;">ABC</h2>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 12px; text-align: center;" data-translate="login">Enterprise Login</p>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 8px; text-align: center;" data-translate="login">Enterprise Login</p>
+        <div id="login-sync-status" style="font-size: 11px; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); font-weight: 600;">
+          <span id="login-sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow: 0 0 6px #f59e0b; transition: all 0.3s ease;"></span>
+          <span id="login-sync-status-txt" data-translate="connectingCloud">Connecting to Cloud...</span>
+        </div>
       <form id="login-form">
         <div class="ios-input-group">
           <!-- Username Row -->

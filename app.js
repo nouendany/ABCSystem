@@ -1174,8 +1174,16 @@
         navigateToView('view-dashboard');
         translateApp();
       } else {
-        errorMsg.setAttribute('data-translate', 'loginError');
-        errorMsg.innerText = window.POS_TRANSLATIONS[state.lang].loginError || 'Invalid credentials or account suspended!';
+        const isNotSynced = state.users.length <= 1 && state.users.some(u => u.id === 'USR-001' && u.password === 'admin');
+        if (isNotSynced && passVal !== 'admin') {
+          errorMsg.setAttribute('data-translate', 'loginSyncing');
+          errorMsg.innerText = state.lang === 'km' 
+            ? 'កំពុងភ្ជាប់ទៅកាន់ប្រព័ន្ធទិន្នន័យ (Cloud)... សូមរង់ចាំ ២-៣ វិនាទី រួចចុច Login ម្តងទៀត!' 
+            : 'Connecting to cloud database... Please wait 2-3 seconds and try logging in again!';
+        } else {
+          errorMsg.setAttribute('data-translate', 'loginError');
+          errorMsg.innerText = window.POS_TRANSLATIONS[state.lang].loginError || 'Invalid credentials or account suspended!';
+        }
         errorMsg.style.display = 'block';
       }
     });
@@ -8112,8 +8120,37 @@
     }, 150); // 150ms debounce window
   }
 
+  function updateLoginSyncStatus(status) {
+    const dot = document.getElementById('login-sync-dot');
+    const txt = document.getElementById('login-sync-status-txt');
+    if (!dot || !txt) return;
+
+    if (status === 'synced') {
+      dot.style.background = '#10b981'; // Green
+      dot.style.boxShadow = '0 0 6px #10b981';
+      txt.setAttribute('data-translate', 'cloudSynced');
+      txt.innerText = (window.POS_TRANSLATIONS[state.lang] && window.POS_TRANSLATIONS[state.lang].cloudSynced) || 'Cloud Synced';
+    } else if (status === 'offline') {
+      dot.style.background = '#64748b'; // Gray/muted
+      dot.style.boxShadow = 'none';
+      txt.setAttribute('data-translate', 'offlineMode');
+      txt.innerText = (window.POS_TRANSLATIONS[state.lang] && window.POS_TRANSLATIONS[state.lang].offlineMode) || 'Offline Mode';
+    } else if (status === 'connecting') {
+      dot.style.background = '#f59e0b'; // Orange
+      dot.style.boxShadow = '0 0 6px #f59e0b';
+      txt.setAttribute('data-translate', 'connectingCloud');
+      txt.innerText = (window.POS_TRANSLATIONS[state.lang] && window.POS_TRANSLATIONS[state.lang].connectingCloud) || 'Connecting to Cloud...';
+    }
+  }
+
+  let syncTimeout;
+
   // 11. SETTINGS & DEVELOPER DOCUMENTATION SCHEMAS
   function initFirebaseSync() {
+    updateLoginSyncStatus('connecting');
+    syncTimeout = setTimeout(() => {
+      updateLoginSyncStatus('offline');
+    }, 5000);
     // Hardcoded production Firebase configuration for automatic sync
     const defaultFirebaseConfig = {
       apiKey: "AIzaSyCGVfZo-Hpc-wdQv21he4Js0K3RuyZ3VQ",
@@ -8238,6 +8275,11 @@
         const setupListener = (colName, stateKey, idKey, renderFns) => {
           dbInstance.collection(colName).onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
+
+            if (syncTimeout) {
+              clearTimeout(syncTimeout);
+            }
+            updateLoginSyncStatus('synced');
 
             const list = [];
             snapshot.forEach(doc => {
@@ -8440,6 +8482,8 @@
 
     } catch (e) {
       console.error("Error initializing Firebase Sync:", e);
+      if (syncTimeout) clearTimeout(syncTimeout);
+      updateLoginSyncStatus('offline');
     }
   }
 
