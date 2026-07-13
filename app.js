@@ -338,6 +338,12 @@
     return state.transactions.filter(t => t.branchId === state.currentUser.branchId);
   }
 
+  function getBranchTransactions() {
+    if (!state.currentUser) return [];
+    if (state.currentUser.role === 'super_admin') return state.transactions;
+    return state.transactions.filter(t => t.branchId === state.currentUser.branchId);
+  }
+
   function getFilteredExpenses() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.expenses;
@@ -1702,7 +1708,7 @@
           empSales[officialName] = 0;
         });
         
-        getFilteredTransactions().forEach(t => {
+        getBranchTransactions().forEach(t => {
           const staffName = getStaffDisplayName(t.staffId, t.staffName || 'System');
           if (empSales[staffName] !== undefined) {
             empSales[staffName] += t.total;
@@ -1743,7 +1749,7 @@
         if (state.pageChart) state.pageChart.destroy();
 
         const pageSales = {};
-        getFilteredTransactions().forEach(t => {
+        getBranchTransactions().forEach(t => {
           const pg = t.pageName || 'Direct Sales';
           pageSales[pg] = (pageSales[pg] || 0) + t.total;
         });
@@ -6340,12 +6346,36 @@
   function openStaffSoldItemsModal(staffName, start, end) {
     const isKhmer = state.lang === 'km';
     
+    // Check permission for sales_staff
+    if (state.currentUser?.role === 'sales_staff') {
+      const details = getCurrentUserStaffDetails();
+      const ownStaffName = details && details.primaryStaffId ? getStaffDisplayName(details.primaryStaffId, state.currentUser.name) : state.currentUser.name;
+      
+      if (staffName && ownStaffName && staffName.toLowerCase().replace(/\s/g, '') !== ownStaffName.toLowerCase().replace(/\s/g, '')) {
+        alert(isKhmer 
+          ? 'អ្នកគ្មានសិទ្ធិមើលទិន្នន័យទំនិញលក់លម្អិតរបស់បុគ្គលិកផ្សេងទេ!' 
+          : 'You do not have permission to view other staff sold products details!');
+        return;
+      }
+    }
+
+    // Set Period Inputs
+    const startInput = document.getElementById('staff-items-start-date');
+    const endInput = document.getElementById('staff-items-end-date');
+    if (startInput && endInput) {
+      startInput.value = start ? start.toISOString().split('T')[0] : '';
+      endInput.value = end ? end.toISOString().split('T')[0] : '';
+    }
+    
+    // Store active staffName in state
+    state.activeStaffItemsName = staffName;
+
     // Set Period string
     const dateOpts = { day: 'numeric', month: 'short', year: 'numeric' };
     const startStr = start ? start.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
     const endStr = end ? end.toLocaleDateString('en-GB', dateOpts).replace(/ /g, '-') : '';
     const dateRangeStr = (start && end) ? `${startStr} ${isKhmer ? 'ដល់' : 'to'} ${endStr}` : '';
-    document.getElementById('staff-items-period').innerText = `${isKhmer ? 'កាលបរិច្ឆេទសាកសួរ៖' : 'Period:'} ${dateRangeStr}`;
+    document.getElementById('staff-items-period').innerText = `${isKhmer ? 'កាលបរិច្ឆេទសាកសួរ៖' : 'Period:'} ${dateRangeStr || (isKhmer ? 'ទាំងអស់' : 'All Time')}`;
     
     // Set Title
     document.getElementById('staff-items-title').innerText = isKhmer ? `ទំនិញលក់បានដោយ៖ ${staffName}` : `Products Sold by: ${staffName}`;
@@ -15031,6 +15061,19 @@ CREATE TABLE sale_items (
         const details = getCurrentUserStaffDetails();
         const staffName = details && details.primaryStaffId ? getStaffDisplayName(details.primaryStaffId, state.currentUser.name) : state.currentUser.name;
         openStaffSoldItemsModal(staffName, null, null);
+      });
+    }
+
+    const filterStaffItemsBtn = document.getElementById('btn-filter-staff-items');
+    if (filterStaffItemsBtn) {
+      filterStaffItemsBtn.addEventListener('click', () => {
+        const startVal = document.getElementById('staff-items-start-date').value;
+        const endVal = document.getElementById('staff-items-end-date').value;
+        
+        const startDate = startVal ? new Date(startVal + 'T00:00:00') : null;
+        const endDate = endVal ? new Date(endVal + 'T23:59:59') : null;
+        
+        openStaffSoldItemsModal(state.activeStaffItemsName, startDate, endDate);
       });
     }
     
