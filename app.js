@@ -2032,7 +2032,8 @@
     sortedCustomers.forEach(c => {
       if (!filterBranch || c.branchId === filterBranch || c.id === 'CST-001') {
         const stats = customerStats[c.id] || { orderCount: 0 };
-        const debtText = c.outstandingDebt > 0 ? ` [Debt: $${c.outstandingDebt.toFixed(2)}]` : '';
+        const debtVal = parseFloat(c.outstandingDebt) || 0;
+        const debtText = debtVal > 0 ? ` [Debt: $${debtVal.toFixed(2)}]` : '';
         const vipText = c.isVip ? '★ [VIP] ' : '';
         const orderText = stats.orderCount > 0 ? ` [Orders: ${stats.orderCount}]` : '';
         custSelect.innerHTML += `<option value="${c.id}">${vipText}${c.name} (${c.phone})${orderText}${debtText}</option>`;
@@ -2762,8 +2763,9 @@
         message += `🚚 <b>Shipping Fee:</b> <b>$${tx.shippingFee.toFixed(2)}</b>\n`;
       }
       message += `💳 <b>Payment Method:</b> <b>${paymentMethod}</b>\n`;
-      if (tx.outstandingDebt > 0) {
-        message += `⚠️ <b>Outstanding Debt:</b> <b>$${tx.outstandingDebt.toFixed(2)}</b>\n`;
+      const txDebtVal = parseFloat(tx.outstandingDebt) || 0;
+      if (txDebtVal > 0) {
+        message += `⚠️ <b>Outstanding Debt:</b> <b>$${txDebtVal.toFixed(2)}</b>\n`;
       }
       message += `----------------------------------------\n`;
       message += `👤 <b>Customer Info:</b>\n`;
@@ -4134,11 +4136,12 @@
 
   function openPayDebtModal(c) {
     if (!guardAction('edit')) return;
+    const debtVal = parseFloat(c.outstandingDebt) || 0;
     document.getElementById('pay-debt-customer-id').value = c.id;
     document.getElementById('pay-debt-customer-name').innerText = c.name;
-    document.getElementById('pay-debt-current-val').innerText = window.POS_HELPERS.formatUSD(c.outstandingDebt);
-    document.getElementById('pay-debt-amount').value = c.outstandingDebt.toFixed(2);
-    document.getElementById('pay-debt-amount').max = c.outstandingDebt;
+    document.getElementById('pay-debt-current-val').innerText = window.POS_HELPERS.formatUSD(debtVal);
+    document.getElementById('pay-debt-amount').value = debtVal.toFixed(2);
+    document.getElementById('pay-debt-amount').max = debtVal;
 
     document.getElementById('modal-pay-debt').classList.add('active-modal');
   }
@@ -10688,7 +10691,8 @@ CREATE TABLE sale_items (
 
         filtered.forEach(c => {
           const stats = customerStats[c.id] || { orderCount: 0 };
-          const debtText = c.outstandingDebt > 0 ? ` [Debt: $${c.outstandingDebt.toFixed(2)}]` : '';
+          const debtVal = parseFloat(c.outstandingDebt) || 0;
+          const debtText = debtVal > 0 ? ` [Debt: $${debtVal.toFixed(2)}]` : '';
           const vipText = c.isVip ? '★ [VIP] ' : '';
           const orderText = stats.orderCount > 0 ? ` [Orders: ${stats.orderCount}]` : '';
           custSelect.innerHTML += `<option value="${c.id}">${vipText}${c.name} (${c.phone})${orderText}${debtText}</option>`;
