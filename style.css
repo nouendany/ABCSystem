@@ -961,6 +961,7 @@ body.light-theme .kpi-icon-wrapper {
   justify-content: center;
   overflow: hidden;
   position: relative;
+  flex-shrink: 0;
 }
 
 .product-image-container img {
@@ -999,12 +1000,14 @@ body.light-theme .kpi-icon-wrapper {
   height: 28px;
   overflow: hidden;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .product-card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .product-price {
