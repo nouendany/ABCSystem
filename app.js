@@ -4285,7 +4285,42 @@
     let countPending = 0;
     let countCompleted = 0;
 
+    // Create Document Fragments for batch DOM insertion
+    const fragmentToday = document.createDocumentFragment();
+    const fragmentPending = document.createDocumentFragment();
+    const fragmentCompleted = document.createDocumentFragment();
+
     const filterBranch = getActiveBranchFilter();
+
+    // Map lookups for high performance O(1) searches
+    const txMap = new Map();
+    state.transactions.forEach(t => txMap.set(t.id, t));
+
+    const custMap = new Map();
+    state.customers.forEach(c => custMap.set(c.id, c));
+
+    const staffMap = new Map();
+    state.staff.forEach(s => {
+      if (s.id) staffMap.set(s.id, s);
+      if (s.name) staffMap.set(s.name, s);
+      if (s.employeeId) staffMap.set(s.employeeId, s);
+    });
+
+    const empMap = new Map();
+    if (state.employees) {
+      state.employees.forEach(e => {
+        if (e.id) empMap.set(e.id, e);
+        if (e.fullName) empMap.set(e.fullName, e);
+        if (e.name) empMap.set(e.name, e);
+      });
+    }
+
+    const userMap = new Map();
+    state.users.forEach(u => {
+      if (u.id) userMap.set(u.id, u);
+      if (u.name) userMap.set(u.name, u);
+      if (u.username) userMap.set(u.username, u);
+    });
 
     // Set up search and filter elements
     const filterStaffSelect = document.getElementById('f-filter-staff');
@@ -4321,7 +4356,7 @@
     const filterStaffId = document.getElementById('f-filter-staff') ? document.getElementById('f-filter-staff').value : 'all';
 
     state.followups.forEach(f => {
-      const tx = state.transactions.find(t => t.id === f.saleId);
+      const tx = txMap.get(f.saleId);
       const itemBranch = f.branchId || (tx ? tx.branchId : null);
       if (filterBranch && itemBranch && itemBranch !== filterBranch) return;
 
@@ -4330,7 +4365,7 @@
       }
 
       // Robust Search
-      const custObj = state.customers.find(c => c.id === f.customerId);
+      const custObj = custMap.get(f.customerId);
       const phone = (custObj && custObj.phone && custObj.phone !== '-') ? custObj.phone : '';
       const phoneClean = phone.toLowerCase();
       const facebook = (custObj && custObj.facebookLink) ? custObj.facebookLink.toLowerCase() : '';
@@ -4351,6 +4386,24 @@
           const d = new Date(sch.date);
           const todayDate = new Date();
           const isToday = d.toDateString() === todayDate.toDateString() && sch.status === 'pending';
+
+          // Optimization: Skip DOM construction for items beyond column limit to save CPU/Memory
+          if (sch.status === 'completed') {
+            if (countCompleted >= 50) {
+              countCompleted++;
+              return;
+            }
+          } else if (isToday || d < todayDate) {
+            if (countToday >= 100) {
+              countToday++;
+              return;
+            }
+          } else {
+            if (countPending >= 100) {
+              countPending++;
+              return;
+            }
+          }
 
           const source = custObj ? custObj.source : 'Walk-In';
           
@@ -4420,14 +4473,14 @@
           }
 
           // Facebook Page info & Sales Staff Info
-          let staffMember = state.staff.find(s => s.id === f.salesStaffId || s.name === f.salesStaffName || s.employeeId === f.salesStaffId);
-          if (!staffMember && state.employees) {
-            const emp = state.employees.find(e => e.id === f.salesStaffId || e.fullName === f.salesStaffName || e.name === f.salesStaffName);
+          let staffMember = staffMap.get(f.salesStaffId) || staffMap.get(f.salesStaffName);
+          if (!staffMember) {
+            const emp = empMap.get(f.salesStaffId) || empMap.get(f.salesStaffName);
             if (emp) {
               staffMember = { id: emp.id, name: emp.fullName || emp.name, fbPage: emp.fbPage };
             }
           }
-          const staffUser = state.users.find(u => u.name === f.salesStaffName || u.id === f.salesStaffId || u.username === f.salesStaffId);
+          const staffUser = userMap.get(f.salesStaffName) || userMap.get(f.salesStaffId);
           const pageNameVal = staffMember && staffMember.fbPage ? staffMember.fbPage : (staffUser ? (staffUser.pageName || "Direct Sales") : (tx && tx.pageName ? tx.pageName : (custObj && custObj.source ? custObj.source : 'Walk-In')));
           const staffNameVal = f.salesStaffName || 'System';
 
@@ -4577,18 +4630,41 @@
           }
 
           if (sch.status === 'completed') {
-            areaCompleted.appendChild(card);
+            fragmentCompleted.appendChild(card);
             countCompleted++;
           } else if (isToday || d < todayDate) {
-            areaToday.appendChild(card);
+            fragmentToday.appendChild(card);
             countToday++;
           } else {
-            areaPending.appendChild(card);
+            fragmentPending.appendChild(card);
             countPending++;
           }
         });
       }
     });
+
+    areaToday.appendChild(fragmentToday);
+    areaPending.appendChild(fragmentPending);
+    areaCompleted.appendChild(fragmentCompleted);
+
+    if (countToday > 100) {
+      const moreToday = document.createElement('div');
+      moreToday.style.cssText = 'padding:8px; text-align:center; font-size:11px; color:var(--text-muted); font-weight:600;';
+      moreToday.innerText = state.lang === 'km' ? `និងមាន ${countToday - 100} ទៀត...` : `and ${countToday - 100} more...`;
+      areaToday.appendChild(moreToday);
+    }
+    if (countPending > 100) {
+      const morePending = document.createElement('div');
+      morePending.style.cssText = 'padding:8px; text-align:center; font-size:11px; color:var(--text-muted); font-weight:600;';
+      morePending.innerText = state.lang === 'km' ? `និងមាន ${countPending - 100} ទៀត...` : `and ${countPending - 100} more...`;
+      areaPending.appendChild(morePending);
+    }
+    if (countCompleted > 50) {
+      const moreCompleted = document.createElement('div');
+      moreCompleted.style.cssText = 'padding:8px; text-align:center; font-size:11px; color:var(--text-muted); font-weight:600; border-top: 1px dashed rgba(255,255,255,0.05);';
+      moreCompleted.innerText = state.lang === 'km' ? `បង្ហាញតែសកម្មភាពបញ្ចប់ថ្មីៗចំនួន ៥០ (មានសរុប ${countCompleted})` : `Showing top 50 completed tasks (Total: ${countCompleted})`;
+      areaCompleted.appendChild(moreCompleted);
+    }
 
     if (countToday === 0) {
       areaToday.innerHTML = `<div class="kanban-empty-state"><span class="empty-icon">📭</span><p>${window.POS_TRANSLATIONS[state.lang].noTasks || 'No tasks in this column'}</p></div>`;
