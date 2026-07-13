@@ -196,12 +196,20 @@
   <!-- ==================== CORE APP LAYOUT ==================== -->
   <div class="app-container">
     
+    <!-- Sidebar mobile backdrop overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
-      <div class="logo-container" id="sidebar-logo-container">
-        <div class="logo-icon" id="sidebar-default-logo">🚀</div>
-        <img id="sidebar-custom-logo" src="" style="display:none; width:36px; height:36px; object-fit:contain; border-radius: var(--radius-sm); margin-right:2px;">
-        <div class="logo-text" id="sidebar-logo-text">ABC System</div>
+      <div class="logo-container" id="sidebar-logo-container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="logo-icon" id="sidebar-default-logo">🚀</div>
+          <img id="sidebar-custom-logo" src="" style="display:none; width:36px; height:36px; object-fit:contain; border-radius: var(--radius-sm); margin-right:2px;">
+          <div class="logo-text" id="sidebar-logo-text">ABC System</div>
+        </div>
+        <button id="btn-close-sidebar" class="btn-close-sidebar" title="Close Sidebar">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       
       <!-- Dedicated Billing POS CTA Button -->
@@ -307,7 +315,10 @@
       
       <!-- Top App Bar Header -->
       <header class="app-header">
-        <div class="header-left">
+        <div class="header-left" style="display:flex; align-items:center; gap:12px;">
+          <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" title="Toggle Sidebar" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary); width: 38px; height: 38px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
           <h1 id="page-title" data-translate="dashboard">Dashboard Analytics</h1>
         </div>
         <!-- Middle section for Marquee / Alerts -->

@@ -79,7 +79,23 @@ body {
   height: 100vh;
 }
 
-/* Sidebar Layout */
+/* Sidebar Layout & Collapsible / Drawer Styles */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9998;
+}
+body.sidebar-active .sidebar-overlay {
+  display: block;
+}
+
 .sidebar {
   width: 250px;
   background-color: var(--bg-sidebar);
@@ -88,7 +104,48 @@ body {
   flex-direction: column;
   padding: 20px 14px;
   flex-shrink: 0;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Collapsed Sidebar Mode (Desktop) */
+body.sidebar-collapsed .sidebar {
+  width: 70px;
+  padding: 20px 8px;
+}
+body.sidebar-collapsed .logo-text,
+body.sidebar-collapsed .nav-item span,
+body.sidebar-collapsed .pos-cta-btn span,
+body.sidebar-collapsed .user-details-wrapper,
+body.sidebar-collapsed .logout-sm-btn,
+body.sidebar-collapsed .sidebar-footer {
+  display: none !important;
+}
+body.sidebar-collapsed .logo-container {
+  justify-content: center;
+  padding-left: 0;
+  margin-bottom: 20px;
+}
+body.sidebar-collapsed .nav-item,
+body.sidebar-collapsed .pos-cta-btn {
+  justify-content: center;
+  padding: 12px;
+  gap: 0;
+}
+
+/* Mobile & Tablet Slider Drawer Layout */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 9999;
+    transform: translateX(-100%);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+  }
+  body.sidebar-active .sidebar {
+    transform: translateX(0);
+  }
 }
 
 .logo-container {
@@ -97,6 +154,33 @@ body {
   gap: 12px;
   margin-bottom: 28px;
   padding-left: 6px;
+}
+
+.btn-close-sidebar {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+  border-radius: var(--radius-sm);
+}
+.btn-close-sidebar:hover {
+  color: var(--text-primary);
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+.btn-close-sidebar:active {
+  transform: scale(0.9);
+}
+
+@media (max-width: 1024px) {
+  .btn-close-sidebar {
+    display: flex;
+  }
 }
 
 .logo-icon {

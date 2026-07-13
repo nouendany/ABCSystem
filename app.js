@@ -1323,11 +1323,42 @@
           return;
         }
 
+        // Auto close mobile/tablet drawer navigation
+        document.body.classList.remove('sidebar-active');
+
         navItems.forEach(nav => nav.classList.remove('active'));
         item.classList.add('active');
         navigateToView(targetView);
       });
     });
+
+    // Toggle Sidebar Drawer (Mobile) or Collapse (Desktop)
+    const btnToggle = document.getElementById('btn-toggle-sidebar');
+    if (btnToggle) {
+      btnToggle.addEventListener('click', () => {
+        if (window.innerWidth < 1025) {
+          document.body.classList.toggle('sidebar-active');
+        } else {
+          document.body.classList.toggle('sidebar-collapsed');
+        }
+      });
+    }
+
+    // Sidebar Backdrop Click Dismiss
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        document.body.classList.remove('sidebar-active');
+      });
+    }
+
+    // Close Sidebar button (inside drawer logo container)
+    const btnClose = document.getElementById('btn-close-sidebar');
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        document.body.classList.remove('sidebar-active');
+      });
+    }
   }
 
   function navigateToView(targetView) {
