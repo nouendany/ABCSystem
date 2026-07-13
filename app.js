@@ -3780,7 +3780,8 @@
           total: t.total,
           invoiceNo: t.invoiceNo || t.id,
           paymentMethod: t.paymentMethod,
-          items: t.items
+          items: t.items,
+          outstandingDebt: t.outstandingDebt || 0
         });
       }
     });
@@ -3886,6 +3887,11 @@
         const methodTranslate = window.POS_TRANSLATIONS[state.lang][o.paymentMethod] || o.paymentMethod;
         const methodBadge = `<span class="badge" style="text-transform:none; font-weight:700; ${methodStyle}">${methodTranslate}</span>`;
 
+        const showPayAction = o.outstandingDebt > 0;
+        const actionHtml = showPayAction
+          ? `<button class="btn btn-primary btn-sm btn-pay-tx" data-id="${o.invoiceNo}" data-debt="${o.outstandingDebt}" style="padding:2px 6px; font-size:10px; font-weight:700;">💰 ${state.lang === 'km' ? 'បង់ប្រាក់' : 'Pay'}</button>`
+          : `<span style="color:var(--text-muted); font-size:10px;">${state.lang === 'km' ? 'រួចរាល់' : 'Paid'}</span>`;
+
         tbody.innerHTML += `
           <tr>
             <td style="font-size:10px;">${window.POS_HELPERS.formatDate(o.date, state.lang)}</td>
@@ -3893,8 +3899,69 @@
             <td style="text-align:right; font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(o.total)}</td>
             <td>${methodBadge}</td>
             <td>${itemsDesc}</td>
+            <td>${actionHtml}</td>
           </tr>
         `;
+      });
+
+      // Bind click listeners for Pay button inside modal
+      tbody.querySelectorAll('.btn-pay-tx').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const invoiceNo = btn.getAttribute('data-id');
+          const txDebt = parseFloat(btn.getAttribute('data-debt')) || 0;
+          
+          const isKh = state.lang === 'km';
+          const confirmMsg = isKh 
+            ? `តើអ្នកពិតជាចង់កំណត់វិក្កយបត្រ ${invoiceNo} ថាបានទូទាត់មែនទេ?` 
+            : `Are you sure you want to mark Invoice ${invoiceNo} as Paid?`;
+          
+          if (!confirm(confirmMsg)) return;
+
+          const methodPrompt = isKh
+            ? `សូមជ្រើសរើសវិធីទូទាត់ប្រាក់ (បញ្ចូលលេខ):\n1: សាច់ប្រាក់ (Cash)\n2: ABA Pay / KHQR\n3: ផ្ទេរតាមធនាគារ (Bank Transfer)`
+            : `Please select the payment method (Enter number):\n1: Cash\n2: ABA Pay / KHQR\n3: Bank Transfer`;
+            
+          const choice = prompt(methodPrompt, "1");
+          if (choice === null) return; // Cancelled
+
+          let finalMethod = 'cash';
+          if (choice.trim() === '2') finalMethod = 'khqr';
+          else if (choice.trim() === '3') finalMethod = 'bank';
+          
+          const tx = state.transactions.find(t => (t.invoiceNo || t.id) === invoiceNo);
+          if (tx) {
+            tx.outstandingDebt = 0;
+            tx.paymentMethod = finalMethod;
+            
+            customer.outstandingDebt = Math.max(0, (customer.outstandingDebt || 0) - txDebt);
+            
+            const activeBranch = state.currentUser?.branchId === 'all' ? 'BR-001' : (state.currentUser?.branchId || 'BR-001');
+            state.paymentLogs.push({
+              id: 'PAY-' + (1000 + state.paymentLogs.length + 1),
+              date: new Date().toISOString(),
+              customerId: customer.id,
+              customerName: customer.name,
+              amount: txDebt,
+              paymentMethod: finalMethod,
+              notes: `Paid invoice ${invoiceNo} via Customer History modal`,
+              branchId: activeBranch,
+              createdBy: state.currentUser ? state.currentUser.username : 'system',
+              updatedBy: state.currentUser ? state.currentUser.username : 'system',
+              timestamp: new Date().toISOString()
+            });
+            
+            saveStateToLocalStorage();
+            
+            alert(isKh 
+              ? `បានទូទាត់វិក្កយបត្រ ${invoiceNo} ចំនួន $${txDebt.toFixed(2)} ជោគជ័យ!` 
+              : `Invoice ${invoiceNo} paid successfully for $${txDebt.toFixed(2)}!`);
+              
+            openCustomerHistoryModal(customerId);
+            renderCustomers();
+            renderFinance();
+            checkCRMNotifications();
+          }
+        });
       });
     }
 
