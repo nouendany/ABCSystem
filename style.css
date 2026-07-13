@@ -538,6 +538,15 @@ body.light-theme .logo-text {
   gap: 16px;
 }
 
+.header-left h1 {
+  font-size: 18px;
+  font-weight: 750;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
 .active-branch-pill {
   display: flex;
   align-items: center;
@@ -672,6 +681,9 @@ body.light-theme .logo-text {
   .kpi-value {
     font-size: 18px !important;
   }
+  .header-left h1 {
+    font-size: 15px !important;
+  }
 }
 
 /* Phone Mobile Screens Optimization (up to 576px) */
@@ -714,6 +726,13 @@ body.light-theme .logo-text {
     font-size: 9px !important;
     margin-bottom: 4px !important;
     letter-spacing: 0.2px !important;
+  }
+  .header-left h1 {
+    font-size: 13px !important;
+  }
+  .app-header {
+    padding: 0 10px !important;
+    gap: 6px !important;
   }
 }
 
