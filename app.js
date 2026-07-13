@@ -255,9 +255,38 @@
   }
 
   // Branch Access Control Filter Helpers
+  function getCurrentUserStaffId() {
+    if (!state.currentUser) return null;
+    const staff = state.staff.find(s => 
+      s.id === state.currentUser.id ||
+      s.employeeId === state.currentUser.id ||
+      (s.name && state.currentUser.name && s.name.toLowerCase() === state.currentUser.name.toLowerCase()) ||
+      s.id === state.currentUser.username
+    );
+    if (staff) return staff.id;
+    if (state.employees) {
+      const emp = state.employees.find(e => 
+        e.id === state.currentUser.id ||
+        (e.fullName && state.currentUser.name && e.fullName.toLowerCase() === state.currentUser.name.toLowerCase()) ||
+        (e.name && state.currentUser.name && e.name.toLowerCase() === state.currentUser.name.toLowerCase()) ||
+        e.id === state.currentUser.username
+      );
+      if (emp) return emp.id;
+    }
+    return null;
+  }
+
   function getFilteredTransactions() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.transactions;
+    if (state.currentUser.role === 'sales_staff') {
+      const staffId = getCurrentUserStaffId();
+      return state.transactions.filter(t => 
+        (staffId && t.staffId === staffId) || 
+        (t.staffName && state.currentUser.name && t.staffName.toLowerCase() === state.currentUser.name.toLowerCase()) ||
+        (t.createdBy && state.currentUser.username && t.createdBy.toLowerCase() === state.currentUser.username.toLowerCase())
+      );
+    }
     return state.transactions.filter(t => t.branchId === state.currentUser.branchId);
   }
 
@@ -1406,7 +1435,7 @@
     // Filter calculations by assigned branch if not super_admin/accountant
     const filterBranch = getActiveBranchFilter();
 
-    state.transactions.forEach(t => {
+    getFilteredTransactions().forEach(t => {
       if (!filterBranch || t.branchId === filterBranch) {
         totalRevenue += t.total;
         t.items.forEach(item => {
@@ -1429,7 +1458,7 @@
     const totalDeducted = totalCOGS + totalExpenses;
     const actualProfit = totalRevenue - totalDeducted;
     const startingCapital = state.companySettings.startingCapital !== undefined ? parseFloat(state.companySettings.startingCapital) : 10000;
-    const salesCount = state.transactions.filter(t => !filterBranch || t.branchId === filterBranch).length;
+    const salesCount = getFilteredTransactions().filter(t => !filterBranch || t.branchId === filterBranch).length;
     const pendingFollows = state.followups.filter(f => {
       const belongs = !filterBranch || f.schedules.some(s => f.salesStaffId === state.currentUser?.id || state.currentUser?.role === 'super_admin');
       const hasPending = f.schedules.some(s => s.status === 'pending');
@@ -1517,7 +1546,7 @@
           dailyExp[dateStr] = 0;
         }
 
-        state.transactions.forEach(t => {
+        getFilteredTransactions().forEach(t => {
           const dateStr = t.date.split('T')[0];
           if (dailyRev[dateStr] !== undefined && (!filterBranch || t.branchId === filterBranch)) {
             dailyRev[dateStr] += t.total;
@@ -1582,7 +1611,7 @@
 
           const branchSales = {};
           state.branches.forEach(b => branchSales[b.id] = 0);
-          state.transactions.forEach(t => {
+          getFilteredTransactions().forEach(t => {
             if (branchSales[t.branchId] !== undefined) {
               branchSales[t.branchId] += t.total;
             }
@@ -1702,7 +1731,7 @@
     // 3. Recent sales injection
     const recentBody = document.getElementById('db-recent-transactions');
     recentBody.innerHTML = '';
-    const sorted = [...state.transactions]
+    const sorted = [...getFilteredTransactions()]
       .filter(t => !filterBranch || t.branchId === filterBranch)
       .sort((a,b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
@@ -1978,14 +2007,29 @@
     // Staff POS select
     const staffSelect = document.getElementById('cart-staff-select');
     staffSelect.innerHTML = '';
+    
+    const loggedInStaffId = getCurrentUserStaffId();
+    
     state.staff.forEach(s => {
       if (!filterBranch || s.branchId === filterBranch) {
-        staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+        if (state.currentUser?.role === 'sales_staff') {
+          if (loggedInStaffId && s.id === loggedInStaffId) {
+            staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+          }
+        } else {
+          staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+        }
       }
     });
-    if (state.staff.length > 0) {
+    
+    if (state.currentUser?.role === 'sales_staff' && loggedInStaffId) {
+      state.currentPOSStaffId = loggedInStaffId;
+      staffSelect.value = loggedInStaffId;
+      staffSelect.disabled = true;
+    } else if (state.staff.length > 0) {
       state.currentPOSStaffId = state.staff[0].id;
       staffSelect.value = state.currentPOSStaffId;
+      staffSelect.disabled = false;
     }
 
     // Customers POS select
