@@ -1031,18 +1031,26 @@
 
   function checkCurrentUserActiveStatus() {
     if (!state.currentUser) return true;
+    
+    // If state.users is still loading/syncing (only has default admin), do not check/boot
+    if (state.users.length <= 1) return true;
+
     const freshUserObj = state.users.find(u => u.id === state.currentUser.id);
-    if (!freshUserObj || freshUserObj.status === 'suspended') {
-      alert(state.lang === 'km' ? 'គណនីរបស់អ្នកត្រូវបានផ្អាកដំណើរការ ឬត្រូវបានលុប! ប្រព័ន្ធនឹងចាកចេញដោយស្វ័យប្រវត្ត។' : 'Your account has been suspended or deleted! Logging out automatically.');
-      performSystemLogout();
-      return false;
-    }
-    if (freshUserObj.forceLogout) {
-      freshUserObj.forceLogout = false;
-      saveStateToLocalStorage();
-      alert(state.lang === 'km' ? 'គណនីរបស់អ្នកត្រូវបានទាត់ចេញពីប្រព័ន្ធដោយ Super Admin!' : 'Your session has been terminated by the Super Admin!');
-      performSystemLogout();
-      return false;
+    
+    // If found, verify status
+    if (freshUserObj) {
+      if (freshUserObj.status === 'suspended') {
+        alert(state.lang === 'km' ? 'គណនីរបស់អ្នកត្រូវបានផ្អាកដំណើរការ ឬត្រូវបានលុប! ប្រព័ន្ធនឹងចាកចេញដោយស្វ័យប្រវត្ត។' : 'Your account has been suspended or deleted! Logging out automatically.');
+        performSystemLogout();
+        return false;
+      }
+      if (freshUserObj.forceLogout) {
+        freshUserObj.forceLogout = false;
+        saveStateToLocalStorage();
+        alert(state.lang === 'km' ? 'គណនីរបស់អ្នកត្រូវបានទាត់ចេញពីប្រព័ន្ធដោយ Super Admin!' : 'Your session has been terminated by the Super Admin!');
+        performSystemLogout();
+        return false;
+      }
     }
     return true;
   }
@@ -1267,7 +1275,7 @@
         navigateToView('view-dashboard');
         translateApp();
       } else {
-        const isNotSynced = state.users.length <= 1 && state.users.some(u => u.id === 'USR-001' && u.password === 'admin');
+        const isNotSynced = state.users.length === 0 || (state.users.length <= 1 && state.users.some(u => u.id === 'USR-001' && u.password === 'admin'));
         if (isNotSynced && passVal !== 'admin') {
           errorMsg.setAttribute('data-translate', 'loginSyncing');
           errorMsg.innerText = state.lang === 'km' 
