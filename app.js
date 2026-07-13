@@ -255,37 +255,85 @@
   }
 
   // Branch Access Control Filter Helpers
-  function getCurrentUserStaffId() {
+  function getCurrentUserStaffDetails() {
     if (!state.currentUser) return null;
+    
+    // Find matching staff record
     const staff = state.staff.find(s => 
       s.id === state.currentUser.id ||
       s.employeeId === state.currentUser.id ||
-      (s.name && state.currentUser.name && s.name.toLowerCase() === state.currentUser.name.toLowerCase()) ||
-      s.id === state.currentUser.username
+      s.id === state.currentUser.username ||
+      (s.name && state.currentUser.name && s.name.toLowerCase().replace(/\s/g, '') === state.currentUser.name.toLowerCase().replace(/\s/g, '')) ||
+      (s.name && state.currentUser.username && s.name.toLowerCase().replace(/\s/g, '').includes(state.currentUser.username.toLowerCase().replace(/\s/g, ''))) ||
+      (s.name && state.currentUser.name && s.name.toLowerCase().replace(/\s/g, '').includes(state.currentUser.name.toLowerCase().replace(/\s/g, ''))) ||
+      (s.name && state.currentUser.username && state.currentUser.username.toLowerCase().replace(/\s/g, '').includes(s.name.toLowerCase().replace(/\s/g, '')))
     );
-    if (staff) return staff.id;
-    if (state.employees) {
-      const emp = state.employees.find(e => 
-        e.id === state.currentUser.id ||
-        (e.fullName && state.currentUser.name && e.fullName.toLowerCase() === state.currentUser.name.toLowerCase()) ||
-        (e.name && state.currentUser.name && e.name.toLowerCase() === state.currentUser.name.toLowerCase()) ||
-        e.id === state.currentUser.username
-      );
-      if (emp) return emp.id;
+
+    // Also look up employee record
+    const emp = state.employees ? state.employees.find(e => 
+      e.id === state.currentUser.id ||
+      e.id === state.currentUser.username ||
+      (e.fullName && state.currentUser.name && e.fullName.toLowerCase().replace(/\s/g, '') === state.currentUser.name.toLowerCase().replace(/\s/g, '')) ||
+      (e.name && state.currentUser.name && e.name.toLowerCase().replace(/\s/g, '') === state.currentUser.name.toLowerCase().replace(/\s/g, '')) ||
+      (e.fullName && state.currentUser.username && e.fullName.toLowerCase().replace(/\s/g, '').includes(state.currentUser.username.toLowerCase().replace(/\s/g, ''))) ||
+      (e.fullName && state.currentUser.name && e.fullName.toLowerCase().replace(/\s/g, '').includes(state.currentUser.name.toLowerCase().replace(/\s/g, '')))
+    ) : null;
+
+    const ids = new Set();
+    const names = new Set();
+
+    if (staff) {
+      ids.add(staff.id);
+      if (staff.employeeId) ids.add(staff.employeeId);
+      if (staff.name) names.add(staff.name.toLowerCase().replace(/\s/g, ''));
     }
-    return null;
+    if (emp) {
+      ids.add(emp.id);
+      if (emp.employeeId) ids.add(emp.employeeId);
+      if (emp.fullName) names.add(emp.fullName.toLowerCase().replace(/\s/g, ''));
+      if (emp.name) names.add(emp.name.toLowerCase().replace(/\s/g, ''));
+    }
+    
+    // Always add user's own name and username
+    if (state.currentUser.name) names.add(state.currentUser.name.toLowerCase().replace(/\s/g, ''));
+    if (state.currentUser.username) names.add(state.currentUser.username.toLowerCase().replace(/\s/g, ''));
+    
+    return {
+      ids: Array.from(ids),
+      names: Array.from(names),
+      primaryStaffId: staff ? staff.id : (emp ? emp.id : null)
+    };
+  }
+
+  function getCurrentUserStaffId() {
+    const details = getCurrentUserStaffDetails();
+    return details ? details.primaryStaffId : null;
   }
 
   function getFilteredTransactions() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.transactions;
     if (state.currentUser.role === 'sales_staff') {
-      const staffId = getCurrentUserStaffId();
-      return state.transactions.filter(t => 
-        (staffId && t.staffId === staffId) || 
-        (t.staffName && state.currentUser.name && t.staffName.toLowerCase() === state.currentUser.name.toLowerCase()) ||
-        (t.createdBy && state.currentUser.username && t.createdBy.toLowerCase() === state.currentUser.username.toLowerCase())
-      );
+      const details = getCurrentUserStaffDetails();
+      if (!details) return [];
+      return state.transactions.filter(t => {
+        // Match by recorded staff ID
+        if (t.staffId && details.ids.includes(t.staffId)) return true;
+        
+        // Match by recorded staff name (stripped of spaces and lowercase)
+        if (t.staffName) {
+          const sName = t.staffName.toLowerCase().replace(/\s/g, '');
+          if (details.names.includes(sName)) return true;
+        }
+        
+        // Match by createdBy (stripped of spaces and lowercase)
+        if (t.createdBy) {
+          const cBy = t.createdBy.toLowerCase().replace(/\s/g, '');
+          if (details.names.includes(cBy)) return true;
+        }
+        
+        return false;
+      });
     }
     return state.transactions.filter(t => t.branchId === state.currentUser.branchId);
   }
