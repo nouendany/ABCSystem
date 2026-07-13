@@ -544,6 +544,9 @@ body.light-theme .logo-text {
   .capital-disabled .dashboard-kpis {
     grid-template-columns: repeat(5, 1fr);
   }
+  .role-sales-staff .dashboard-kpis {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
   .finance-kpis {
     grid-template-columns: repeat(6, 1fr);
     gap: 12px;

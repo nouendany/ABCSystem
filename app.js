@@ -1172,9 +1172,13 @@
 
     // Handle Capital Tracking and finance KPI card visibility based on role
     const canSeeFinance = role === 'super_admin' || role === 'branch_admin' || role === 'accountant';
+    const canSeeRevenue = canSeeFinance || role === 'sales_staff';
     
     // Hide/show other financial KPI cards on Dashboard and Financial Ledger
-    document.querySelectorAll('.kpi-revenue, .kpi-deducted, .kpi-expense, .kpi-profit').forEach(card => {
+    document.querySelectorAll('.kpi-revenue').forEach(card => {
+      card.style.setProperty('display', canSeeRevenue ? 'flex' : 'none', 'important');
+    });
+    document.querySelectorAll('.kpi-deducted, .kpi-expense, .kpi-profit').forEach(card => {
       card.style.setProperty('display', canSeeFinance ? 'flex' : 'none', 'important');
     });
 
@@ -1188,6 +1192,12 @@
       document.body.classList.remove('capital-disabled');
     } else {
       document.body.classList.add('capital-disabled');
+    }
+
+    if (role === 'sales_staff') {
+      document.body.classList.add('role-sales-staff');
+    } else {
+      document.body.classList.remove('role-sales-staff');
     }
 
     // Hide/show starting capital field inside settings profile form if it exists
@@ -1485,6 +1495,7 @@
     let totalRevenue = 0;
     let totalExpenses = 0;
     let totalCOGS = 0;
+    let totalItemsSold = 0;
     
     // Filter calculations by assigned branch if not super_admin/accountant
     const filterBranch = getActiveBranchFilter();
@@ -1493,6 +1504,7 @@
       if (!filterBranch || t.branchId === filterBranch) {
         totalRevenue += t.total;
         t.items.forEach(item => {
+          totalItemsSold += item.qty;
           const p = state.products.find(prod => prod.sku === item.sku);
           const costPrice = item.costPrice !== undefined ? item.costPrice : (p ? (p.costPrice || 0) : 0);
           totalCOGS += costPrice * item.qty;
@@ -1556,6 +1568,10 @@
     document.getElementById('kpi-profit-riel').innerText = window.POS_HELPERS.formatKHR(actualProfit);
     document.getElementById('kpi-profit-val').style.color = actualProfit < 0 ? 'var(--danger)' : '';
     document.getElementById('kpi-sales-count').innerText = salesCount;
+    const personalItemsCountEl = document.getElementById('kpi-personal-items-count');
+    if (personalItemsCountEl) {
+      personalItemsCountEl.innerText = totalItemsSold;
+    }
     document.getElementById('kpi-followups-badge').innerText = `${pendingFollows} Pending CRM Follow-ups`;
     checkCRMNotifications();
 
