@@ -412,8 +412,13 @@
             <div class="kpi-icon-wrapper">⚖️</div>
           </div>
           <div class="kpi-card kpi-sales" style="border-left-color:var(--secondary);">
-            <div class="kpi-details">
-              <h4 data-translate="totalSales">Total Sales Count</h4>
+            <div class="kpi-details" style="width: 100%;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <h4 data-translate="totalSales">Total Sales Count</h4>
+                <button class="btn btn-secondary btn-sm" id="btn-view-staff-sales-details" style="padding: 2px 8px; font-size:10px; font-weight:700; border-radius:4px; display:flex; align-items:center; gap:4px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--text-primary); cursor:pointer;">
+                  <span style="font-size:10px;">📦</span> <span data-translate="viewDetails">Details</span>
+                </button>
+              </div>
               <div class="kpi-value" id="kpi-sales-count">0</div>
               <div class="kpi-subvalue" id="kpi-followups-badge">0 Pending Followups</div>
             </div>

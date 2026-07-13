@@ -15025,6 +15025,15 @@ CREATE TABLE sale_items (
     setupStickyNotes();
     setupMarquee();
     
+    const viewStaffDetailsBtn = document.getElementById('btn-view-staff-sales-details');
+    if (viewStaffDetailsBtn) {
+      viewStaffDetailsBtn.addEventListener('click', () => {
+        const details = getCurrentUserStaffDetails();
+        const staffName = details && details.primaryStaffId ? getStaffDisplayName(details.primaryStaffId, state.currentUser.name) : state.currentUser.name;
+        openStaffSoldItemsModal(staffName, null, null);
+      });
+    }
+    
     translateApp();
     renderCurrentView();
     updateLowStockAlertCount();
