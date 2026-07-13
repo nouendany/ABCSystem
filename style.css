@@ -538,11 +538,11 @@ body.light-theme .logo-text {
 
 @media (min-width: 1300px) {
   .dashboard-kpis {
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 10px;
   }
   .capital-disabled .dashboard-kpis {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
   .role-sales-staff .dashboard-kpis {
     grid-template-columns: repeat(3, 1fr) !important;

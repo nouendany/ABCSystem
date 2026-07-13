@@ -1208,6 +1208,12 @@
       document.body.classList.remove('role-sales-staff');
     }
 
+    // Sales KPI cards (Total Sales Count, Total Items Sold) ONLY visible to sales_staff
+    const isSalesStaff = role === 'sales_staff';
+    document.querySelectorAll('.kpi-sales, .kpi-personal-items-sold').forEach(card => {
+      card.style.setProperty('display', isSalesStaff ? 'flex' : 'none', 'important');
+    });
+
     // Hide/show starting capital field inside settings profile form if it exists
     const settingsCapitalGroup = document.getElementById('c-starting-capital')?.closest('.form-group');
     if (settingsCapitalGroup) {
