@@ -967,6 +967,16 @@ body.light-theme .kpi-icon-wrapper {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.product-card:hover .product-image-container img {
+  transform: scale(1.08);
+}
+.product-fallback-avatar span {
+  transition: transform 0.3s ease;
+}
+.product-card:hover .product-fallback-avatar span {
+  transform: translateY(-4px) scale(1.1) rotate(5deg) !important;
 }
 
 .product-card-badge {

@@ -2390,6 +2390,64 @@
     });
   }
 
+  function getProductImageHtml(p) {
+    const name = (p.nameEn || p.sku || '').toLowerCase();
+    const cat = (p.category || '').toLowerCase();
+    
+    // Choose appropriate premium emoji & theme color for the fallback
+    let emoji = '📦';
+    let gradient = 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)';
+    let color = '#818cf8';
+    
+    if (name.includes('sunscreen') || name.includes('sun') || cat.includes('sunscreen')) {
+      emoji = '☀️';
+      gradient = 'linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(239, 68, 68, 0.15) 100%)';
+      color = '#f59e0b';
+    } else if (name.includes('serum') || name.includes('booster') || cat.includes('serum')) {
+      emoji = '🧪';
+      gradient = 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(99, 102, 241, 0.15) 100%)';
+      color = '#10b981';
+    } else if (name.includes('gel') || cat.includes('gel')) {
+      emoji = '🧴';
+      gradient = 'linear-gradient(135deg, rgba(6, 182, 212, 0.18) 0%, rgba(59, 130, 246, 0.15) 100%)';
+      color = '#06b6d4';
+    } else if (name.includes('cleanser') || name.includes('wash') || cat.includes('cleanser')) {
+      emoji = '🧼';
+      gradient = 'linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(16, 185, 129, 0.15) 100%)';
+      color = '#0ea5e9';
+    } else if (name.includes('mask') || name.includes('sheet') || cat.includes('mask')) {
+      emoji = '🎭';
+      gradient = 'linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(236, 72, 153, 0.15) 100%)';
+      color = '#a855f7';
+    } else if (name.includes('acne') || name.includes('cream') || cat.includes('acne') || cat.includes('cream')) {
+      emoji = '🧴';
+      gradient = 'linear-gradient(135deg, rgba(236, 72, 153, 0.18) 0%, rgba(99, 102, 241, 0.15) 100%)';
+      color = '#ec4899';
+    } else if (name.includes('collagen') || name.includes('peptide') || name.includes('supplement') || cat.includes('supplement')) {
+      emoji = '💊';
+      gradient = 'linear-gradient(135deg, rgba(244, 63, 94, 0.18) 0%, rgba(245, 158, 11, 0.15) 100%)';
+      color = '#f43f5e';
+    }
+
+    const fallbackHtml = `
+      <div class="product-fallback-avatar" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:${gradient}; border-radius:var(--radius-sm); position:relative; overflow:hidden;">
+        <span style="font-size:36px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25)); transform: translateY(-4px);">${emoji}</span>
+        <span style="font-size:8px; font-weight:700; color:${color}; text-transform:uppercase; letter-spacing:1px; position:absolute; bottom:8px; opacity:0.8;">${p.sku}</span>
+      </div>
+    `;
+
+    if (p.image && (p.image.startsWith('http') || p.image.startsWith('data:image'))) {
+      return `
+        <img src="${p.image}" alt="${p.nameEn}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s ease;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div style="display:none; width:100%; height:100%;" class="fallback-wrapper-box">
+          ${fallbackHtml}
+        </div>
+      `;
+    }
+    
+    return fallbackHtml;
+  }
+
   function renderPOSProductGrid() {
     const grid = document.getElementById('pos-products-grid');
     grid.innerHTML = '';
@@ -2416,9 +2474,7 @@
     filtered.forEach(p => {
       const branchQty = p.warehouseStock[branchId] || 0;
       const isOutOfStock = branchQty <= 0;
-      const displayImg = p.image 
-        ? `<img src="${p.image}" alt="${p.nameEn}">`
-        : `<span style="font-size:32px;">📦</span>`;
+      const displayImg = getProductImageHtml(p);
 
       const card = document.createElement('div');
       card.className = 'product-card' + (isOutOfStock ? ' out-of-stock' : '');
