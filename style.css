@@ -1,6 +1,12 @@
 /* CSS Stylesheet for GEDA Enterprise POS & ERP System */
 @import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy:wght@300;400;700&family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Noto+Sans+Khmer:wght@400;700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 :root {
   /* Common Design Tokens */
   --primary: #6366f1;       /* Vibrant Indigo */
@@ -279,6 +285,38 @@ body.light-theme .logo-text {
   border-radius: 0 4px 4px 0;
   box-shadow: 0 0 8px var(--primary);
 }
+
+/* Glowing Border Light Trail Animation on Hover/Active */
+.nav-item::after,
+.pos-cta-btn::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--border-angle), transparent 50%, rgba(99, 102, 241, 0.4) 70%, var(--primary) 90%, #ffffff 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.nav-item:hover::after,
+.nav-item.active::after,
+.pos-cta-btn:hover::before {
+  opacity: 1;
+  animation: rotate-border 2s linear infinite;
+}
+
+@keyframes rotate-border {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
 
 .sidebar-footer {
   padding-top: 16px;
