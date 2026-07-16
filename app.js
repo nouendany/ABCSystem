@@ -2124,18 +2124,31 @@
     staffSelect.innerHTML = '';
     
     const loggedInStaffId = getCurrentUserStaffId();
+    let staffCount = 0;
     
     state.staff.forEach(s => {
       if (!filterBranch || s.branchId === filterBranch) {
         if (state.currentUser?.role === 'sales_staff') {
           if (loggedInStaffId && s.id === loggedInStaffId) {
             staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            staffCount++;
           }
         } else {
           staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+          staffCount++;
         }
       }
     });
+
+    // Fallback: If no staff found for this branch, show all staff so the dropdown is never empty
+    if (staffCount === 0 && state.staff.length > 0) {
+      state.staff.forEach(s => {
+        const brObj = state.branches.find(b => b.id === s.branchId);
+        const brName = brObj ? (state.lang === 'km' ? brObj.nameKh : brObj.name) : s.branchId;
+        staffSelect.innerHTML += `<option value="${s.id}">${s.name} (${brName})</option>`;
+        staffCount++;
+      });
+    }
     
     if (state.currentUser?.role === 'sales_staff' && loggedInStaffId) {
       state.currentPOSStaffId = loggedInStaffId;
