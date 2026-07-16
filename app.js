@@ -3267,6 +3267,7 @@
       cashReceived: cashReceived,
       changeDue: changeDue,
       outstandingDebt: outstandingDebt,
+      notes: document.getElementById('checkout-notes')?.value.trim() || '',
       status: "completed",
       isOwnerPrivate: isOwnerPrivate,
       createdBy: state.currentUser ? state.currentUser.username : 'system',
@@ -3298,6 +3299,8 @@
     document.getElementById('cart-shipping-fee').value = 0;
     const carrierEl = document.getElementById('cart-shipping-carrier');
     if (carrierEl) carrierEl.value = '';
+    const checkoutNotesEl = document.getElementById('checkout-notes');
+    if (checkoutNotesEl) checkoutNotesEl.value = '';
     
     renderPOS();
     populatePOSSelects();
@@ -3426,6 +3429,11 @@
             <span>${window.POS_HELPERS.formatUSD(tx.changeDue)}</span>
           </div>
         `}
+        ${tx.notes ? `
+          <div style="border-top:1px dashed #000; padding-top:6px; margin-top:6px; font-style:italic; font-size:9px; color:var(--text-secondary); text-align:left; word-wrap:break-word;">
+            <strong>Note:</strong> ${tx.notes}
+          </div>
+        ` : ''}
       </div>
 
       <div style="text-align:center; margin-top:16px; font-size:9px; border-top:1px dashed #000; padding-top:8px;">
