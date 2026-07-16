@@ -306,7 +306,8 @@ body.light-theme .logo-text {
 
 .nav-item:hover::after,
 .nav-item.active::after,
-.pos-cta-btn:hover::before {
+.pos-cta-btn:hover::before,
+.pos-cta-btn.active::before {
   opacity: 1;
   animation: rotate-border 2s linear infinite;
 }
@@ -3011,10 +3012,10 @@ body.light-theme .audit-log-badge {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-  background-size: 200% auto;
+  background: linear-gradient(-45deg, #6366f1, #8b5cf6, #ec4899, #db2777);
+  background-size: 300% 300%;
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
   padding: 14px 18px;
   font-weight: 850;
@@ -3023,40 +3024,60 @@ body.light-theme .audit-log-badge {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+  animation: liquid-gradient 8s ease infinite;
+}
+
+@keyframes liquid-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .pos-cta-btn::after {
   content: '';
   position: absolute;
   top: 0;
-  left: -50%;
+  left: -150%;
   width: 200%;
   height: 100%;
   background: linear-gradient(
     to right,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.35) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   transform: skewX(-25deg);
-  transition: 0.75s ease-in-out;
-  opacity: 0;
+  pointer-events: none;
+}
+
+.pos-cta-btn.active::after {
+  animation: auto-shine 5s infinite ease-in-out;
+}
+
+@keyframes auto-shine {
+  0% { left: -150%; opacity: 0; }
+  12% { left: 150%; opacity: 1; }
+  100% { left: 150%; opacity: 0; }
 }
 
 .pos-cta-btn:hover,
 body.light-theme .nav-item.pos-cta-btn:hover {
   transform: translateY(-3px) scale(1.02) !important;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
-  background-position: right center !important;
-  background-size: 200% auto !important;
+  background: linear-gradient(-45deg, #6366f1, #8b5cf6, #ec4899, #db2777) !important;
+  background-size: 300% 300% !important;
   color: #ffffff !important;
   box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35), 0 8px 30px rgba(236, 72, 153, 0.25) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  animation: liquid-gradient 4s ease infinite !important;
 }
 
 .pos-cta-btn:hover::after {
-  left: 125%;
-  opacity: 1;
+  animation: auto-shine-hover 0.8s ease-out;
+}
+
+@keyframes auto-shine-hover {
+  0% { left: -150%; opacity: 0; }
+  100% { left: 150%; opacity: 1; }
 }
 
 .pos-cta-btn:active,
@@ -3104,9 +3125,16 @@ body.light-theme .nav-item.pos-cta-btn.active svg {
 /* Ensure active/selected styling matches and overrides the light theme general nav rules */
 .pos-cta-btn.active,
 body.light-theme .nav-item.pos-cta-btn.active {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%) !important;
+  background: linear-gradient(-45deg, #4f46e5, #7c3aed, #ec4899, #db2777) !important;
+  background-size: 300% 300% !important;
   color: #ffffff !important;
-  box-shadow: 0 0 0 2px var(--text-primary), 0 8px 30px rgba(99, 102, 241, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  animation: liquid-gradient 6s ease infinite, active-neon-pulse 2.5s infinite alternate ease-in-out !important;
+}
+
+@keyframes active-neon-pulse {
+  0% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35), 0 4px 20px rgba(236, 72, 153, 0.25) !important; }
+  100% { box-shadow: 0 12px 35px rgba(124, 58, 237, 0.65), 0 12px 40px rgba(236, 72, 153, 0.5) !important; }
 }
 
 body.light-theme .pos-cta-btn {
