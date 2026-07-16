@@ -2094,12 +2094,18 @@
     
     // Branches POS select
     const brSelect = document.getElementById('cart-branch-select');
+    const currentSelectedBranch = brSelect ? brSelect.value : null;
+
     brSelect.innerHTML = '';
     state.branches.forEach(b => {
       if (!filterBranch || b.id === filterBranch) {
         brSelect.innerHTML += `<option value="${b.id}">${state.lang === 'km' ? b.nameKh : b.name}</option>`;
       }
     });
+
+    if (currentSelectedBranch && [...brSelect.options].some(o => o.value === currentSelectedBranch)) {
+      brSelect.value = currentSelectedBranch;
+    }
 
     // Shipping Carrier POS Select dropdown
     const carrierSelect = document.getElementById('cart-shipping-carrier');
@@ -2125,9 +2131,10 @@
     
     const loggedInStaffId = getCurrentUserStaffId();
     let staffCount = 0;
+    const activeSelectedBranch = brSelect.value || filterBranch;
     
     state.staff.forEach(s => {
-      if (!filterBranch || s.branchId === filterBranch) {
+      if (!activeSelectedBranch || s.branchId === activeSelectedBranch) {
         if (state.currentUser?.role === 'sales_staff') {
           if (loggedInStaffId && s.id === loggedInStaffId) {
             staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
@@ -11411,19 +11418,9 @@ CREATE TABLE sale_items (
     });
 
     document.getElementById('cart-branch-select').addEventListener('change', () => {
-      renderPOSProductGrid();
-      // Filter staff specific to selected branch
       const brId = document.getElementById('cart-branch-select').value;
-      const staffSelect = document.getElementById('cart-staff-select');
-      staffSelect.innerHTML = '';
-      state.staff.forEach(s => {
-        if (s.branchId === brId) {
-          staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-        }
-      });
-      if (state.staff.length > 0) {
-        state.currentPOSStaffId = staffSelect.value;
-      }
+      populatePOSSelects();
+      renderPOSProductGrid();
 
       // Update global active branch display in header banner & sidebar user details
       const br = state.branches.find(b => b.id === brId);
