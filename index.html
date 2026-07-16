@@ -203,8 +203,10 @@
     <aside class="sidebar">
       <div class="logo-container" id="sidebar-logo-container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div class="logo-icon" id="sidebar-default-logo">🚀</div>
-          <img id="sidebar-custom-logo" src="" style="display:none; width:36px; height:36px; object-fit:contain; border-radius: var(--radius-sm); margin-right:2px;">
+          <div class="sidebar-logo-wrapper">
+            <div class="logo-icon" id="sidebar-default-logo">🚀</div>
+            <img id="sidebar-custom-logo" class="sidebar-logo-img" src="" style="display:none;">
+          </div>
           <div class="logo-text" id="sidebar-logo-text">ABC System</div>
         </div>
         <button id="btn-close-sidebar" class="btn-close-sidebar" title="Close Sidebar">
