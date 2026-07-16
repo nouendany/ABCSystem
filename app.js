@@ -12071,6 +12071,7 @@ CREATE TABLE sale_items (
       const src = document.getElementById('tf-source-branch').value;
       const tar = document.getElementById('tf-target-branch').value;
       const extraPrice = parseFloat(document.getElementById('tf-extra-price').value) || 0;
+      const note = document.getElementById('tf-note-input').value.trim();
 
       if (src === tar) {
         alert(state.lang === 'km' ? 'សាខាប្រភព និងគោលដៅត្រូវតែខុសគ្នា!' : 'Source and target branches must be different!');
@@ -12092,6 +12093,12 @@ CREATE TABLE sale_items (
 
       const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
 
+      const baseDescOut = `Transferred ${qty} units to branch ${tar}` + (extraPrice > 0 ? ` with extra price +$${extraPrice.toFixed(2)}/unit` : '');
+      const descOut = note ? `${baseDescOut} (${note})` : baseDescOut;
+
+      const baseDescIn = `Received ${qty} units from branch ${src}` + (extraPrice > 0 ? ` with extra price +$${extraPrice.toFixed(2)}/unit` : '');
+      const descIn = note ? `${baseDescIn} (${note})` : baseDescIn;
+
       // Logs
       state.stockLogs.push({
         id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
@@ -12100,7 +12107,7 @@ CREATE TABLE sale_items (
         type: 'transfer',
         qty: -qty,
         warehouseId: src,
-        description: `Transferred ${qty} units to branch ${tar}` + (extraPrice > 0 ? ` with extra price +$${extraPrice.toFixed(2)}/unit` : ''),
+        description: descOut,
         branchId: src,
         createdBy: state.currentUser ? state.currentUser.username : 'system',
         updatedBy: state.currentUser ? state.currentUser.username : 'system',
@@ -12114,7 +12121,7 @@ CREATE TABLE sale_items (
         type: 'transfer',
         qty: qty,
         warehouseId: tar,
-        description: `Received ${qty} units from branch ${src}` + (extraPrice > 0 ? ` with extra price +$${extraPrice.toFixed(2)}/unit` : ''),
+        description: descIn,
         branchId: tar,
         createdBy: state.currentUser ? state.currentUser.username : 'system',
         updatedBy: state.currentUser ? state.currentUser.username : 'system',
