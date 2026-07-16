@@ -1,11 +1,6 @@
 /* CSS Stylesheet for GEDA Enterprise POS & ERP System */
 @import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy:wght@300;400;700&family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Noto+Sans+Khmer:wght@400;700&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
-@property --border-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
 
 :root {
   /* Common Design Tokens */
@@ -179,33 +174,17 @@ body.sidebar-collapsed .pos-cta-btn {
   padding: 6px 12px 6px 6px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   width: 100%; /* Make it fill the sidebar width perfectly! */
-  animation: brand-float 5s ease-in-out infinite, brand-glow 3s ease-in-out infinite alternate;
-}
-
-@keyframes brand-float {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-  100% { transform: translateY(0); }
-}
-
-@keyframes brand-glow {
-  0% {
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 4px rgba(99, 102, 241, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-  100% {
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.12), 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 12px rgba(99, 102, 241, 0.22);
-    border-color: rgba(255, 255, 255, 0.18);
-  }
+  will-change: transform;
 }
 
 .brand-pill-container:hover {
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 8px 25px rgba(0, 0, 0, 0.35), 0 0 20px rgba(99, 102, 241, 0.35);
-  animation-play-state: paused; /* Pause floating while hovering for precise hover state */
-  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15), 0 6px 18px rgba(0, 0, 0, 0.25), 0 0 10px rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
 }
 
 body.light-theme .brand-pill-container {
@@ -380,36 +359,10 @@ body.light-theme .logo-text {
   box-shadow: 0 0 8px var(--primary);
 }
 
-/* Glowing Border Light Trail Animation on Hover/Active */
-.nav-item::after,
-.pos-cta-btn::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(from var(--border-angle), transparent 50%, rgba(99, 102, 241, 0.4) 70%, var(--primary) 90%, #ffffff 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.nav-item:hover::after,
-.nav-item.active::after,
-.pos-cta-btn:hover::before,
-.pos-cta-btn.active::before {
-  opacity: 1;
-  animation: rotate-border 2s linear infinite;
-}
-
-@keyframes rotate-border {
-  to {
-    --border-angle: 360deg;
-  }
+/* Elegant, high-performance static border transitions on hover/active */
+.nav-item:hover,
+.nav-item.active {
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
 
