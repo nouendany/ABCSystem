@@ -166,7 +166,7 @@ body.sidebar-collapsed .pos-cta-btn {
   align-items: center;
   gap: 12px;
   margin-bottom: 28px;
-  padding-left: 6px;
+  padding-left: 0; /* Align perfectly with other nav items */
 }
 
 .brand-pill-container {
@@ -176,11 +176,11 @@ body.sidebar-collapsed .pos-cta-btn {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 6px 16px 6px 6px;
+  padding: 6px 12px 6px 6px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  width: fit-content;
+  width: 100%; /* Make it fill the sidebar width perfectly! */
   animation: brand-float 5s ease-in-out infinite, brand-glow 3s ease-in-out infinite alternate;
 }
 
