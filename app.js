@@ -111,8 +111,8 @@
     departments: [],
     teams: [],
     positions: [],
-    payrollItems: [],
     kpis: [],
+    testimonials: [],
 
     // POS State
     cart: [],
@@ -171,7 +171,8 @@
     positions: [],
     payrollItems: [],
     kpis: [],
-    voidedTransactions: []
+    voidedTransactions: [],
+    testimonials: []
   };
 
   let firebaseActive = false;
@@ -540,6 +541,7 @@
     state.positions = safeParse('abc_positions', []);
     state.payrollItems = safeParse('abc_payroll_items', []);
     state.kpis = safeParse('abc_kpis', []);
+    state.testimonials = safeParse('abc_testimonials', []);
     state.commissionRules = safeParse('abc_commission_rules', {});
     state.companySettings = safeParse('abc_company_settings', {});
     if (state.companySettings.startingCapital === undefined) {
@@ -835,6 +837,7 @@
     safeSetItem('abc_positions', JSON.stringify(state.positions));
     safeSetItem('abc_payroll_items', JSON.stringify(state.payrollItems));
     safeSetItem('abc_kpis', JSON.stringify(state.kpis));
+    safeSetItem('abc_testimonials', JSON.stringify(state.testimonials));
 
     // If Firebase Sync is active, write added/modified records to Firestore
     if (state.firebaseDb) {
@@ -882,6 +885,7 @@
         syncChanges('positions', state.positions, lastSyncedState.positions, 'id');
         syncChanges('payroll_items', state.payrollItems, lastSyncedState.payrollItems, 'id');
         syncChanges('kpis', state.kpis, lastSyncedState.kpis, 'id');
+        syncChanges('testimonials', state.testimonials, lastSyncedState.testimonials, 'id');
         syncChanges('voided_transactions', state.voidedTransactions, lastSyncedState.voidedTransactions, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
@@ -909,7 +913,8 @@
           positions: JSON.parse(JSON.stringify(state.positions)),
           payrollItems: JSON.parse(JSON.stringify(state.payrollItems)),
           kpis: JSON.parse(JSON.stringify(state.kpis)),
-          voidedTransactions: JSON.parse(JSON.stringify(state.voidedTransactions))
+          voidedTransactions: JSON.parse(JSON.stringify(state.voidedTransactions)),
+          testimonials: JSON.parse(JSON.stringify(state.testimonials))
         };
       } catch (err) {
         console.error("Cloud sync diff error:", err);
@@ -3174,6 +3179,14 @@
       customer.outstandingDebt = (customer.outstandingDebt || 0) + outstandingDebt;
     }
 
+    // Determine customer type for KPI points (new vs repeat)
+    let customerType = 'new';
+    if (customerId !== 'CST-001' && customer) {
+      if (customer.purchaseCount && customer.purchaseCount > 0) {
+        customerType = 'repeat';
+      }
+    }
+
     // Save CRM auto-followups (Restart schedule on new purchase, update order counts & histories)
     if (customerId !== 'CST-001' && customer) {
       // 1. Update customer order count and list
@@ -3260,6 +3273,7 @@
       pageName: pageName,
       pageId: pageId,
       customerId: customerId,
+      customerType: customerType,
       customerName: customer ? customer.name : 'General Customer',
       branchId: branchId,
       items: state.cart.map(item => {
@@ -4824,6 +4838,7 @@
     if (!sch) return;
 
     sch.status = 'completed';
+    sch.completedAt = new Date().toISOString();
     const notesText = state.lang === 'km' ? 'បានបញ្ចប់តាមរយៈការកត់ត្រារហ័ស' : 'Completed via quick-log';
     sch.notes = notesText;
 
@@ -8752,6 +8767,7 @@
         setupListener('positions', 'positions', 'id', [renderHROrg]);
         setupListener('payroll_items', 'payrollItems', 'id', [renderHRPayroll]);
         setupListener('kpis', 'kpis', 'id', [renderHRPerformance]);
+        setupListener('testimonials', 'testimonials', 'id', [renderTestimonials, renderCurrentView]);
         setupListener('voided_transactions', 'voidedTransactions', 'id', []);
 
         // Company settings listener
@@ -8870,6 +8886,7 @@
           migrateCollection('positions', state.positions, 'id');
           migrateCollection('payroll_items', state.payrollItems, 'id');
           migrateCollection('kpis', state.kpis, 'id');
+          migrateCollection('testimonials', state.testimonials, 'id');
           
           const pSettings = db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error(e));
           promises.push(pSettings);
@@ -10237,7 +10254,7 @@
       document.getElementById('btn-export-db').addEventListener('click', () => {
         if (!guardAction('export')) return;
         const backupData = {};
-        const keys = ['abc_users', 'abc_branches', 'abc_customers', 'abc_brands', 'abc_units', 'abc_categories', 'abc_products', 'abc_staff', 'abc_transactions', 'abc_expenses', 'abc_stock_logs', 'abc_payment_logs', 'abc_followups', 'abc_commission_rules', 'abc_company_settings', 'abc_voided_transactions'];
+        const keys = ['abc_users', 'abc_branches', 'abc_customers', 'abc_brands', 'abc_units', 'abc_categories', 'abc_products', 'abc_staff', 'abc_transactions', 'abc_expenses', 'abc_stock_logs', 'abc_payment_logs', 'abc_followups', 'abc_commission_rules', 'abc_company_settings', 'abc_voided_transactions', 'abc_testimonials'];
         
         keys.forEach(k => {
           backupData[k] = safeGetItem(k);
@@ -10347,6 +10364,7 @@
           state.positions = [];
           state.payrollItems = [];
           state.kpis = [];
+          state.testimonials = [];
 
           // Retain only General Customer (CST-001)
           state.customers = [
@@ -12278,6 +12296,7 @@ CREATE TABLE sale_items (
 
           // Add to customer timeline if completed
           if (status === 'completed') {
+            sch.completedAt = new Date().toISOString();
             const c = state.customers.find(cust => cust.id === f.customerId);
             if (c) {
               if (!c.timeline) c.timeline = [];
@@ -14701,17 +14720,13 @@ CREATE TABLE sale_items (
     const currentMonth = new Date().toISOString().slice(0, 7);
 
     tbody.innerHTML = state.employees.map(emp => {
+      // Calculate live KPI points
+      const liveKpi = calculateEmployeeKPI(emp.id, currentMonth);
+      const scoreStr = `${liveKpi.total} Pts`;
+      const gradeStr = getLiveKpiGrade(liveKpi.total);
+
       const empKpis = state.kpis.filter(k => k.employeeId === emp.id);
-      const currentEval = empKpis.find(k => k.month === currentMonth);
       const lastEval = empKpis.length > 0 ? empKpis[empKpis.length - 1] : null;
-
-      let scoreStr = 'Not Evaluated';
-      let gradeStr = 'N/A';
-      if (currentEval) {
-        scoreStr = `${currentEval.score}%`;
-        gradeStr = getKpiGrade(currentEval.score);
-      }
-
       let lastEvalStr = 'None';
       if (lastEval) {
         lastEvalStr = `${lastEval.month} (Score: ${lastEval.score}%)`;
@@ -14723,26 +14738,29 @@ CREATE TABLE sale_items (
           <td>${emp.fullName}</td>
           <td>${emp.position || 'N/A'}</td>
           <td>${currentMonth}</td>
-          <td><strong style="color: ${currentEval ? 'var(--primary)' : 'var(--text-secondary)'};">${scoreStr}</strong></td>
-          <td><span class="status-badge" style="background: ${getKpiGradeColor(gradeStr)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${gradeStr}</span></td>
+          <td><strong style="color: var(--primary);">${scoreStr}</strong></td>
+          <td><span class="status-badge" style="background: ${getLiveKpiGradeColor(gradeStr)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${gradeStr}</span></td>
           <td>${lastEvalStr}</td>
           <td>
-            <button class="btn btn-sm btn-secondary" onclick="openKpiEvalModal('${emp.id}')">✍️ Evaluate</button>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-primary" onclick="openKpiDetailsModal('${emp.id}', '${currentMonth}')">📊 Scorecard</button>
+              <button class="btn btn-sm btn-secondary" onclick="openKpiEvalModal('${emp.id}')">✍️ Review</button>
+            </div>
           </td>
         </tr>
       `;
     }).join('') || `<tr><td colspan="8" style="text-align:center;">No employees in the database.</td></tr>`;
   }
 
-  function getKpiGrade(score) {
-    if (score >= 90) return 'Grade A (Outstanding)';
-    if (score >= 80) return 'Grade B (Excellent)';
-    if (score >= 70) return 'Grade C (Good)';
-    if (score >= 50) return 'Grade D (Satisfactory)';
+  function getLiveKpiGrade(score) {
+    if (score >= 120) return 'Grade A (Outstanding)';
+    if (score >= 90) return 'Grade B (Excellent)';
+    if (score >= 60) return 'Grade C (Good)';
+    if (score >= 40) return 'Grade D (Satisfactory)';
     return 'Grade F (Fail)';
   }
 
-  function getKpiGradeColor(grade) {
+  function getLiveKpiGradeColor(grade) {
     if (grade.includes('Grade A')) return 'linear-gradient(135deg, #10b981, #059669)';
     if (grade.includes('Grade B')) return 'linear-gradient(135deg, #3b82f6, #2563eb)';
     if (grade.includes('Grade C')) return 'linear-gradient(135deg, #f59e0b, #d97706)';
@@ -15250,6 +15268,368 @@ CREATE TABLE sale_items (
     });
   }
 
+  // ==================== AUTOMATED KPI & TESTIMONIAL SYSTEM ====================
+  function calculateEmployeeKPI(employeeId, month) {
+    const emp = state.employees.find(e => e.id === employeeId);
+    if (!emp) return { total: 0, attendance: 0, newCustomer: 0, repeatSale: 0, followUp: 0, testimonial: 0, targetBonus: 0, unitsSold: 0 };
+
+    // 1. Attendance (វត្តមាន): 2 points per clock-in/out
+    const monthAtt = state.attendance.filter(a => a.employeeId === employeeId && a.date && a.date.startsWith(month));
+    let attendancePoints = 0;
+    monthAtt.forEach(a => {
+      if (a.checkIn) attendancePoints += 2;
+      if (a.checkOut) attendancePoints += 2;
+    });
+
+    // Find linked staff ID
+    const staffObj = state.staff.find(s => s.employeeId === employeeId || s.id === employeeId);
+    const staffId = staffObj ? staffObj.id : null;
+
+    let newCustomerPoints = 0;
+    let repeatSalePoints = 0;
+    let unitsSold = 0;
+
+    if (staffId) {
+      // 2. POS Checkout (New/Repeat Customer)
+      const monthTX = state.transactions.filter(t => t.staffId === staffId && t.date && t.date.startsWith(month));
+      monthTX.forEach(t => {
+        const qtySum = t.items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
+        unitsSold += qtySum;
+
+        if (t.customerType === 'new') {
+          newCustomerPoints += 1;
+        } else if (t.customerType === 'repeat') {
+          repeatSalePoints += 2;
+        } else {
+          if (t.customerId === 'CST-001') {
+            newCustomerPoints += 1;
+          } else {
+            newCustomerPoints += 1;
+          }
+        }
+      });
+    }
+
+    // 3. Customer Follow-up completes (0.2 points each)
+    let followUpPoints = 0;
+    state.followups.forEach(f => {
+      if (f.salesStaffId === staffId || f.salesStaffId === employeeId) {
+        f.schedules.forEach(s => {
+          if (s.status === 'completed' && s.completedAt && s.completedAt.startsWith(month)) {
+            followUpPoints += 0.2;
+          }
+        });
+      }
+    });
+
+    // 4. Create testimonials (សាក្សី) (5 points each)
+    let testimonialPoints = 0;
+    const staffTestimonials = state.testimonials.filter(t => (t.staffId === staffId || t.staffId === employeeId) && t.date && t.date.startsWith(month));
+    testimonialPoints = staffTestimonials.length * 5;
+
+    // 5. Target goal bonus (100 points for >= 300 units)
+    let targetBonus = 0;
+    if (unitsSold >= 300) {
+      targetBonus = 100;
+    }
+
+    const total = parseFloat((attendancePoints + newCustomerPoints + repeatSalePoints + followUpPoints + testimonialPoints + targetBonus).toFixed(1));
+
+    return {
+      total,
+      attendance: attendancePoints,
+      newCustomer: newCustomerPoints,
+      repeatSale: repeatSalePoints,
+      followUp: parseFloat(followUpPoints.toFixed(1)),
+      testimonial: testimonialPoints,
+      targetBonus,
+      unitsSold
+    };
+  }
+  window.calculateEmployeeKPI = calculateEmployeeKPI;
+
+  function renderTestimonials() {
+    const tbody = document.getElementById('testimonials-table-body');
+    if (!tbody) return;
+
+    const query = document.getElementById('search-testimonial-input')?.value.toLowerCase() || '';
+    const staffFilter = document.getElementById('filter-testimonial-staff')?.value || 'all';
+
+    // Populate staff filter dropdown if empty
+    const filterSelect = document.getElementById('filter-testimonial-staff');
+    if (filterSelect && filterSelect.options.length <= 1) {
+      filterSelect.innerHTML = '<option value="all">All Staff</option>';
+      getFilteredStaff().forEach(s => {
+        filterSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+      });
+    }
+
+    let filtered = state.testimonials;
+
+    if (staffFilter !== 'all') {
+      filtered = filtered.filter(t => t.staffId === staffFilter);
+    }
+
+    if (query) {
+      filtered = filtered.filter(t => 
+        (t.customerName && t.customerName.toLowerCase().includes(query)) ||
+        (t.productName && t.productName.toLowerCase().includes(query)) ||
+        (t.details && t.details.toLowerCase().includes(query)) ||
+        (t.staffName && t.staffName.toLowerCase().includes(query))
+      );
+    }
+
+    tbody.innerHTML = filtered.map(t => {
+      const dateStr = t.date ? new Date(t.date).toLocaleDateString(state.lang === 'km' ? 'km-KH' : 'en-US') : '—';
+      return `
+        <tr>
+          <td>${dateStr}</td>
+          <td><strong>${t.customerName || 'General Customer'}</strong></td>
+          <td><span class="badge badge-info" style="font-size:11px;">${t.productName || 'General'}</span></td>
+          <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: normal;">${t.details || ''}</td>
+          <td><span style="font-weight:600; color:var(--primary-light);">${t.staffName || 'System'}</span></td>
+          <td style="text-align:center;">
+            <button class="qty-btn" style="background:rgba(239,68,68,0.15); color:var(--danger);" onclick="deleteTestimonial('${t.id}')">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No testimonials recorded.</td></tr>`;
+  }
+  window.renderTestimonials = renderTestimonials;
+
+  window.deleteTestimonial = function(id) {
+    if (!guardAction('delete')) return;
+    if (confirm(state.lang === 'km' ? 'តើអ្នកប្រាកដជាចង់លុបសាក្សីនេះមែនទេ?' : 'Are you sure you want to delete this testimonial?')) {
+      state.testimonials = state.testimonials.filter(t => t.id !== id);
+      saveStateToLocalStorage();
+      renderTestimonials();
+      alert(state.lang === 'km' ? 'បានលុបសាក្សីដោយជោគជ័យ!' : 'Testimonial deleted successfully!');
+    }
+  }
+
+  function openAddTestimonialModal() {
+    if (!guardAction('add')) return;
+    
+    const custSelect = document.getElementById('test-cust-id');
+    custSelect.innerHTML = '';
+    state.customers.forEach(c => {
+      custSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.phone})</option>`;
+    });
+
+    const prodSelect = document.getElementById('test-product-sku');
+    prodSelect.innerHTML = '<option value="general">General Feedback / Service (សេវាកម្មទូទៅ)</option>';
+    state.products.forEach(p => {
+      const name = state.lang === 'km' ? p.nameKh : p.nameEn;
+      prodSelect.innerHTML += `<option value="${p.sku}">${name}</option>`;
+    });
+
+    const staffSelect = document.getElementById('test-staff-id');
+    staffSelect.innerHTML = '';
+    getFilteredStaff().forEach(s => {
+      staffSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    });
+    
+    const currentStaff = state.staff.find(s => s.name === state.currentUser?.name || s.id === state.currentUser?.id);
+    if (currentStaff) {
+      staffSelect.value = currentStaff.id;
+    }
+
+    document.getElementById('test-details').value = '';
+    document.getElementById('modal-testimonial').classList.add('active-modal');
+  }
+
+  function saveTestimonial(e) {
+    e.preventDefault();
+    if (!guardAction('add')) return;
+
+    const customerId = document.getElementById('test-cust-id').value;
+    const productSku = document.getElementById('test-product-sku').value;
+    const staffId = document.getElementById('test-staff-id').value;
+    const details = document.getElementById('test-details').value.trim();
+
+    const customer = state.customers.find(c => c.id === customerId);
+    const staff = state.staff.find(s => s.id === staffId);
+    let productName = 'General Feedback';
+    if (productSku !== 'general') {
+      const p = state.products.find(prod => prod.sku === productSku);
+      productName = p ? (state.lang === 'km' ? p.nameKh : p.nameEn) : 'Product';
+    }
+
+    const newTestimonial = {
+      id: 'TST-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+      date: new Date().toISOString(),
+      customerId,
+      customerName: customer ? customer.name : 'Unknown',
+      productSku,
+      productName,
+      details,
+      staffId,
+      staffName: staff ? staff.name : 'System',
+      timestamp: new Date().toISOString()
+    };
+
+    state.testimonials.push(newTestimonial);
+    saveStateToLocalStorage();
+    document.getElementById('modal-testimonial').classList.remove('active-modal');
+    renderTestimonials();
+    alert(state.lang === 'km' ? 'បានរក្សាទុកសាក្សីដោយជោគជ័យ! បុគ្គលិកទទួលបាន ៥ ពិន្ទុ!' : 'Testimonial saved successfully! Staff rewarded 5 points!');
+  }
+
+  function openKpiDetailsModal(employeeId, month) {
+    const emp = state.employees.find(e => e.id === employeeId);
+    if (!emp) return;
+
+    const kpi = calculateEmployeeKPI(employeeId, month);
+
+    document.getElementById('kpi-detail-emp-info').innerText = `${emp.id} - ${emp.fullName}`;
+    document.getElementById('kpi-detail-month').innerText = month;
+
+    const listContainer = document.getElementById('kpi-breakdown-list');
+    listContainer.innerHTML = `
+      <div style="background: rgba(255,255,255,0.01); border-left: 3px solid var(--primary); padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">វត្តមានប្រចាំខែ (Attendance Logs)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">2 points per check-in or check-out</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: var(--primary); font-size: 14px;">+${kpi.attendance} pts</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${kpi.attendance / 2} Check-ins/outs</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.01); border-left: 3px solid var(--success); padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">លក់ឱ្យអតិថិជនថ្មី (New Customer Sales)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">1 point per new customer sale</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: var(--success); font-size: 14px;">+${kpi.newCustomer} pts</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${kpi.newCustomer} invoices</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.01); border-left: 3px solid var(--warning); padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">លក់ឡើងវិញ / ម៉ូយចាស់ (Repeat Sales)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">2 points per returning customer sale</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: var(--warning); font-size: 14px;">+${kpi.repeatSale} pts</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${Math.round(kpi.repeatSale / 2)} invoices</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.01); border-left: 3px solid #8b5cf6; padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">ការតាមដានអតិថិជន (Follow-Up Complete)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">0.2 points per completed followup alert</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: #8b5cf6; font-size: 14px;">+${kpi.followUp} pts</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${Math.round(kpi.followUp / 0.2)} follow-ups</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.01); border-left: 3px solid #ec4899; padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">បង្កើតសាក្សី (Testimonials Created)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">5 points per customer testimony logged</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: #ec4899; font-size: 14px;">+${kpi.testimonial} pts</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${kpi.testimonial / 5} testimonials</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.01); border-left: 3px solid #f59e0b; padding: 10px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary);">លក់គ្រប់គោលដៅ ៣០០ ឯកតា (Sales Target)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">+100 bonus points if monthly sales >= 300 units</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: ${kpi.targetBonus > 0 ? '#10b981' : 'var(--text-muted)'}; font-size: 14px;">+${kpi.targetBonus} pts</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${kpi.unitsSold} / 300 units</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('kpi-detail-total-score').innerText = `${kpi.total} Points`;
+    document.getElementById('modal-kpi-details').classList.add('active-modal');
+  }
+  window.openKpiDetailsModal = openKpiDetailsModal;
+
+  function setupTestimonialEventListeners() {
+    const btnAdd = document.getElementById('btn-add-testimonial-modal');
+    if (btnAdd) {
+      btnAdd.addEventListener('click', openAddTestimonialModal);
+    }
+    const btnClose = document.getElementById('btn-close-testimonial');
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        document.getElementById('modal-testimonial').classList.remove('active-modal');
+      });
+    }
+    const btnCancel = document.getElementById('btn-cancel-testimonial');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', () => {
+        document.getElementById('modal-testimonial').classList.remove('active-modal');
+      });
+    }
+    const form = document.getElementById('testimonial-form');
+    if (form) {
+      form.addEventListener('submit', saveTestimonial);
+    }
+    const searchInput = document.getElementById('search-testimonial-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', renderTestimonials);
+    }
+    const staffSelect = document.getElementById('filter-testimonial-staff');
+    if (staffSelect) {
+      staffSelect.addEventListener('change', renderTestimonials);
+    }
+
+    // CRM sub-tabs event delegation
+    document.querySelectorAll('.crm-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.crm-tab-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+
+        const targetTab = e.target.getAttribute('data-tab');
+        document.querySelectorAll('.crm-view-panel').forEach(panel => {
+          panel.style.display = 'none';
+          panel.classList.remove('active-panel');
+        });
+
+        const activePanel = document.getElementById(targetTab);
+        if (activePanel) {
+          activePanel.style.display = 'block';
+          activePanel.classList.add('active-panel');
+        }
+
+        if (targetTab === 'crm-testimonials') {
+          renderTestimonials();
+        } else {
+          renderCustomers();
+        }
+      });
+    });
+  }
+
+  function setupKpiDetailsEventListeners() {
+    const btnClose = document.getElementById('btn-close-kpi-details');
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        document.getElementById('modal-kpi-details').classList.remove('active-modal');
+      });
+    }
+    const btnCloseFooter = document.getElementById('btn-close-kpi-details-footer');
+    if (btnCloseFooter) {
+      btnCloseFooter.addEventListener('click', () => {
+        document.getElementById('modal-kpi-details').classList.remove('active-modal');
+      });
+    }
+  }
+
   // ==================== END HRMS UPGRADE LOGIC ====================
 
   // Bind main DOM event
@@ -15269,6 +15649,8 @@ CREATE TABLE sale_items (
     setupOrgEventListeners();
     setupPayrollEventListeners();
     setupKpiEventListeners();
+    setupTestimonialEventListeners();
+    setupKpiDetailsEventListeners();
     setupSecurityEventListeners();
     setupStickyNotes();
     setupMarquee();

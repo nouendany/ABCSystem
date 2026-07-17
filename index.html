@@ -816,57 +816,105 @@
       </div>
 
       <div id="view-customers" class="view-panel">
-        <div class="table-actions-row" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-          <button class="btn btn-primary" id="btn-add-customer-modal" data-translate="addCustomer">Add Customer</button>
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <!-- Customer Search Input -->
-            <input type="text" class="form-control" id="search-customer-input" placeholder="Search customer..." data-translate="searchPlaceholderCustomers" style="width:240px; padding:6px 12px; font-size:12.5px; height:34px; margin:0; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff;">
-            
-            <div style="display:flex; align-items:center; gap:8px;">
-              <label style="margin:0; font-size:12px; font-weight:600; white-space:nowrap;" data-translate="filterByStaff">Filter by Staff</label>
-              <select class="form-control" id="filter-customer-staff" style="width:180px; padding:6px; font-size:12px; height:auto; margin:0;">
-                <!-- Populated dynamically -->
-              </select>
+        <!-- CRM Sub-tabs -->
+        <div class="hr-tab-row crm-tab-row" style="margin-bottom: 20px;">
+          <button class="hr-tab-btn crm-tab-btn active" data-tab="crm-profiles">Customer Profiles (ព័ត៌មានអតិថិជន)</button>
+          <button class="hr-tab-btn crm-tab-btn" data-tab="crm-testimonials">Testimonials (សាក្សីអតិថិជន)</button>
+        </div>
+
+        <!-- CRM Tab 1: Profiles -->
+        <div id="crm-profiles" class="crm-view-panel active-panel">
+          <div class="table-actions-row" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btn-add-customer-modal" data-translate="addCustomer">Add Customer</button>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <!-- Customer Search Input -->
+              <input type="text" class="form-control" id="search-customer-input" placeholder="Search customer..." data-translate="searchPlaceholderCustomers" style="width:240px; padding:6px 12px; font-size:12.5px; height:34px; margin:0; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff;">
+              
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="margin:0; font-size:12px; font-weight:600; white-space:nowrap;" data-translate="filterByStaff">Filter by Staff</label>
+                <select class="form-control" id="filter-customer-staff" style="width:180px; padding:6px; font-size:12px; height:auto; margin:0;">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="customers">Customer Profiles (CRM)</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table" id="customers-crm-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th data-translate="customerName">Customer Name</th>
+                    <th data-translate="customerPhone">Phone Number</th>
+                    <th data-translate="customerAddress">Address</th>
+                    <th data-translate="customerSource">Lead Source</th>
+                    <th data-translate="assignedStaff">Assigned Staff</th>
+                    <th data-translate="rank">CRM Tier</th>
+                    <th style="text-align:center;" data-translate="ordersCount">Orders</th>
+                    <th style="text-align:right;" data-translate="outstandingDebt">Outstanding Debt</th>
+                    <th style="text-align:right;" data-translate="totalPaid">Total Paid</th>
+                    <th>Notes</th>
+                    <th data-translate="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-crm-table-body">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div id="crm-pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">
+                <span data-translate="showing">Showing</span> <span id="crm-page-start" style="color:var(--text-primary);">0</span>-<span id="crm-page-end" style="color:var(--text-primary);">0</span> <span data-translate="of">of</span> <span id="crm-total-count" style="color:var(--primary-light);">0</span> <span data-translate="customers_count">customers</span>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-outline btn-sm" id="btn-crm-prev-page" style="padding: 6px 12px; font-weight: 800; cursor: pointer;">⬅️ <span data-translate="prevPage">Prev</span></button>
+                <div id="crm-page-numbers" style="display: flex; gap: 6px; align-items: center;"></div>
+                <button class="btn btn-outline btn-sm" id="btn-crm-next-page" style="padding: 6px 12px; font-weight: 800; cursor: pointer;"><span data-translate="nextPage">Next</span> ➡️</button>
+              </div>
             </div>
           </div>
         </div>
-        
-        <div class="glass-card">
-          <div class="table-header">
-            <h3 data-translate="customers">Customer Profiles (CRM)</h3>
-          </div>
-          <div class="table-responsive">
-            <table class="pos-table" id="customers-crm-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th data-translate="customerName">Customer Name</th>
-                  <th data-translate="customerPhone">Phone Number</th>
-                  <th data-translate="customerAddress">Address</th>
-                  <th data-translate="customerSource">Lead Source</th>
-                  <th data-translate="assignedStaff">Assigned Staff</th>
-                  <th data-translate="rank">CRM Tier</th>
-                  <th style="text-align:center;" data-translate="ordersCount">Orders</th>
-                  <th style="text-align:right;" data-translate="outstandingDebt">Outstanding Debt</th>
-                  <th style="text-align:right;" data-translate="totalPaid">Total Paid</th>
-                  <th>Notes</th>
-                  <th data-translate="action">Action</th>
-                </tr>
-              </thead>
-              <tbody id="customers-crm-table-body">
-                <!-- JS Injected -->
-              </tbody>
-            </table>
-          </div>
-          <!-- Pagination Controls -->
-          <div id="crm-pagination-container" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
-            <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">
-              <span data-translate="showing">Showing</span> <span id="crm-page-start" style="color:var(--text-primary);">0</span>-<span id="crm-page-end" style="color:var(--text-primary);">0</span> <span data-translate="of">of</span> <span id="crm-total-count" style="color:var(--primary-light);">0</span> <span data-translate="customers_count">customers</span>
+
+        <!-- CRM Tab 2: Testimonials -->
+        <div id="crm-testimonials" class="crm-view-panel" style="display:none;">
+          <div class="table-actions-row" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btn-add-testimonial-modal">➕ Add Testimonial (បង្កើតសាក្សី)</button>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <input type="text" class="form-control" id="search-testimonial-input" placeholder="Search testimonials..." style="width:240px; padding:6px 12px; font-size:12.5px; height:34px; margin:0; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="margin:0; font-size:12px; font-weight:600; white-space:nowrap;">Filter by Staff</label>
+                <select class="form-control" id="filter-testimonial-staff" style="width:180px; padding:6px; font-size:12px; height:auto; margin:0;">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <button class="btn btn-outline btn-sm" id="btn-crm-prev-page" style="padding: 6px 12px; font-weight: 800; cursor: pointer;">⬅️ <span data-translate="prevPage">Prev</span></button>
-              <div id="crm-page-numbers" style="display: flex; gap: 6px; align-items: center;"></div>
-              <button class="btn btn-outline btn-sm" id="btn-crm-next-page" style="padding: 6px 12px; font-weight: 800; cursor: pointer;"><span data-translate="nextPage">Next</span> ➡️</button>
+          </div>
+
+          <div class="glass-card">
+            <div class="table-header">
+              <h3>Customer Testimonials (សាក្សីអតិថិជន)</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table" id="testimonials-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Customer Name</th>
+                    <th>Product/Service</th>
+                    <th>Testimonial Details</th>
+                    <th>Logged By</th>
+                    <th style="text-align:center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="testimonials-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -3328,6 +3376,80 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="btn-close-staff-items-footer" style="width: 100%; justify-content: center;">បិទ / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD TESTIMONIAL -->
+  <div class="modal-overlay" id="modal-testimonial">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Add Testimonial (បង្កើតសាក្សី)</h3>
+        <button class="qty-btn" id="btn-close-testimonial">×</button>
+      </div>
+      <form id="testimonial-form">
+        <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
+          <div class="form-group">
+            <label>Customer Name (ឈ្មោះអតិថិជន) *</label>
+            <select class="form-control" id="test-cust-id" required style="width:100%; padding:8px; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-color); border-radius:4px;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Product Purchased (ទំនិញដែលបានទិញ) *</label>
+            <select class="form-control" id="test-product-sku" required style="width:100%; padding:8px; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-color); border-radius:4px;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sales Rep / Staff (បុគ្គលិកលក់) *</label>
+            <select class="form-control" id="test-staff-id" required style="width:100%; padding:8px; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-color); border-radius:4px;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Testimonial Details (ខ្លឹមសារសាក្សី / Feedback) *</label>
+            <textarea class="form-control" id="test-details" required rows="4" placeholder="e.g. អតិថិជនប្រើហើយបាត់មុនជាំ សរសើរមិនដាច់ពីមាត់ ឬលីងរូបភាព/វីដេអូ..." style="background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; width: 100%; padding: 8px; font-size: 13px; resize: vertical;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-testimonial" style="flex: 1; justify-content: center;">បដិសេធ / Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">រក្សាទុក / Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: KPI SCORECARD DETAILS -->
+  <div class="modal-overlay" id="modal-kpi-details">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>KPI Scorecard Details (របាយការណ៍ពិន្ទុ KPI)</h3>
+        <button class="qty-btn" id="btn-close-kpi-details">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
+        <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Employee ID / Name:</span>
+            <strong id="kpi-detail-emp-info" style="color: var(--text-primary);">-</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Evaluation Month:</span>
+            <strong id="kpi-detail-month" style="color: var(--text-primary);">-</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;" id="kpi-breakdown-list">
+          <!-- Dynamic Scorecard Rows -->
+        </div>
+
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 2px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 15px; font-weight: 800; color: var(--text-primary);">Total KPI Score:</span>
+          <strong id="kpi-detail-total-score" style="font-size: 20px; color: var(--primary); text-shadow: 0 0 10px rgba(99,102,241,0.3);">-</strong>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-close-kpi-details-footer" style="width: 100%; justify-content: center;">បិទ / Close</button>
       </div>
     </div>
   </div>
