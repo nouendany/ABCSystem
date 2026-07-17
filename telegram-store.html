@@ -448,7 +448,7 @@
     /* Cart Action Bar (Bottom Bar) */
     .cart-action-bar {
       position: fixed;
-      bottom: 0;
+      bottom: 64px; /* Lift above bottom nav bar */
       left: 0;
       right: 0;
       background-color: var(--card-bg);
@@ -458,7 +458,7 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
-      z-index: 9;
+      z-index: 99;
     }
 
     .cart-info {
@@ -979,7 +979,7 @@
 
     /* Padding for content so it doesn't get hidden behind fixed footer */
     body {
-      padding-bottom: 74px !important;
+      padding-bottom: 150px !important;
     }
 
     .tma-card {
