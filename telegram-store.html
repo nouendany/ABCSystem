@@ -918,6 +918,89 @@
       border-bottom: 1.5px dashed var(--border);
       margin: 4px 0;
     }
+
+    /* Bottom Nav & TMA Upgrades */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 64px;
+      background: #0f172a;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-tab {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .nav-tab:hover {
+      color: #e2e8f0;
+    }
+
+    .nav-tab.active {
+      color: #3b82f6;
+    }
+
+    .nav-tab svg, .nav-tab .tab-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .tab-panel {
+      display: none;
+      flex: 1;
+      width: 100%;
+    }
+
+    .tab-panel.active-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Padding for content so it doesn't get hidden behind fixed footer */
+    body {
+      padding-bottom: 74px !important;
+    }
+
+    .tma-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tma-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
@@ -939,34 +1022,136 @@
   </header>
 
   <!-- Controls (Search + Categories) -->
-  <div class="controls-container">
-    <div class="search-box">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-      </svg>
-      <input type="text" id="search-input" placeholder="ស្វែងរកទំនិញ (Search product/SKU)...">
+  <!-- View 1: POS Order Tab Panel -->
+  <div id="view-order-pos" class="tab-panel active-panel">
+    <!-- Controls (Search + Categories) -->
+    <div class="controls-container">
+      <div class="search-box">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <input type="text" id="search-input" placeholder="ស្វែងរកទំនិញ (Search product/SKU)...">
+      </div>
+
+      <div class="categories-bar" id="categories-tabs">
+        <span class="category-tab active" data-category="all">ទាំងអស់ (All)</span>
+        <!-- Categories loaded dynamically -->
+      </div>
     </div>
 
-    <div class="categories-bar" id="categories-tabs">
-      <span class="category-tab active" data-category="all">ទាំងអស់ (All)</span>
-      <!-- Categories loaded dynamically -->
+    <!-- Products Grid -->
+    <div class="products-container" id="products-grid">
+      <!-- Loaded dynamically -->
+    </div>
+
+    <!-- Cart Bottom Action Bar -->
+    <div class="cart-action-bar">
+      <div class="cart-info">
+        <div class="cart-summary-text" id="cart-item-count">0 items</div>
+        <div class="cart-total-amount" id="cart-total-preview">$0.00</div>
+      </div>
+      <button class="view-cart-btn" id="btn-view-cart" disabled>
+        🛒 View Cart
+      </button>
     </div>
   </div>
 
-  <!-- Products Grid -->
-  <div class="products-container" id="products-grid">
-    <!-- Loaded dynamically -->
   </div>
 
-  <!-- Cart Bottom Action Bar -->
-  <div class="cart-action-bar">
-    <div class="cart-info">
-      <div class="cart-summary-text" id="cart-item-count">0 items</div>
-      <div class="cart-total-amount" id="cart-total-preview">$0.00</div>
+  <!-- View 2: CRM Followups Panel -->
+  <div id="view-crm-followups" class="tab-panel" style="display: none; padding: 15px 15px 80px 15px; flex: 1; overflow-y: auto;">
+    <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <h3 style="font-size:16px; font-weight:700;">📞 តាមដានអតិថិជន (Follow-Ups)</h3>
     </div>
-    <button class="view-cart-btn" id="btn-view-cart" disabled>
-      🛒 View Cart
+    <div class="search-box" style="margin-bottom:15px; position:relative; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; padding:0 12px; height:40px;">
+      <input type="text" id="followup-search-input" placeholder="Search customer follow-ups..." style="border:none; width:100%; height:100%; font-size:13px; outline:none; background:transparent;">
+    </div>
+    <div id="followups-list-container" style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- View 3: CRM Testimonials Panel -->
+  <div id="view-crm-testimonials" class="tab-panel" style="display: none; padding: 15px 15px 80px 15px; flex: 1; overflow-y: auto;">
+    <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <h3 style="font-size:16px; font-weight:700;">✍️ សាក្សីអតិថិជន (Testimonials)</h3>
+      <button class="view-cart-btn" id="btn-add-test-tma" style="width:auto; height:32px; padding:0 12px; font-size:12px; border-radius:6px; cursor:pointer;">➕ Add Testimonial</button>
+    </div>
+    <div class="search-box" style="margin-bottom:15px; position:relative; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; padding:0 12px; height:40px;">
+      <input type="text" id="test-search-input-tma" placeholder="Search testimonials..." style="border:none; width:100%; height:100%; font-size:13px; outline:none; background:transparent;">
+    </div>
+    <div id="testimonials-list-container" style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- View 4: My KPI Scorecard Panel -->
+  <div id="view-personal-kpi" class="tab-panel" style="display: none; padding: 15px 15px 80px 15px; flex: 1; overflow-y: auto;">
+    <div class="section-header" style="margin-bottom:15px;">
+      <h3 style="font-size:16px; font-weight:700;">📊 ពិន្ទុ KPI របស់ខ្ញុំ (My Scorecard)</h3>
+    </div>
+    
+    <!-- KPI Header Dashboard Card -->
+    <div class="kpi-card-tma" style="background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%); color: white; padding: 18px; border-radius: var(--radius-lg); margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37,99,235,0.25); text-align:center;">
+      <div style="font-size: 13px; opacity: 0.85; margin-bottom: 4px;">ពិន្ទុសរុបប្រចាំខែ (Monthly Total Score)</div>
+      <div id="kpi-total-points-tma" style="font-size: 32px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">0.0 Points</div>
+      <div id="kpi-grade-badge-tma" style="margin-top: 8px; display: inline-block; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.2); font-size: 11px; font-weight: 700;">Grade: F</div>
+    </div>
+
+    <!-- KPI breakdown details list -->
+    <div id="kpi-details-container-tma" style="display:flex; flex-direction:column; gap:10px;">
+      <!-- Dynamic detailed scorecard rows -->
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-tab active" data-panel="view-order-pos">
+      <span class="tab-icon">🛒</span>
+      <span>POS Order</span>
     </button>
+    <button class="nav-tab" data-panel="view-crm-followups">
+      <span class="tab-icon">📞</span>
+      <span>Follow-Ups</span>
+    </button>
+    <button class="nav-tab" data-panel="view-crm-testimonials">
+      <span class="tab-icon">✍️</span>
+      <span>Testimony</span>
+    </button>
+    <button class="nav-tab" data-panel="view-personal-kpi">
+      <span class="tab-icon">📊</span>
+      <span>My KPI</span>
+    </button>
+  </nav>
+
+  <!-- Modal: Add Testimonial (TMA) -->
+  <div class="cart-drawer-backdrop" id="modal-test-backdrop" style="display:none; z-index:1100;"></div>
+  <div class="cart-drawer" id="modal-test-drawer" style="display:none; z-index:1200; height:75vh;">
+    <div class="cart-drawer-header">
+      <div class="cart-drawer-title">✍️ បញ្ចូលសាក្សីថ្មី (Add Testimonial)</div>
+      <button class="close-drawer-btn" id="btn-close-test-drawer">✕</button>
+    </div>
+    <div class="cart-drawer-content" style="padding: 15px;">
+      <form id="test-form-tma">
+        <div class="form-group">
+          <label>ឈ្មោះអតិថិជន (Customer Name) *</label>
+          <select id="test-cust-select-tma" required style="width:100%; height:40px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); outline:none;">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ទំនិញ/សេវាកម្ម (Product/Service) *</label>
+          <select id="test-prod-select-tma" required style="width:100%; height:40px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); outline:none;">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>ខ្លឹមសារសាក្សី / Feedback *</label>
+          <textarea id="test-details-tma" required rows="4" placeholder="ស្វែងរក/បញ្ចូលមតិអតិថិជនប្រើហើយបាត់មុនជាំ សរសើរ..." style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); outline:none; font-size:13px; font-family:inherit; resize:none;"></textarea>
+        </div>
+        <button type="submit" class="view-cart-btn" style="width:100%; margin-top:15px; height:45px; font-size:14px; font-weight:700; opacity: 1;">រក្សាទុកសាក្សី (Save Testimonial)</button>
+      </form>
+    </div>
   </div>
 
   <!-- Cart Drawer Sheet -->
@@ -1182,6 +1367,10 @@
     let categoriesList = [];
     let branchesList = [];
     let customersList = [];
+    let followupsList = [];
+    let testimonialsList = [];
+    let attendanceList = [];
+    let transactionsList = [];
     let activeBranchId = 'BR-001';
     let activeCategory = 'all';
     let searchQuery = '';
@@ -1633,6 +1822,27 @@
             address: matchedCompany.address || companySettings.address,
             email: matchedCompany.email || companySettings.email || ''
           };
+        }
+
+        // Fetch followups, testimonials, attendance, transactions for KPI
+        try {
+          const followSnap = await db.collection('followups').get();
+          followupsList = [];
+          followSnap.forEach(doc => followupsList.push({ id: doc.id, ...doc.data() }));
+
+          const testSnap = await db.collection('testimonials').get();
+          testimonialsList = [];
+          testSnap.forEach(doc => testimonialsList.push({ id: doc.id, ...doc.data() }));
+
+          const attSnap = await db.collection('attendance').get();
+          attendanceList = [];
+          attSnap.forEach(doc => attendanceList.push({ id: doc.id, ...doc.data() }));
+
+          const txSnap = await db.collection('transactions').get();
+          transactionsList = [];
+          txSnap.forEach(doc => transactionsList.push({ id: doc.id, ...doc.data() }));
+        } catch (err) {
+          console.error("Optional collections fetch error (skipping non-blocking):", err);
         }
 
         hideOverlay();
@@ -2108,6 +2318,388 @@
           statusMsg.innerHTML = "👉 សូមចុចសង្កត់លើរូបភាពខាងក្រោម ដើម្បីរក្សាទុក ឬផ្ញើបន្ត<br>(Long-press the image below to Save to Gallery or Share)";
         }
       });
+    }
+
+    // ==================== TMA UPGRADED TABS & KPI SCORECARD ====================
+    function renderFollowUpsTMA() {
+      const container = document.getElementById('followups-list-container');
+      if (!container) return;
+
+      const query = document.getElementById('followup-search-input')?.value.toLowerCase() || '';
+
+      const staffName = employeeData ? (employeeData.fullName || employeeData.name) : '';
+      let myFollowups = followupsList.filter(f => 
+        (f.salesStaffId === employeeId) || 
+        (f.salesStaffName && staffName && f.salesStaffName.toLowerCase() === staffName.toLowerCase())
+      );
+
+      if (query) {
+        myFollowups = myFollowups.filter(f => 
+          (f.customerName && f.customerName.toLowerCase().includes(query)) ||
+          (f.customerPhone && f.customerPhone.includes(query))
+        );
+      }
+
+      let html = '';
+      myFollowups.forEach(f => {
+        if (f.schedules) {
+          f.schedules.forEach(s => {
+            if (s.status === 'pending') {
+              const dayLabel = `Day ${s.day} Contact`;
+              html += `
+                <div class="tma-card" style="border-left: 4px solid var(--primary); background: white;">
+                  <div class="tma-card-header">
+                    <strong>${f.customerName} (${f.customerPhone})</strong>
+                    <span style="font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-light); padding:2px 6px; border-radius:4px;">${dayLabel}</span>
+                  </div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
+                    Product: ${f.productName || 'Purchase'}
+                  </div>
+                  <button class="view-cart-btn" style="height:32px; font-size:12px; font-weight:700; width:100%;" onclick="quickCompleteFollowupTMA('${f.id}', ${s.day})">
+                    📞 Mark as Contacted
+                  </button>
+                </div>
+              `;
+            }
+          });
+        }
+      });
+
+      container.innerHTML = html || `<div style="text-align:center; color:var(--text-muted); padding:30px 0; font-size:13px;">No pending follow-ups found.</div>`;
+    }
+
+    window.quickCompleteFollowupTMA = async function(fId, day) {
+      showOverlay("Updating follow-up status...");
+      try {
+        const f = followupsList.find(fl => fl.id === fId);
+        if (!f) return;
+        const sch = f.schedules.find(s => s.day === day);
+        if (!sch) return;
+
+        sch.status = 'completed';
+        sch.completedAt = new Date().toISOString();
+        sch.notes = 'Completed via Telegram Mini App';
+
+        // Write to Firestore
+        await db.collection('followups').doc(fId).set(f);
+
+        // Update local list
+        const idx = followupsList.findIndex(fl => fl.id === fId);
+        if (idx !== -1) followupsList[idx] = f;
+
+        hideOverlay();
+        renderFollowUpsTMA();
+        alert("Follow-up marked as completed! (+0.2 KPI Points)");
+      } catch (err) {
+        console.error(err);
+        showOverlayError("Failed to update: " + err.message);
+      }
+    };
+
+    function renderTestimonialsTMA() {
+      const container = document.getElementById('testimonials-list-container');
+      if (!container) return;
+
+      const query = document.getElementById('test-search-input-tma')?.value.toLowerCase() || '';
+
+      const staffName = employeeData ? (employeeData.fullName || employeeData.name) : '';
+      let myTestimonials = testimonialsList.filter(t => 
+        (t.staffId === employeeId) || 
+        (t.staffName && staffName && t.staffName.toLowerCase() === staffName.toLowerCase())
+      );
+
+      if (query) {
+        myTestimonials = myTestimonials.filter(t => 
+          (t.customerName && t.customerName.toLowerCase().includes(query)) ||
+          (t.productName && t.productName.toLowerCase().includes(query)) ||
+          (t.details && t.details.toLowerCase().includes(query))
+        );
+      }
+
+      let html = '';
+      myTestimonials.forEach(t => {
+        const dateStr = t.date ? new Date(t.date).toLocaleDateString('km-KH') : '—';
+        html += `
+          <div class="tma-card" style="border-left: 4px solid var(--success); background: white;">
+            <div class="tma-card-header">
+              <strong>${t.customerName}</strong>
+              <span style="font-size:10px; color:var(--text-muted);">${dateStr}</span>
+            </div>
+            <div style="font-size:11px; margin-bottom:4px;"><span style="font-weight:700; color:var(--success);">Product:</span> ${t.productName}</div>
+            <div style="font-size:12px; color:var(--text-main); white-space:normal; line-height:1.45;">${t.details}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html || `<div style="text-align:center; color:var(--text-muted); padding:30px 0; font-size:13px;">No testimonials recorded by you.</div>`;
+    }
+
+    function renderKpiScorecardTMA() {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+
+      // 1. Attendance: 2 points per checkin/checkout
+      const monthAtt = attendanceList.filter(a => a.employeeId === employeeId && a.date && a.date.startsWith(currentMonth));
+      let attendancePoints = 0;
+      monthAtt.forEach(a => {
+        if (a.checkIn) attendancePoints += 2;
+        if (a.checkOut) attendancePoints += 2;
+      });
+
+      // 2. POS Checkout (New/Repeat)
+      const myTransactions = transactionsList.filter(t => t.employeeId === employeeId && t.date && t.date.startsWith(currentMonth));
+      let newCustomerPoints = 0;
+      let repeatSalePoints = 0;
+      let unitsSold = 0;
+
+      myTransactions.forEach(t => {
+        const qtySum = t.cart ? t.cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0) : 0;
+        unitsSold += qtySum;
+
+        if (t.customerType === 'new') {
+          newCustomerPoints += 1;
+        } else if (t.customerType === 'repeat') {
+          repeatSalePoints += 2;
+        } else {
+          if (t.customerId === 'CST-001') {
+            newCustomerPoints += 1;
+          } else {
+            newCustomerPoints += 1;
+          }
+        }
+      });
+
+      // 3. CRM Follow-up completes (0.2 points each)
+      let followUpPoints = 0;
+      const staffName = employeeData ? (employeeData.fullName || employeeData.name) : '';
+      const myFollowups = followupsList.filter(f => 
+        (f.salesStaffId === employeeId) || 
+        (f.salesStaffName && staffName && f.salesStaffName.toLowerCase() === staffName.toLowerCase())
+      );
+      myFollowups.forEach(f => {
+        if (f.schedules) {
+          f.schedules.forEach(s => {
+            if (s.status === 'completed' && s.completedAt && s.completedAt.startsWith(currentMonth)) {
+              followUpPoints += 0.2;
+            }
+          });
+        }
+      });
+
+      // 4. Testimonials (5 points each)
+      const myTestimonials = testimonialsList.filter(t => 
+        (t.staffId === employeeId) || 
+        (t.staffName && staffName && t.staffName.toLowerCase() === staffName.toLowerCase())
+      );
+      const testimonialPoints = myTestimonials.filter(t => t.date && t.date.startsWith(currentMonth)).length * 5;
+
+      // 5. Sales Target (100 points for >= 300 units)
+      let targetBonus = 0;
+      if (unitsSold >= 300) {
+        targetBonus = 100;
+      }
+
+      const total = parseFloat((attendancePoints + newCustomerPoints + repeatSalePoints + followUpPoints + testimonialPoints + targetBonus).toFixed(1));
+
+      let grade = 'Grade F';
+      if (total >= 120) grade = 'Grade A (Outstanding)';
+      else if (total >= 90) grade = 'Grade B (Excellent)';
+      else if (total >= 60) grade = 'Grade C (Good)';
+      else if (total >= 40) grade = 'Grade D (Satisfactory)';
+
+      document.getElementById('kpi-total-points-tma').innerText = `${total} Points`;
+      document.getElementById('kpi-grade-badge-tma').innerText = `Grade: ${grade}`;
+
+      const container = document.getElementById('kpi-details-container-tma');
+      container.innerHTML = `
+        <div class="tma-card" style="border-left: 3px solid var(--primary); display:flex; flex-direction:row; justify-content:space-between; align-items:center; background: white;">
+          <div>
+            <strong>វត្តមានប្រចាំខែ (Attendance)</strong>
+            <div style="font-size:11px; color:var(--text-muted);">2 pts per clock-in/out</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; color:var(--primary);">+${attendancePoints} pts</div>
+            <div style="font-size:10px; color:var(--text-muted);">${attendancePoints/2} logs</div>
+          </div>
+        </div>
+
+        <div class="tma-card" style="border-left: 3px solid var(--success); display:flex; flex-direction:row; justify-content:space-between; align-items:center; background: white;">
+          <div>
+            <strong>អតិថិជនថ្មី (New Customer Sales)</strong>
+            <div style="font-size:11px; color:var(--text-muted);">1 pt per new customer sale</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; color:var(--success);">+${newCustomerPoints} pts</div>
+            <div style="font-size:10px; color:var(--text-muted);">${newCustomerPoints} sales</div>
+          </div>
+        </div>
+
+        <div class="tma-card" style="border-left: 3px solid var(--warning); display:flex; flex-direction:row; justify-content:space-between; align-items:center; background: white;">
+          <div>
+            <strong>ម៉ូយចាស់លក់ឡើងវិញ (Repeat Sales)</strong>
+            <div style="font-size:11px; color:var(--text-muted);">2 pts per repeat customer sale</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; color:var(--warning);">+${repeatSalePoints} pts</div>
+            <div style="font-size:10px; color:var(--text-muted);">${repeatSalePoints/2} sales</div>
+          </div>
+        </div>
+
+        <div class="tma-card" style="border-left: 3px solid #8b5cf6; display:flex; flex-direction:row; justify-content:space-between; align-items:center; background: white;">
+          <div>
+            <strong>ការតាមដានអតិថិជន (Follow-Ups)</strong>
+            <div style="font-size:11px; color:var(--text-muted);">0.2 pt per completed follow-up</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; color:#8b5cf6;">+${followUpPoints.toFixed(1)} pts</div>
+            <div style="font-size:10px; color:var(--text-muted);">${Math.round(followUpPoints/0.2)} follow-ups</div>
+          </div>
+        </div>
+
+        <div class="tma-card" style="border-left: 3px solid #ec4899; display:flex; flex-direction:row; justify-content:space-between; align-items:center; background: white;">
+          <div>
+            <strong>សាក្សីអតិថិជន (Testimonials)</strong>
+            <div style="font-size:11px; color:var(--text-muted);">5 pts per testimonial recorded</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; color:#ec4899;">+${testimonialPoints} pts</div>
+            <div style="font-size:10px; color:var(--text-muted);">${testimonialPoints/5} testimonials</div>
+          </div>
+        </div>
+
+        <div class="tma-card" style="border-left: 3px solid #f59e0b; display:flex; flex-direction:row; justify-content:space-between; align-items:center; background: white;">
+          <div>
+            <strong>លក់គ្រប់គោលដៅ ៣០០ (Sales Target)</strong>
+            <div style="font-size:11px; color:var(--text-muted);">+100 pts if monthly sales >= 300 units</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; color:${targetBonus > 0 ? 'var(--success)' : 'var(--text-muted)'};">+${targetBonus} pts</div>
+            <div style="font-size:10px; color:var(--text-muted);">${unitsSold} / 300 units</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openAddTestimonialModalTMA() {
+      // Populate customers dropdown
+      const custSelect = document.getElementById('test-cust-select-tma');
+      custSelect.innerHTML = '<option value="">-- Select Customer --</option>';
+      customersList.forEach(c => {
+        custSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.phone})</option>`;
+      });
+
+      // Populate products dropdown
+      const prodSelect = document.getElementById('test-prod-select-tma');
+      prodSelect.innerHTML = '<option value="general">General Service (សេវាកម្មទូទៅ)</option>';
+      productsList.forEach(p => {
+        prodSelect.innerHTML += `<option value="${p.sku}">${p.nameKh || p.nameEn}</option>`;
+      });
+
+      document.getElementById('test-details-tma').value = '';
+      document.getElementById('modal-test-drawer').style.display = 'block';
+      document.getElementById('modal-test-backdrop').style.display = 'block';
+    }
+
+    async function saveTestimonialTMA(e) {
+      e.preventDefault();
+      
+      const customerId = document.getElementById('test-cust-select-tma').value;
+      const productSku = document.getElementById('test-prod-select-tma').value;
+      const details = document.getElementById('test-details-tma').value.trim();
+
+      const customer = customersList.find(c => c.id === customerId);
+      let productName = 'General Feedback';
+      if (productSku !== 'general') {
+        const p = productsList.find(prod => prod.sku === productSku);
+        productName = p ? (p.nameKh || p.nameEn) : 'Product';
+      }
+
+      showOverlay("Saving testimonial...");
+
+      const newTestimonial = {
+        id: 'TST-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+        date: new Date().toISOString(),
+        customerId,
+        customerName: customer ? customer.name : 'Unknown',
+        productSku,
+        productName,
+        details,
+        staffId: employeeId,
+        staffName: employeeData ? (employeeData.fullName || employeeData.name) : 'Staff',
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await db.collection('testimonials').doc(newTestimonial.id).set(newTestimonial);
+
+        // Update local list
+        testimonialsList.push(newTestimonial);
+
+        hideOverlay();
+        document.getElementById('modal-test-drawer').style.display = 'none';
+        document.getElementById('modal-test-backdrop').style.display = 'none';
+        renderTestimonialsTMA();
+        alert("Testimonial saved successfully! (+5 KPI Points)");
+      } catch (err) {
+        console.error(err);
+        showOverlayError("Failed to save: " + err.message);
+      }
+    }
+
+    // Wiring up Navigation and Form Listeners
+    document.querySelectorAll('.bottom-nav .nav-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const targetBtn = e.currentTarget;
+        document.querySelectorAll('.bottom-nav .nav-tab').forEach(b => b.classList.remove('active'));
+        targetBtn.classList.add('active');
+
+        const targetPanelId = targetBtn.getAttribute('data-panel');
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+          panel.style.display = 'none';
+          panel.classList.remove('active-panel');
+        });
+
+        const activePanel = document.getElementById(targetPanelId);
+        if (activePanel) {
+          activePanel.style.display = 'flex';
+          activePanel.classList.add('active-panel');
+        }
+
+        // Render matching view
+        if (targetPanelId === 'view-crm-followups') {
+          renderFollowUpsTMA();
+        } else if (targetPanelId === 'view-crm-testimonials') {
+          renderTestimonialsTMA();
+        } else if (targetPanelId === 'view-personal-kpi') {
+          renderKpiScorecardTMA();
+        }
+      });
+    });
+
+    // Add search listeners
+    const followupSearch = document.getElementById('followup-search-input');
+    if (followupSearch) {
+      followupSearch.addEventListener('input', renderFollowUpsTMA);
+    }
+    const testSearch = document.getElementById('test-search-input-tma');
+    if (testSearch) {
+      testSearch.addEventListener('input', renderTestimonialsTMA);
+    }
+
+    // Modal Add Testimonial buttons
+    const btnAddTest = document.getElementById('btn-add-test-tma');
+    if (btnAddTest) {
+      btnAddTest.addEventListener('click', openAddTestimonialModalTMA);
+    }
+    const btnCloseTest = document.getElementById('btn-close-test-drawer');
+    if (btnCloseTest) {
+      btnCloseTest.addEventListener('click', () => {
+        document.getElementById('modal-test-drawer').style.display = 'none';
+        document.getElementById('modal-test-backdrop').style.display = 'none';
+      });
+    }
+    const formTest = document.getElementById('test-form-tma');
+    if (formTest) {
+      formTest.addEventListener('submit', saveTestimonialTMA);
     }
 
     // Load configurations on page load
