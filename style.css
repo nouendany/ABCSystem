@@ -1448,8 +1448,27 @@ textarea.form-control {
 }
 
 .table-header {
-  padding: 14px 16px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-header h2,
+.table-header h3,
+.table-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* Card Form Padding & Spacing */
+.glass-card > form,
+.card > form,
+.panel-card > form,
+#branch-form-card form {
+  padding: 22px 26px;
 }
 
 .table-responsive {
@@ -3032,8 +3051,41 @@ body.light-theme .card,
 body.light-theme .panel-card {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
-  border-radius: 16px !important;
+  border-radius: 18px !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  overflow: hidden !important;
+}
+
+body.light-theme .table-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 18px 24px !important;
+}
+
+body.light-theme .table-header h2,
+body.light-theme .table-header h3,
+body.light-theme .table-header h4 {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  font-size: 16px !important;
+}
+
+body.light-theme .glass-card > form,
+body.light-theme .card > form,
+body.light-theme .panel-card > form,
+body.light-theme #branch-form-card form {
+  padding: 24px 28px !important;
+}
+
+body.light-theme .form-group {
+  margin-bottom: 18px !important;
+}
+
+body.light-theme .checkout-method-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  margin-bottom: 0 !important;
 }
 
 /* Card Titles / Form Headers in Light Mode */
