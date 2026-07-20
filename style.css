@@ -1244,34 +1244,34 @@ body.light-theme .kpi-icon-wrapper {
 
 /* Form Controls */
 .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .form-group label {
   display: block;
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .form-control {
   width: 100%;
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   color: var(--text-primary);
-  padding: 8px 12px;
-  font-size: 12px;
+  padding: 9px 13px;
+  font-size: 13px;
   outline: none;
   font-family: inherit;
   transition: all 0.2s ease-in-out;
 }
 .form-control:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  background-color: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 .form-control::-webkit-calendar-picker-indicator {
   filter: invert(1);
@@ -2994,6 +2994,89 @@ body.light-theme .nav-item:hover svg {
 body.light-theme select option {
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+/* Form Labels & Group Titles in Light Mode */
+body.light-theme .form-group label {
+  color: #1e293b !important;
+  font-weight: 750 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.4px !important;
+}
+
+/* Form Controls & Inputs in Light Mode */
+body.light-theme .form-control {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-theme .form-control:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18) !important;
+  background-color: #ffffff !important;
+}
+
+body.light-theme .form-control::placeholder {
+  color: #64748b !important;
+  opacity: 0.85;
+}
+
+/* Cards & Form Panels in Light Mode */
+body.light-theme .glass-card,
+body.light-theme .card,
+body.light-theme .panel-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Card Titles / Form Headers in Light Mode */
+body.light-theme h1, 
+body.light-theme h2, 
+body.light-theme h3, 
+body.light-theme h4,
+body.light-theme .card-title {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* Table Headers & Rows in Light Mode */
+body.light-theme .pos-table th {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  font-weight: 750 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+body.light-theme .pos-table td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .pos-table tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Primary Action Buttons in Light Mode */
+body.light-theme .btn-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 750 !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
+  border-radius: 10px !important;
+  padding: 11px 20px !important;
+}
+
+body.light-theme .btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%) !important;
+  transform: translateY(-1px);
 }
 
 body.light-theme .user-status-card {
