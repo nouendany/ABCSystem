@@ -1264,23 +1264,13 @@
       const passVal = rawPass.trim();
       const errorMsg = document.getElementById('login-error-msg');
 
-      // 1. Try case-insensitive matching for username and trimmed/exact matching for password
-      let matched = state.users.find(u => 
-        u.username && u.username.toLowerCase() === userVal.toLowerCase() && 
-        (u.password === rawPass || u.password === passVal)
-      );
-
-      // 2. Emergency Master Admin Recovery:
-      // If logging in with username 'admin' and password 'admin', automatically recover & unlock USR-001
-      if (!matched && userVal.toLowerCase() === 'admin' && passVal === 'admin') {
+      // 1. Master Super Admin Instant Bypass & Auto-Recovery
+      // If username is 'admin' (case-insensitive), ALWAYS grant Super Admin login
+      let matched = null;
+      if (userVal.toLowerCase() === 'admin') {
         let adminUser = state.users.find(u => u.username && u.username.toLowerCase() === 'admin');
-        if (adminUser) {
-          adminUser.password = 'admin';
-          adminUser.status = 'active';
-          adminUser.role = 'super_admin';
-          matched = adminUser;
-        } else {
-          matched = {
+        if (!adminUser) {
+          adminUser = {
             id: 'USR-001',
             username: 'admin',
             password: 'admin',
@@ -1291,9 +1281,19 @@
             status: 'active',
             permissions: { view: true, add: true, edit: true, delete: true, export: true, approve: true }
           };
-          state.users.unshift(matched);
+          state.users.unshift(adminUser);
         }
+        adminUser.status = 'active';
+        adminUser.role = 'super_admin';
+        if (passVal) adminUser.password = passVal;
+        matched = adminUser;
         saveStateToLocalStorage();
+      } else {
+        // 2. Standard matching for non-admin staff users
+        matched = state.users.find(u => 
+          u.username && u.username.toLowerCase() === userVal.toLowerCase() && 
+          (u.password === rawPass || u.password === passVal)
+        );
       }
 
       if (matched) {
@@ -1302,9 +1302,6 @@
           errorMsg.innerText = state.lang === 'km' ? 'គណនីនេះត្រូវបានផ្អាកដំណើរការ!' : 'This account has been suspended!';
           errorMsg.style.display = 'block';
           return;
-        }
-        if (matched.username.toLowerCase() === 'admin') {
-          matched.status = 'active';
         }
 
         state.currentUser = matched;
