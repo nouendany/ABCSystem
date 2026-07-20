@@ -358,24 +358,25 @@ body.light-theme .logo-text {
 }
 
 .nav-item.active {
-  background: rgba(99, 102, 241, 0.14);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.3);
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
   font-weight: 700;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
 
 .nav-item.active svg {
-  stroke: #818cf8;
+  stroke: #ffffff !important;
 }
 
 .nav-item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 20%;
-  height: 60%;
-  width: 3px;
-  background: #6366f1;
+  top: 15%;
+  height: 70%;
+  width: 4px;
+  background: #ffffff;
   border-radius: 0 4px 4px 0;
 }
 
@@ -2956,13 +2957,30 @@ body.light-theme .app-header {
 }
 
 body.light-theme .nav-item.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.04));
-  color: var(--primary);
-  border-color: rgba(99, 102, 241, 0.15);
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
 }
 
 body.light-theme .nav-item.active svg {
-  stroke: var(--primary);
+  stroke: #ffffff !important;
+}
+
+body.light-theme .nav-item.active::before {
+  background: #ffffff !important;
+}
+
+body.light-theme .nav-item:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-theme select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 body.light-theme .user-status-card {
