@@ -27,19 +27,19 @@
   --font-khmer: 'Kantumruy', 'Kantumruy Pro', 'Noto Sans Khmer', 'Battambang', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   --font-english: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   
-  /* Dark Theme Variable Overrides */
-  --bg-main: #080b11;
-  --bg-card: rgba(17, 25, 40, 0.75);
-  --bg-sidebar: #0b0f19;
-  --border-color: rgba(255, 255, 255, 0.06);
-  --border-glow: rgba(99, 102, 241, 0.2);
+  /* Clean Modern Slate Dark Theme Variables */
+  --bg-main: #0b0f19;
+  --bg-card: #111827;
+  --bg-sidebar: #090d16;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(99, 102, 241, 0.15);
   
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --card-gradient: linear-gradient(135deg, rgba(21, 31, 50, 0.7) 0%, rgba(9, 13, 22, 0.8) 100%);
-  --input-bg: #05070c;
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --text-muted: #64748b;
+  --card-gradient: #111827;
+  --input-bg: #0d1322;
+  --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Light Theme Variables Switch */
@@ -358,58 +358,25 @@ body.light-theme .logo-text {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.05));
-  color: var(--text-primary);
-  border-color: rgba(99, 102, 241, 0.15);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+  background: rgba(99, 102, 241, 0.14);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.3);
+  font-weight: 700;
 }
 
 .nav-item.active svg {
-  stroke: var(--primary);
+  stroke: #818cf8;
 }
 
 .nav-item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 25%;
-  height: 50%;
+  top: 20%;
+  height: 60%;
   width: 3px;
-  background: var(--primary);
+  background: #6366f1;
   border-radius: 0 4px 4px 0;
-  box-shadow: 0 0 8px var(--primary);
-}
-
-/* Glowing Border Light Trail Animation on Hover/Active */
-.nav-item::after,
-.pos-cta-btn::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(from var(--border-angle), transparent 50%, rgba(99, 102, 241, 0.4) 70%, var(--primary) 90%, #ffffff 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.nav-item:hover::after,
-.nav-item.active::after,
-.pos-cta-btn:hover::before,
-.pos-cta-btn.active::before {
-  opacity: 1;
-  animation: rotate-border 2s linear infinite;
-}
-
-@keyframes rotate-border {
-  to {
-    --border-angle: 360deg;
-  }
 }
 
 
