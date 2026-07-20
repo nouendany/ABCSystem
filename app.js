@@ -8767,6 +8767,25 @@
               list.push(data);
             });
 
+            if (colName === 'users') {
+              let adminDoc = list.find(u => u.username && u.username.toLowerCase() === 'admin');
+              if (!adminDoc) {
+                list.unshift({
+                  id: "USR-001",
+                  username: "admin",
+                  password: "admin",
+                  role: "super_admin",
+                  name: "ABC Executive Super Admin",
+                  branchId: "BR-001",
+                  position: "Chief Executive Officer",
+                  status: "active",
+                  permissions: { view: true, add: true, edit: true, delete: true, export: true, approve: true }
+                });
+              } else {
+                adminDoc.status = 'active';
+              }
+            }
+
             state[stateKey] = list;
             lastSyncedState[stateKey] = JSON.parse(JSON.stringify(list));
             
