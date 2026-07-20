@@ -1496,8 +1496,30 @@ textarea.form-control {
   color: var(--text-primary);
 }
 
-.pos-table tr:hover {
-  background: rgba(255,255,255,0.01);
+.pos-table tbody tr {
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.pos-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.16) !important;
+  box-shadow: inset 4px 0 0 0 #818cf8 !important;
+}
+
+.pos-table tbody tr:hover td {
+  color: #ffffff !important;
+}
+
+.pos-table tbody tr.selected-row,
+.pos-table tbody tr.active-row {
+  background: rgba(99, 102, 241, 0.28) !important;
+  box-shadow: inset 5px 0 0 0 #a5b4fc !important;
+}
+
+.pos-table tbody tr.selected-row td,
+.pos-table tbody tr.active-row td {
+  color: #ffffff !important;
+  font-weight: 750 !important;
 }
 
 /* Adjustments Table Stock Matrix colors */
@@ -3111,8 +3133,31 @@ body.light-theme .pos-table td {
   border-bottom: 1px solid #e2e8f0 !important;
 }
 
-body.light-theme .pos-table tr:hover {
-  background-color: #f8fafc !important;
+body.light-theme .pos-table tbody tr {
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+}
+
+body.light-theme .pos-table tbody tr:hover {
+  background-color: #e0e7ff !important; /* Rich Indigo-100 highlight */
+  box-shadow: inset 4px 0 0 0 #4f46e5 !important; /* Bold Solid Indigo left accent bar */
+}
+
+body.light-theme .pos-table tbody tr:hover td {
+  color: #1e1b4b !important; /* Deep Indigo text */
+  font-weight: 650 !important;
+}
+
+body.light-theme .pos-table tbody tr.selected-row,
+body.light-theme .pos-table tbody tr.active-row {
+  background-color: #c7d2fe !important; /* Deep Indigo-200 highlight */
+  box-shadow: inset 5px 0 0 0 #4338ca !important;
+}
+
+body.light-theme .pos-table tbody tr.selected-row td,
+body.light-theme .pos-table tbody tr.active-row td {
+  color: #1e1b4b !important;
+  font-weight: 800 !important;
 }
 
 /* Primary Action Buttons in Light Mode */

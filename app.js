@@ -1343,6 +1343,18 @@
         state.activeView = 'view-dashboard';
       }
     });
+
+    // Global Table Row Selection Highlight Listener (Instant Visual UX Feedback)
+    document.addEventListener('click', (e) => {
+      const row = e.target.closest('.pos-table tbody tr, table tbody tr');
+      if (row) {
+        const tbody = row.parentElement;
+        if (tbody) {
+          Array.from(tbody.children).forEach(child => child.classList.remove('selected-row', 'active-row'));
+          row.classList.add('selected-row');
+        }
+      }
+    });
   }
 
   // Routing Framework SPA
