@@ -825,7 +825,10 @@
         <!-- CRM Tab 1: Profiles -->
         <div id="crm-profiles" class="crm-view-panel active-panel">
           <div class="table-actions-row" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <button class="btn btn-primary" id="btn-add-customer-modal" data-translate="addCustomer">Add Customer</button>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary" id="btn-add-customer-modal" data-translate="addCustomer">Add Customer</button>
+              <button class="btn btn-outline" id="btn-transfer-customers-modal" style="border: 1px solid var(--primary); color: var(--primary); font-weight:700; background:transparent;">🔄 Transfer Customers (ផ្ទេរអតិថិជន)</button>
+            </div>
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               <!-- Customer Search Input -->
               <input type="text" class="form-control" id="search-customer-input" placeholder="Search customer..." data-translate="searchPlaceholderCustomers" style="width:240px; padding:6px 12px; font-size:12.5px; height:34px; margin:0; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:rgba(0,0,0,0.15); color:#fff;">
@@ -2488,7 +2491,34 @@
     </div>
   </div>
 
-  <!-- MODAL 5: EXPENSE RECORD MODAL -->
+  <!-- MODAL 4B: BATCH TRANSFER CUSTOMERS MODAL -->
+  <div class="modal-overlay" id="modal-transfer-customers">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="transfer-modal-title" style="font-size:15.5px; font-weight:800; color:var(--text-primary);">Bulk Transfer Customers (ផ្ទេរការគ្រប់គ្រងអតិថិជន)</h3>
+        <button class="qty-btn" id="btn-close-transfer-customers">×</button>
+      </div>
+      <form id="transfer-customers-form">
+        <div class="modal-body" style="max-height: 480px; overflow-y: auto; padding: 20px 24px;">
+          <div style="font-size:12.5px; line-height:1.5; color:var(--text-secondary); margin-bottom:16px; background:rgba(99, 102, 241, 0.08); padding:10px 14px; border-radius:8px; border:1px solid rgba(99,102,241,0.15);">
+            💡 <strong>ព័ត៌មាន (Info):</strong> ផ្ទេរអតិថិជនទាំងអស់ពីបុគ្គលិកចាស់ ទៅឱ្យបុគ្គលិកថ្មីក្នុងពេលតែមួយ។ ប្រវត្តិនៃការលក់ចាស់ៗរបស់បុគ្គលិកមុន នឹងមិនត្រូវបានប៉ះពាល់ឡើយ ដើម្បីធានាភាពត្រឹមត្រូវនៃចំនួនលក់។
+          </div>
+          <div class="form-group">
+            <label style="color:var(--text-primary); font-weight:700;">Transfer From (ផ្ទេរចេញពីបុគ្គលិក)</label>
+            <select class="form-control" id="transfer-from-staff" required></select>
+          </div>
+          <div class="form-group">
+            <label style="color:var(--text-primary); font-weight:700;">Transfer To (ផ្ទេរទៅកាន់បុគ្គលិក)</label>
+            <select class="form-control" id="transfer-to-staff" required></select>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding:14px 24px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-transfer-customers" data-translate="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Transfer (បញ្ជាក់ការផ្ទេរ)</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <div class="modal-overlay" id="modal-expense">
     <div class="modal-card" style="max-width: 400px;">
       <div class="modal-header">
@@ -3516,7 +3546,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Core logic engine application file -->
-  <script src="app.js?v=1.6.7_audit_fix"></script>
+  <script src="app.js?v=1.6.8_batch_transfer_tool"></script>
 
   <!-- Floating Diagnostics Trigger Button -->
   <button id="btn-diagnostics-toggle" style="position:fixed; bottom:16px; right:16px; z-index:999990; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition:all 0.2s ease-in-out; outline:none;" title="Diagnostics (វិភាគប្រព័ន្ធ)">
