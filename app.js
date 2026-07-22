@@ -11767,17 +11767,10 @@ CREATE TABLE sale_items (
           }
         });
 
-        // Update customerName and staffName in historical transactions
+        // Update customerName in historical transactions (keep original sales staff intact)
         state.transactions.forEach(tx => {
           if (tx.customerId === editId) {
             tx.customerName = name;
-            tx.staffId = staffId;
-            let sObj = state.staff.find(st => st.id === staffId || st.employeeId === staffId);
-            if (!sObj && state.employees) {
-              const emp = state.employees.find(e => e.id === staffId);
-              if (emp) sObj = { id: emp.id, name: emp.fullName || emp.name };
-            }
-            if (sObj) tx.staffName = sObj.name;
           }
         });
 
