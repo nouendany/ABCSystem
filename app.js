@@ -3111,19 +3111,49 @@
     const staff = state.staff.find(s => s.id === staffId) || { name: 'Unknown', id: 'STF-001' };
     const customer = state.customers.find(c => c.id === customerId);
 
-    // If the customer profile doesn't have an assigned staff member, automatically assign them to this checkout staff member
-    if (customer && customer.id !== 'CST-001' && (!customer.staffId || customer.staffId === '')) {
+    // Automatically update the customer profile's assigned staff to the checkout salesperson (e.g. Phai Chanthou)
+    if (customer && customer.id !== 'CST-001') {
+      const oldStaffId = customer.staffId;
+      const isDifferentStaff = oldStaffId && oldStaffId !== staff.id;
+      
+      // Update assigned staff
       customer.staffId = staff.id;
       customer.updatedBy = state.currentUser ? state.currentUser.username : 'system';
       customer.timestamp = new Date().toISOString();
+      
       if (!customer.timeline) customer.timeline = [];
-      customer.timeline.push({
-        date: txDate,
-        status: 'Staff Assigned',
-        staffName: staff.name,
-        feedback: 'Automatically assigned at checkout',
-        notes: `Assigned to ${staff.name} at checkout`
-      });
+      
+      if (isDifferentStaff) {
+        // Find old staff name for the timeline log
+        let oldStaffName = 'Unassigned';
+        const oldStaffObj = state.staff.find(s => s.id === oldStaffId || s.employeeId === oldStaffId) || 
+                            (state.employees && state.employees.find(e => e.id === oldStaffId));
+        if (oldStaffObj) oldStaffName = oldStaffObj.fullName || oldStaffObj.name;
+        
+        customer.timeline.push({
+          date: txDate,
+          status: 'Staff Transferred',
+          staffName: staff.name,
+          feedback: `Reassigned from ${oldStaffName} via new purchase`,
+          notes: `Customer transferred from ${oldStaffName} to ${staff.name} due to new order.`
+        });
+
+        // Also update any future active followups of this customer to the new checkout staff member
+        state.followups.forEach(f => {
+          if (f.customerId === customer.id) {
+            f.salesStaffId = staff.id;
+            f.salesStaffName = staff.name;
+          }
+        });
+      } else if (!oldStaffId || oldStaffId === '') {
+        customer.timeline.push({
+          date: txDate,
+          status: 'Staff Assigned',
+          staffName: staff.name,
+          feedback: 'Automatically assigned at checkout',
+          notes: `Assigned to ${staff.name} at checkout`
+        });
+      }
     }
 
     let subtotal = 0;
@@ -11967,131 +11997,6 @@ CREATE TABLE sale_items (
       checkCRMNotifications();
     });
 
-    // Show Batch Transfer Modal & Populate dropdown options
-    const transferBtn = document.getElementById('btn-transfer-customers-modal');
-    if (transferBtn) {
-      transferBtn.addEventListener('click', () => {
-        if (!guardAction('edit')) return;
-        const fromSelect = document.getElementById('transfer-from-staff');
-        const toSelect = document.getElementById('transfer-to-staff');
-        
-        if (fromSelect && toSelect) {
-          // Reset select options
-          fromSelect.innerHTML = `<option value="">${state.lang === 'km' ? '-- ជ្រើសរើសបុគ្គលិកចាស់ --' : '-- Select Old Staff --'}</option>`;
-          toSelect.innerHTML = `<option value="">${state.lang === 'km' ? '-- ជ្រើសរើសបុគ្គលិកថ្មី --' : '-- Select New Staff --'}</option>`;
-          
-          const optionTemplate = (id, name) => `<option value="${id}">${name} (${id})</option>`;
-          
-          state.staff.forEach(s => {
-            const opt = optionTemplate(s.id, s.name);
-            fromSelect.innerHTML += opt;
-            toSelect.innerHTML += opt;
-          });
-          
-          if (state.employees) {
-            state.employees.forEach(emp => {
-              if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
-                const opt = optionTemplate(emp.id, emp.fullName || emp.name);
-                fromSelect.innerHTML += opt;
-                toSelect.innerHTML += opt;
-              }
-            });
-          }
-        }
-        
-        document.getElementById('modal-transfer-customers').classList.add('active-modal');
-      });
-    }
-
-    // Close Batch Transfer Modal
-    const closeTransferBtn = document.getElementById('btn-close-transfer-customers');
-    const cancelTransferBtn = document.getElementById('btn-cancel-transfer-customers');
-    const closeTransferModal = () => {
-      document.getElementById('modal-transfer-customers').classList.remove('active-modal');
-      document.getElementById('transfer-customers-form').reset();
-    };
-    if (closeTransferBtn) closeTransferBtn.addEventListener('click', closeTransferModal);
-    if (cancelTransferBtn) cancelTransferBtn.addEventListener('click', closeTransferModal);
-
-    // Form Submit logic for transferring customer ownership
-    const transferForm = document.getElementById('transfer-customers-form');
-    if (transferForm) {
-      transferForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (!guardAction('edit')) return;
-
-        const fromStaff = document.getElementById('transfer-from-staff').value;
-        const toStaff = document.getElementById('transfer-to-staff').value;
-
-        if (!fromStaff || !toStaff) {
-          alert(state.lang === 'km' ? 'សូមជ្រើសរើសបុគ្គលិកទាំងពីរ!' : 'Please select both staff members!');
-          return;
-        }
-
-        if (fromStaff === toStaff) {
-          alert(state.lang === 'km' ? 'មិនអាចផ្ទេរទៅកាន់បុគ្គលិកដដែលបានទេ!' : 'Cannot transfer to the same staff member!');
-          return;
-        }
-
-        // Get names for alert dialog
-        let fromStaffName = fromStaff;
-        let toStaffName = toStaff;
-
-        const fObj = state.staff.find(st => st.id === fromStaff || st.employeeId === fromStaff) || 
-                     (state.employees && state.employees.find(e => e.id === fromStaff));
-        if (fObj) fromStaffName = fObj.fullName || fObj.name;
-
-        const tObj = state.staff.find(st => st.id === toStaff || st.employeeId === toStaff) || 
-                     (state.employees && state.employees.find(e => e.id === toStaff));
-        if (tObj) toStaffName = tObj.fullName || tObj.name;
-
-        // Perform batch customer reassignment
-        let reassignCount = 0;
-        state.customers.forEach(c => {
-          if (getUnifiedStaffId(c.staffId) === fromStaff) {
-            c.staffId = toStaff;
-            c.updatedBy = state.currentUser ? state.currentUser.username : 'system';
-            c.timestamp = new Date().toISOString();
-            reassignCount++;
-          }
-        });
-
-        // Perform active follow-ups reassignment
-        let followupCount = 0;
-        state.followups.forEach(f => {
-          if (getUnifiedStaffId(f.salesStaffId) === fromStaff) {
-            f.salesStaffId = toStaff;
-            f.salesStaffName = toStaffName;
-            followupCount++;
-          }
-        });
-
-        if (reassignCount === 0) {
-          alert(state.lang === 'km' ? 
-            `គ្មានអតិថិជនណាដែលចាត់តាំងឱ្យបុគ្គលិក ${fromStaffName} នោះទេ!` : 
-            `No customers currently assigned to ${fromStaffName}!`);
-          return;
-        }
-
-        // Save states and trigger UI sync
-        saveStateToLocalStorage();
-        
-        if (typeof checkOnlineStatusAndSync === 'function') {
-          checkOnlineStatusAndSync();
-        }
-
-        closeTransferModal();
-        renderCustomers();
-        if (state.activeView === 'view-followups') {
-          renderFollowups();
-        }
-
-        // Success Alert message
-        alert(state.lang === 'km' ? 
-          `ជោគជ័យ! បានផ្ទេរអតិថិជនចំនួន ${reassignCount} នាក់ និងកិច្ចការតាមដានចំនួន ${followupCount} ពីបុគ្គលិក ${fromStaffName} ទៅកាន់ ${toStaffName} រួចរាល់ដោយសុវត្ថិភាព។` : 
-          `Success! Transferred ${reassignCount} customers and ${followupCount} active follow-ups from ${fromStaffName} to ${toStaffName} successfully.`);
-      });
-    }
 
     // Pay Debt payoff submission
     document.getElementById('pay-debt-form').addEventListener('submit', (e) => {
