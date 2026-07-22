@@ -377,7 +377,18 @@
       }
     }
     if (s) return s.name;
-    return defaultName || 'System';
+  }
+
+  function isEmployeeAlreadyInStaff(emp, staffList) {
+    if (!emp) return false;
+    const empId = emp.id;
+    const empNameNormalized = (emp.fullName || emp.name || '').toLowerCase().replace(/\s+/g, '');
+    
+    return staffList.some(s => {
+      if (s.id === empId || s.employeeId === empId) return true;
+      const staffNameNormalized = (s.name || '').toLowerCase().replace(/\s+/g, '');
+      return staffNameNormalized === empNameNormalized;
+    });
   }
 
   function getFilteredFollowups() {
@@ -3816,7 +3827,7 @@
       });
       if (state.employees) {
         state.employees.forEach(emp => {
-          if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+          if (!isEmployeeAlreadyInStaff(emp, state.staff)) {
             filterOpts += `<option value="${emp.id}">${emp.fullName || emp.name}</option>`;
           }
         });
@@ -4370,7 +4381,7 @@
       });
       if (state.employees) {
         state.employees.forEach(emp => {
-          if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+          if (!isEmployeeAlreadyInStaff(emp, state.staff)) {
             modalStaffSelect.innerHTML += `<option value="${emp.id}">${emp.fullName || emp.name}</option>`;
           }
         });
@@ -4544,7 +4555,7 @@
         });
         if (state.employees) {
           state.employees.forEach(emp => {
-            if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+            if (!isEmployeeAlreadyInStaff(emp, state.staff)) {
               filterStaffSelect.innerHTML += `<option value="${emp.id}">${emp.fullName || emp.name}</option>`;
             }
           });
@@ -7779,7 +7790,7 @@
     
     if (state.employees) {
       state.employees.forEach(emp => {
-        if (!state.staff.some(s => s.id === emp.id || s.employeeId === emp.id)) {
+        if (!isEmployeeAlreadyInStaff(emp, state.staff)) {
           const isSel = emp.id === unifiedSelectedId;
           if (isSel) found = true;
           selectOptions += `<option value="${emp.id}" ${isSel ? 'selected' : ''}>${emp.fullName || emp.name}</option>`;
