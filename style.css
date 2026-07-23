@@ -648,8 +648,6 @@ body.light-theme .logo-text {
   white-space: nowrap;
   letter-spacing: -0.2px;
 }
-
-.active-branch-pill {
 .active-branch-pill {
   display: flex;
   align-items: center;
