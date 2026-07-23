@@ -2370,7 +2370,37 @@
         });
       }
 
-      // Update badge counts dynamically
+      // Group schedules by customerId
+      const groupedCustomers = [];
+      myFollowups.forEach(f => {
+        if (!f.schedules) return;
+        
+        // Find if we already have this customer added to the group list
+        let custGroup = groupedCustomers.find(cg => cg.customerId === f.customerId);
+        
+        // Filter schedules matching the current subtab status
+        const matchedSchedules = f.schedules.filter(s => s.status === activeFollowupSubTab);
+        if (matchedSchedules.length === 0) return;
+
+        if (!custGroup) {
+          custGroup = {
+            id: f.id, // followup document id
+            customerId: f.customerId,
+            customerName: f.customerName,
+            customerPhone: f.customerPhone,
+            customerAddress: f.customerAddress,
+            productName: f.productName,
+            saleId: f.saleId,
+            salesStaffName: f.salesStaffName,
+            schedules: []
+          };
+          groupedCustomers.push(custGroup);
+        }
+        
+        custGroup.schedules.push(...matchedSchedules);
+      });
+
+      // Update badge counts dynamically (total tasks for this employee)
       let pendingCount = 0;
       let completedCount = 0;
       myFollowups.forEach(f => {
@@ -2388,132 +2418,134 @@
       if (countCompletedElem) countCompletedElem.innerText = completedCount;
 
       let html = '';
-      myFollowups.forEach(f => {
-        if (f.schedules) {
-          f.schedules.forEach(s => {
-            if (s.status === activeFollowupSubTab) {
-              const dayLabel = `Day ${s.day} Contact`;
-              
-              // Get details fallbacks
-              const cust = customersList.find(c => c.id === f.customerId);
-              const phone = f.customerPhone || (cust ? cust.phone : '') || 'N/A';
-              const address = f.customerAddress || (cust ? cust.address : '') || 'N/A';
-              
-              const tx = transactionsList.find(t => t.id === f.saleId);
-              let productNameVal = f.productName;
-              if (!productNameVal && tx && tx.items) {
-                productNameVal = tx.items.map(it => `${it.nameKh || it.nameEn} x${it.qty}`).join(', ');
-              }
-              if (!productNameVal) {
-                productNameVal = 'General Purchase';
-              }
+      groupedCustomers.forEach(cg => {
+        // Get details fallbacks for the customer
+        const cust = customersList.find(c => c.id === cg.customerId);
+        const phone = cg.customerPhone || (cust ? cust.phone : '') || 'N/A';
+        const address = cg.customerAddress || (cust ? cust.address : '') || 'N/A';
+        
+        const tx = transactionsList.find(t => t.id === cg.saleId);
+        let productNameVal = cg.productName;
+        if (!productNameVal && tx && tx.items) {
+          productNameVal = tx.items.map(it => `${it.nameKh || it.nameEn} x${it.qty}`).join(', ');
+        }
+        if (!productNameVal) {
+          productNameVal = 'General Purchase';
+        }
 
-              let productsHtml = '';
-              if (productNameVal !== 'General Purchase') {
-                productsHtml = productNameVal.split(', ').map(p => `
-                  <span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; margin-right:4px; display:inline-block; font-weight:600; color:#334155; margin-top:2px;">
-                    ${p}
-                  </span>
-                `).join('');
-              } else {
-                productsHtml = `<span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#64748b; margin-top:2px; display:inline-block;">General Purchase</span>`;
-              }
+        let productsHtml = '';
+        if (productNameVal !== 'General Purchase') {
+          productsHtml = productNameVal.split(', ').map(p => `
+            <span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; margin-right:4px; display:inline-block; font-weight:600; color:#334155; margin-top:2px;">
+              ${p}
+            </span>
+          `).join('');
+        } else {
+          productsHtml = `<span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#64748b; margin-top:2px; display:inline-block;">General Purchase</span>`;
+        }
 
-              const formattedDate = s.date ? (window.POS_HELPERS ? window.POS_HELPERS.formatDate(s.date, 'km') : new Date(s.date).toLocaleDateString()) : 'N/A';
+        const primaryBorderColor = activeFollowupSubTab === 'pending' ? '#6366f1' : '#94a3b8';
 
-              if (activeFollowupSubTab === 'pending') {
-                const borderLeftColor = (s.day <= 5) ? '#f59e0b' : (s.day <= 22 ? '#6366f1' : '#10b981');
-                html += `
-                  <div class="tma-card" style="border-left: 4px solid ${borderLeftColor}; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.04); border-radius:12px; margin-bottom:4px; padding:14px 16px;">
-                    <div class="tma-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
-                      <strong style="font-size:14.5px; color:#1e293b;">${f.customerName}</strong>
-                      <span style="font-size:11px; font-weight:700; color:${borderLeftColor}; background:rgba(${s.day<=5?'245,158,11':(s.day<=22?'99,102,241':'16,185,129')}, 0.08); padding:3px 8px; border-radius:20px;">${dayLabel}</span>
-                    </div>
-                    
-                    <div style="font-size:13px; display:flex; flex-direction:column; gap:4px; color:#334155; line-height:1.45;">
-                      <div>📞 <strong>ទូរស័ព្ទ៖</strong> <a href="tel:${phone}" style="color:#2563eb; text-decoration:none; font-weight:700; border-bottom:1px dashed #2563eb;">${phone}</a></div>
-                      <div>📍 <strong>អាសយដ្ឋាន៖</strong> <span style="color:#475569;">${address}</span></div>
-                      <div style="margin-top:2px;">🛍️ <strong>ទំនិញទិញ៖</strong></div>
-                      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:2px;">${productsHtml}</div>
-                      <div style="font-size:11.5px; color:#64748b; margin-top:2px; display:flex; align-items:center; gap:4px;">
-                        <span>📅 <strong>ថ្ងៃត្រូវទាក់ទង៖</strong> ${formattedDate}</span>
-                      </div>
-                    </div>
+        html += `
+          <div class="tma-card" style="border-left: 4px solid ${primaryBorderColor}; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.04); border-radius:12px; margin-bottom:12px; padding:14px 16px;">
+            <!-- Customer profile header info -->
+            <div class="tma-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
+              <strong style="font-size:15px; color:#1e293b;">👤 ${cg.customerName}</strong>
+              <a href="tel:${phone}" style="color:#2563eb; text-decoration:none; font-weight:700; font-size:13px; background:rgba(37,99,235,0.08); padding:3px 10px; border-radius:20px; display:flex; align-items:center; gap:4px;">
+                📞 ${phone}
+              </a>
+            </div>
+            
+            <div style="font-size:12.5px; display:flex; flex-direction:column; gap:4px; color:#475569; line-height:1.4;">
+              <div>📍 <strong>អាសយដ្ឋាន៖</strong> <span>${address}</span></div>
+              <div style="margin-top:2px;">🛍️ <strong>ទំនិញទិញ៖</strong></div>
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">${productsHtml}</div>
+            </div>
 
-                    <!-- Call Form Container (Inline Expander) -->
-                    <div id="form-container-${f.id}-${s.day}" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; padding:12px; border-radius:10px; margin-top:10px;">
-                      <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">📞 លទ្ធផលការហៅ (Call Status)</div>
-                      <select id="status-${f.id}-${s.day}" style="width:100%; height:36px; padding:0 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; margin-bottom:8px; background:white; outline:none; font-family:inherit;">
-                        <option value="Contacted & Spoke">📞 ជួបនិយាយរួចរាល់</option>
-                        <option value="No Answer">🔇 គ្មានអ្នកទទួល (No Answer)</option>
-                        <option value="Busy / Call Back Later">⏳ រវល់ / ទាក់ទងក្រោយ</option>
-                        <option value="Invalid / Switched Off">❌ លេខខុស / បិទម៉ាស៊ីន</option>
-                      </select>
-                      
-                      <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">📝 មតិយោបល់អតិថិជន (Feedback Notes)</div>
-                      <input type="text" id="notes-${f.id}-${s.day}" placeholder="កត់ត្រាមតិយោបល់ ឬ លទ្ធផល..." style="width:100%; height:36px; padding:0 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; margin-bottom:8px; box-sizing:border-box; outline:none; font-family:inherit;">
-                      
-                      <!-- Quick Note Chips -->
-                      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px;">
-                        <span style="cursor:pointer; font-size:10.5px; background:white; border:1px solid #cbd5e1; padding:3px 8px; border-radius:12px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${f.id}', ${s.day}, 'អតិថិជនពេញចិត្តខ្លាំង 👍')">ពេញចិត្ត 👍</span>
-                        <span style="cursor:pointer; font-size:10.5px; background:white; border:1px solid #cbd5e1; padding:3px 8px; border-radius:12px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${f.id}', ${s.day}, 'ទូរស័ព្ទចូល តែគ្មានអ្នកទទួល 📵')">គ្មានអ្នកទទួល 📵</span>
-                        <span style="cursor:pointer; font-size:10.5px; background:white; border:1px solid #cbd5e1; padding:3px 8px; border-radius:12px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${f.id}', ${s.day}, 'រវល់ សុំតេមកវិញក្រោយ ⏳')">សុំតេក្រោយ ⏳</span>
-                        <span style="cursor:pointer; font-size:10.5px; background:white; border:1px solid #cbd5e1; padding:3px 8px; border-radius:12px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${f.id}', ${s.day}, 'សន្យានឹងមកទិញថែម 🤝')">សន្យាទិញថែម 🤝</span>
-                        <span style="cursor:pointer; font-size:10.5px; background:white; border:1px solid #cbd5e1; padding:3px 8px; border-radius:12px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${f.id}', ${s.day}, 'មិនចាប់អារម្មណ៍ / បដិសេធ ❌')">បដិសេធ ❌</span>
-                      </div>
-                      
-                      <div style="display:flex; gap:8px;">
-                        <button class="view-cart-btn" style="flex:1; height:32px; font-size:12px; font-weight:700; background:#10b981; border-color:#10b981; color:white; border-radius:6px; cursor:pointer;" onclick="submitFollowupTMA('${f.id}', ${s.day})">
-                          💾 រក្សាទុក (Save)
-                        </button>
-                        <button class="view-cart-btn" style="flex:1; height:32px; font-size:12px; font-weight:700; background:#64748b; border-color:#64748b; color:white; border-radius:6px; cursor:pointer;" onclick="toggleCallFormTMA('${f.id}', ${s.day})">
-                          ❌ បោះបង់ (Cancel)
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <button id="main-btn-${f.id}-${s.day}" class="view-cart-btn" style="height:34px; font-size:12.5px; font-weight:700; width:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; background:#2563eb; border-color:#2563eb; color:white; cursor:pointer; margin-top:10px;" onclick="toggleCallFormTMA('${f.id}', ${s.day})">
-                      📝 កត់ត្រាលទ្ធផលហៅ (Record Call Result)
+            <!-- List of follow-up tasks for this specific customer -->
+            <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+        `;
+
+        cg.schedules.forEach(s => {
+          const dayLabel = `Day ${s.day} Contact`;
+          const formattedDate = s.date ? (window.POS_HELPERS ? window.POS_HELPERS.formatDate(s.date, 'km') : new Date(s.date).toLocaleDateString()) : 'N/A';
+
+          if (activeFollowupSubTab === 'pending') {
+            const taskColor = (s.day <= 5) ? '#f59e0b' : (s.day <= 22 ? '#6366f1' : '#10b981');
+            html += `
+              <div style="border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <span style="font-size:11px; font-weight:700; color:${taskColor}; background:rgba(${s.day<=5?'245,158,11':(s.day<=22?'99,102,241':'16,185,129')}, 0.08); padding:2px 8px; border-radius:12px;">🔔 ${dayLabel}</span>
+                  <span style="font-size:11px; color:#64748b;">📅 ថ្ងៃកំណត់៖ ${formattedDate}</span>
+                </div>
+
+                <!-- Call Form Container (Inline Expander) -->
+                <div id="form-container-${cg.id}-${s.day}" style="display:none; background:#f8fafc; border:1px solid #cbd5e1; padding:10px; border-radius:8px; margin-top:6px; box-sizing:border-box;">
+                  <div style="font-size:11.5px; font-weight:700; color:#475569; margin-bottom:4px;">📞 លទ្ធផលការហៅ (Call Status)</div>
+                  <select id="status-${cg.id}-${s.day}" style="width:100%; height:34px; padding:0 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12.5px; margin-bottom:6px; background:white; outline:none; font-family:inherit;">
+                    <option value="Contacted & Spoke">📞 ជួបនិយាយរួចរាល់</option>
+                    <option value="No Answer">🔇 គ្មានអ្នកទទួល (No Answer)</option>
+                    <option value="Busy / Call Back Later">⏳ រវល់ / ទាក់ទងក្រោយ</option>
+                    <option value="Invalid / Switched Off">❌ លេខខុស / បិទម៉ាស៊ីន</option>
+                  </select>
+                  
+                  <div style="font-size:11.5px; font-weight:700; color:#475569; margin-bottom:4px;">📝 មតិយោបល់អតិថិជន (Feedback Notes)</div>
+                  <input type="text" id="notes-${cg.id}-${s.day}" placeholder="កត់ត្រាមតិយោបល់ ឬ លទ្ធផល..." style="width:100%; height:34px; padding:0 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12.5px; margin-bottom:6px; box-sizing:border-box; outline:none; font-family:inherit;">
+                  
+                  <!-- Quick Note Chips -->
+                  <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
+                    <span style="cursor:pointer; font-size:10px; background:white; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${cg.id}', ${s.day}, 'អតិថិជនពេញចិត្តខ្លាំង 👍')">ពេញចិត្ត 👍</span>
+                    <span style="cursor:pointer; font-size:10px; background:white; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${cg.id}', ${s.day}, 'ទូរស័ព្ទចូល តែគ្មានអ្នកទទួល 📵')">គ្មានអ្នកទទួល 📵</span>
+                    <span style="cursor:pointer; font-size:10px; background:white; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${cg.id}', ${s.day}, 'រវល់ សុំតេមកវិញក្រោយ ⏳')">សុំតេក្រោយ ⏳</span>
+                    <span style="cursor:pointer; font-size:10px; background:white; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${cg.id}', ${s.day}, 'សន្យានឹងមកទិញថែម 🤝')">សន្យាទិញថែម 🤝</span>
+                    <span style="cursor:pointer; font-size:10px; background:white; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; color:#475569; font-weight:500;" onclick="setQuickNoteTMA('${cg.id}', ${s.day}, 'មិនចាប់អារម្មណ៍ / បដិសេធ ❌')">បដិសេធ ❌</span>
+                  </div>
+                  
+                  <div style="display:flex; gap:6px;">
+                    <button class="view-cart-btn" style="flex:1; height:30px; font-size:11.5px; font-weight:700; background:#10b981; border-color:#10b981; color:white; border-radius:6px; cursor:pointer;" onclick="submitFollowupTMA('${cg.id}', ${s.day})">
+                      💾 រក្សាទុក (Save)
+                    </button>
+                    <button class="view-cart-btn" style="flex:1; height:30px; font-size:11.5px; font-weight:700; background:#64748b; border-color:#64748b; color:white; border-radius:6px; cursor:pointer;" onclick="toggleCallFormTMA('${cg.id}', ${s.day})">
+                      ❌ បោះបង់ (Cancel)
                     </button>
                   </div>
-                `;
-              } else {
-                // Completed Card (History)
-                const statusColor = s.callStatus === 'No Answer' ? '#ef4444' : (s.callStatus === 'Busy / Call Back Later' ? '#f59e0b' : '#10b981');
-                const khCallStatus = s.callStatus === 'No Answer' ? 'គ្មានអ្នកទទួល' : (s.callStatus === 'Busy / Call Back Later' ? 'រវល់ / ទាក់ទងក្រោយ' : (s.callStatus === 'Invalid / Switched Off' ? 'លេខខុស / បិទម៉ាស៊ីន' : 'ទាក់ទងបានសម្រេច'));
+                </div>
                 
-                html += `
-                  <div class="tma-card" style="border-left: 4px solid #94a3b8; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.02); border-radius:12px; margin-bottom:4px; padding:14px 16px;">
-                    <div class="tma-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
-                      <strong style="font-size:14.5px; color:#1e293b;">${f.customerName}</strong>
-                      <span style="font-size:10.5px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:3px 8px; border-radius:20px;">✅ ${dayLabel} Done</span>
-                    </div>
-                    
-                    <div style="font-size:13px; display:flex; flex-direction:column; gap:4px; color:#334155;">
-                      <div>📞 <strong>ទូរស័ព្ទ៖</strong> <span style="font-weight:600;">${phone}</span></div>
-                      <div>🛍️ <strong>ទំនិញទិញ៖</strong></div>
-                      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:2px;">${productsHtml}</div>
-                    </div>
-
-                    <!-- Call Log Audit Box -->
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:10px; border-radius:8px; margin-top:8px; font-size:12px; line-height:1.4;">
-                      <div style="color:#64748b; margin-bottom:4px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:2px;">
-                        <span>👤 <strong>បុគ្គលិក៖</strong> ${s.completedBy || f.salesStaffName || 'System'}</span>
-                        <span>📅 <strong>កាលបរិច្ឆេទ៖</strong> ${s.completedAt ? new Date(s.completedAt).toLocaleString('km-KH', {hour12:true}) : 'N/A'}</span>
-                      </div>
-                      <div style="margin-bottom:4px;">
-                        📞 <strong>លទ្ធផល៖</strong> <span style="font-weight:700; color:${statusColor}; background:rgba(${statusColor === '#ef4444'?'239,68,68':(statusColor === '#f59e0b'?'245,158,11':'16,185,129')}, 0.08); padding:2px 8px; border-radius:12px; font-size:11px;">${khCallStatus}</span>
-                      </div>
-                      <div style="background:white; border-left:3px solid #cbd5e1; padding:6px 10px; font-style:italic; color:#475569; margin-top:6px; border-radius:0 4px 4px 0; word-break:break-word;">
-                        "${s.notes || 'No description'}"
-                      </div>
-                    </div>
+                <button id="main-btn-${cg.id}-${s.day}" class="view-cart-btn" style="height:30px; font-size:11.5px; font-weight:700; width:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:4px; background:#2563eb; border-color:#2563eb; color:white; cursor:pointer; margin-top:6px;" onclick="toggleCallFormTMA('${cg.id}', ${s.day})">
+                  📝 កត់ត្រាលទ្ធផលហៅ (Record Call Result)
+                </button>
+              </div>
+            `;
+          } else {
+            // Completed Row (History)
+            const statusColor = s.callStatus === 'No Answer' ? '#ef4444' : (s.callStatus === 'Busy / Call Back Later' ? '#f59e0b' : '#10b981');
+            const khCallStatus = s.callStatus === 'No Answer' ? 'គ្មានអ្នកទទួល' : (s.callStatus === 'Busy / Call Back Later' ? 'រវល់ / ទាក់ទងក្រោយ' : (s.callStatus === 'Invalid / Switched Off' ? 'លេខខុស / បិទម៉ាស៊ីន' : 'ទាក់ទងបានសម្រេច'));
+            
+            html += `
+              <div style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <span style="font-size:11px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:2px 8px; border-radius:12px;">✅ ${dayLabel} Done</span>
+                  <span style="font-size:11px; color:#64748b;">📅 ${s.completedAt ? new Date(s.completedAt).toLocaleString('km-KH', {hour12:true}) : 'N/A'}</span>
+                </div>
+                
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:8px; font-size:11.5px; line-height:1.4;">
+                  <div style="color:#64748b; margin-bottom:2px; font-size:10.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:2px;">
+                    <span>👤 <strong>បុគ្គលិក៖</strong> ${s.completedBy || cg.salesStaffName || 'System'}</span>
+                    <span>📞 <strong>លទ្ធផល៖</strong> <span style="font-weight:700; color:${statusColor}; background:rgba(${statusColor === '#ef4444'?'239,68,68':(statusColor === '#f59e0b'?'245,158,11':'16,185,129')}, 0.08); padding:1px 6px; border-radius:12px; font-size:10px;">${khCallStatus}</span></span>
                   </div>
-                `;
-              }
-            }
-          });
-        }
+                  <div style="background:white; border-left:3px solid #cbd5e1; padding:4px 8px; font-style:italic; color:#475569; margin-top:4px; border-radius:0 4px 4px 0; word-break:break-word;">
+                    "${s.notes || 'No description'}"
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
       });
 
       container.innerHTML = html || `<div style="text-align:center; color:var(--text-muted); padding:40px 0; font-size:13.5px;">No ${activeFollowupSubTab} follow-ups found.</div>`;
@@ -2595,6 +2627,7 @@
         showOverlayError("Failed to save: " + err.message);
       }
     };
+
 
     function renderTestimonialsTMA() {
       const container = document.getElementById('testimonials-list-container');
