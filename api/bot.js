@@ -572,7 +572,7 @@ async function handleWebAppOrder(req, res, body) {
     const escapedNotes = esc(req.body.customerNotes);
     const escapedCarrier = esc(shippingCarrier);
 
-    const itemsListText = items.map(it => `- <b>${esc(it.nameKh || it.nameEn)}</b> x ${it.qty} (<code>$${it.price}</code>)`).join("\n");
+    const itemsListText = items.map(it => `- <b>${esc(it.nameKh || it.nameEn)}</b> x ${it.qty} (<b>$${it.price}</b>)`).join("\n");
 
     // Send Telegram Group Notification
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
@@ -594,7 +594,7 @@ async function handleWebAppOrder(req, res, body) {
                             (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
                             `🧾 វិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
                             `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
-                            `👤 អ្នកលក់៖ <b>${escapedEmployeeName}</b> (<code>${escapedEmployeeId}</code>)\n` +
+                            `👤 អ្នកលក់៖ <b>${escapedEmployeeName}</b> | <code>${escapedEmployeeId}</code>\n` +
                             `🏢 សាខា៖ <b>${escapedBranchName}</b>\n` +
                             `----------------------------------------\n` +
                             `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +
@@ -638,7 +638,7 @@ async function handleWebAppOrder(req, res, body) {
                        `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>\n` +
                        (shipping > 0 || shippingCarrier ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n` : '') +
                        `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
-                       `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) (<code>${escapedCustomerPhone}</code>)\n` +
+                       `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) | <code>${escapedCustomerPhone}</code>\n` +
                        `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>\n` +
                        `----------------------------------------\n` +
                        `🛒 <b>ទំនិញកម្មង់៖</b>\n${itemsListText}`;

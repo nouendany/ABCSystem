@@ -3183,7 +3183,7 @@
       // Build items text
       let itemsText = '';
       tx.items.forEach((item) => {
-        itemsText += `- <b>${esc(item.nameKh || item.nameEn)}</b> x ${item.qty} (<code>$${item.price.toFixed(2)}</code>)\n`;
+        itemsText += `- <b>${esc(item.nameKh || item.nameEn)}</b> x ${item.qty} (<b>$${item.price.toFixed(2)}</b>)\n`;
       });
 
       // Helper for Khmer numerals
@@ -3203,7 +3203,7 @@
       message += `🧾 <b>Invoice No:</b> <code>${invoiceNo}</code>\n`;
       message += `📅 <b>Date:</b> <b>${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), 'km')}</b> (${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), 'en')})\n`;
       message += `🏢 <b>Branch:</b> <b>${branchName}</b>\n`;
-      message += `👤 <b>Staff:</b> <b>${staffName}</b> (<code>${pageName}</code>)\n`;
+      message += `👤 <b>Staff:</b> <b>${staffName}</b> | <code>${pageName}</code>\n`;
       message += `----------------------------------------\n`;
       message += `🛒 <b>Ordered Items:</b>\n${itemsText}`;
       message += `----------------------------------------\n`;
