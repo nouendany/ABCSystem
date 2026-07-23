@@ -15607,16 +15607,25 @@ CREATE TABLE sale_items (
         const qtySum = t.items ? t.items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0) : 0;
         unitsSold += qtySum;
 
-        if (t.customerType === 'new') {
-          newCustomerPoints += 1;
-        } else if (t.customerType === 'repeat') {
+        let isRepeat = false;
+        if (t.customerType === 'repeat') {
+          isRepeat = true;
+        } else if (t.customerType === 'new') {
+          isRepeat = false;
+        } else if (t.customerId !== 'CST-001') {
+          const custTXs = state.transactions.filter(tx => tx.customerId === t.customerId && tx.date);
+          if (custTXs.length > 1) {
+            custTXs.sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (t.id !== custTXs[0].id) {
+              isRepeat = true;
+            }
+          }
+        }
+
+        if (isRepeat) {
           repeatSalePoints += 2;
         } else {
-          if (t.customerId === 'CST-001') {
-            newCustomerPoints += 1;
-          } else {
-            newCustomerPoints += 1;
-          }
+          newCustomerPoints += 1;
         }
       });
     }
