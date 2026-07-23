@@ -4163,7 +4163,45 @@
         staff = { id: emp.id, name: emp.fullName || emp.name };
       }
     }
-    document.getElementById('cust-profile-staff').innerText = staff ? staff.name : (state.lang === 'km' ? 'មិនទាន់ចាត់តាំង' : 'Unassigned');
+    
+    let staffNameText = staff ? staff.name : (state.lang === 'km' ? 'មិនទាន់ចាត់តាំង' : 'Unassigned');
+    
+    // Dynamically find original staff member from timeline or oldest order
+    let originalStaffName = '';
+    if (customer.timeline && customer.timeline.length > 0) {
+      const registrationEntry = customer.timeline.find(item => 
+        item.status === 'Register & Purchase' || 
+        item.status === 'Register' || 
+        (item.notes && item.notes.includes('Registered'))
+      ) || customer.timeline[0];
+      
+      if (registrationEntry && registrationEntry.staffName) {
+        originalStaffName = registrationEntry.staffName;
+      }
+    }
+    if (!originalStaffName && orderDates && orderDates.length > 0) {
+      const oldestOrder = orderDates[orderDates.length - 1];
+      if (oldestOrder && oldestOrder.staffName) {
+        originalStaffName = oldestOrder.staffName;
+      }
+    }
+    
+    // Normalize comparison to avoid duplicates
+    const normalizeName = (name) => (name || '').toLowerCase().replace(/\s+/g, '');
+    const currentNameNorm = normalizeName(staffNameText);
+    const origNameNorm = normalizeName(originalStaffName);
+    
+    if (originalStaffName && currentNameNorm !== origNameNorm) {
+      const origLabel = state.lang === 'km' ? 'ដំបូង' : 'Original';
+      document.getElementById('cust-profile-staff').innerHTML = `
+        ${staffNameText} 
+        <span style="color:var(--text-secondary); font-size:11px; font-weight:normal; margin-left:6px; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); display:inline-block; vertical-align:middle;">
+          ${origLabel}: ${originalStaffName}
+        </span>
+      `;
+    } else {
+      document.getElementById('cust-profile-staff').innerText = staffNameText;
+    }
     
     const debtEl = document.getElementById('cust-profile-debt');
     if (debtEl) {
