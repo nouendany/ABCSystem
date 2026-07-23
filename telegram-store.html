@@ -2453,11 +2453,12 @@
           productsHtml = `<span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#64748b; margin-top:2px; display:inline-block;">General Purchase</span>`;
         }
 
-        // Determine first purchase date (Month/Year)
+        // Determine first purchase date (Month/Year) - robust lookup
         let firstPurchaseDate = 'N/A';
         if (cust) {
           let dates = [];
           if (cust.timestamp) dates.push(new Date(cust.timestamp));
+          if (cust.createdAt) dates.push(new Date(cust.createdAt));
           if (cust.orders && Array.isArray(cust.orders)) {
             cust.orders.forEach(o => {
               if (o.date) dates.push(new Date(o.date));
@@ -2465,14 +2466,17 @@
           }
           if (cust.timeline && Array.isArray(cust.timeline)) {
             cust.timeline.forEach(t => {
-              if (t.status === 'Purchase' && t.date) dates.push(new Date(t.date));
+              if (t.date) dates.push(new Date(t.date));
             });
           }
           if (dates.length > 0) {
-            const earliest = new Date(Math.min(...dates));
-            const m = String(earliest.getMonth() + 1).padStart(2, '0');
-            const y = earliest.getFullYear();
-            firstPurchaseDate = `${m}/${y}`;
+            const validDates = dates.filter(d => !isNaN(d.getTime()));
+            if (validDates.length > 0) {
+              const earliest = new Date(Math.min(...validDates));
+              const m = String(earliest.getMonth() + 1).padStart(2, '0');
+              const y = earliest.getFullYear();
+              firstPurchaseDate = `${m}/${y}`;
+            }
           }
         }
 
@@ -2759,13 +2763,14 @@
       });
 
       // 2. POS Checkout (New/Repeat)
-      const myTransactions = transactionsList.filter(t => t.employeeId === employeeId && t.date && t.date.startsWith(currentMonth));
+      const myTransactions = transactionsList.filter(t => (t.staffId === employeeId || t.employeeId === employeeId) && t.date && t.date.startsWith(currentMonth));
       let newCustomerPoints = 0;
       let repeatSalePoints = 0;
       let unitsSold = 0;
 
       myTransactions.forEach(t => {
-        const qtySum = t.cart ? t.cart.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0) : 0;
+        const orderItems = t.items || t.cart || [];
+        const qtySum = orderItems.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
         unitsSold += qtySum;
 
         if (t.customerType === 'new') {
