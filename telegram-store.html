@@ -2372,14 +2372,23 @@
 
       // Group schedules by customerId
       const groupedCustomers = [];
+      const todayStr = new Date().toISOString().split('T')[0]; // e.g. "2026-07-23"
+
       myFollowups.forEach(f => {
         if (!f.schedules) return;
         
         // Find if we already have this customer added to the group list
         let custGroup = groupedCustomers.find(cg => cg.customerId === f.customerId);
         
-        // Filter schedules matching the current subtab status
-        const matchedSchedules = f.schedules.filter(s => s.status === activeFollowupSubTab);
+        // Filter schedules matching the current subtab status AND due date if pending
+        const matchedSchedules = f.schedules.filter(s => {
+          if (s.status !== activeFollowupSubTab) return false;
+          if (activeFollowupSubTab === 'pending') {
+            // Only show schedules scheduled for today or in the past (actual due date)
+            return s.date && s.date <= todayStr;
+          }
+          return true;
+        });
         if (matchedSchedules.length === 0) return;
 
         if (!custGroup) {
@@ -2400,13 +2409,13 @@
         custGroup.schedules.push(...matchedSchedules);
       });
 
-      // Update badge counts dynamically (total tasks for this employee)
+      // Update badge counts dynamically based on actual filtered items (due pending / all completed)
       let pendingCount = 0;
       let completedCount = 0;
       myFollowups.forEach(f => {
         if (f.schedules) {
           f.schedules.forEach(s => {
-            if (s.status === 'pending') pendingCount++;
+            if (s.status === 'pending' && s.date && s.date <= todayStr) pendingCount++;
             if (s.status === 'completed') completedCount++;
           });
         }
@@ -2444,26 +2453,83 @@
           productsHtml = `<span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#64748b; margin-top:2px; display:inline-block;">General Purchase</span>`;
         }
 
+        // Determine first purchase date (Month/Year)
+        let firstPurchaseDate = 'N/A';
+        if (cust) {
+          let dates = [];
+          if (cust.timestamp) dates.push(new Date(cust.timestamp));
+          if (cust.orders && Array.isArray(cust.orders)) {
+            cust.orders.forEach(o => {
+              if (o.date) dates.push(new Date(o.date));
+            });
+          }
+          if (cust.timeline && Array.isArray(cust.timeline)) {
+            cust.timeline.forEach(t => {
+              if (t.status === 'Purchase' && t.date) dates.push(new Date(t.date));
+            });
+          }
+          if (dates.length > 0) {
+            const earliest = new Date(Math.min(...dates));
+            const m = String(earliest.getMonth() + 1).padStart(2, '0');
+            const y = earliest.getFullYear();
+            firstPurchaseDate = `${m}/${y}`;
+          }
+        }
+
         const primaryBorderColor = activeFollowupSubTab === 'pending' ? '#6366f1' : '#94a3b8';
 
         html += `
-          <div class="tma-card" style="border-left: 4px solid ${primaryBorderColor}; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.04); border-radius:12px; margin-bottom:12px; padding:14px 16px;">
-            <!-- Customer profile header info -->
-            <div class="tma-card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px;">
-              <strong style="font-size:15px; color:#1e293b;">👤 ${cg.customerName}</strong>
-              <a href="tel:${phone}" style="color:#2563eb; text-decoration:none; font-weight:700; font-size:13px; background:rgba(37,99,235,0.08); padding:3px 10px; border-radius:20px; display:flex; align-items:center; gap:4px;">
-                📞 ${phone}
-              </a>
-            </div>
-            
-            <div style="font-size:12.5px; display:flex; flex-direction:column; gap:4px; color:#475569; line-height:1.4;">
-              <div>📍 <strong>អាសយដ្ឋាន៖</strong> <span>${address}</span></div>
-              <div style="margin-top:2px;">🛍️ <strong>ទំនិញទិញ៖</strong></div>
-              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">${productsHtml}</div>
+          <div class="tma-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04), 0 2px 4px -1px rgba(0,0,0,0.02); transition: all 0.2s ease;">
+            <!-- Card Header (Collapsible Click Target) -->
+            <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;" onclick="toggleCustomerDetailsTMA('${cg.customerId}')">
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <span style="font-size: 14.5px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                  👤 ${cg.customerName}
+                </span>
+                <span style="font-size: 11.5px; color: #64748b; font-weight: 500;">
+                  📅 ទិញដំបូង៖ <span style="color: #0f766e; font-weight: 700;">${firstPurchaseDate}</span>
+                </span>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- Task Badge -->
+                <span style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${activeFollowupSubTab === 'pending' ? 'rgba(99,102,241,0.08)' : 'rgba(16,185,129,0.08)'}; color: ${activeFollowupSubTab === 'pending' ? '#6366f1' : '#10b981'};">
+                  ${cg.schedules.length} ${activeFollowupSubTab === 'pending' ? 'ត្រូវហៅ' : 'រួចរាល់'}
+                </span>
+                <!-- Accordion Arrow Icon -->
+                <span id="expand-icon-${cg.customerId}" style="color: #94a3b8; font-size: 11px; font-weight: 700; transition: transform 0.2s ease; margin-left: 2px;">▶</span>
+              </div>
             </div>
 
-            <!-- List of follow-up tasks for this specific customer -->
-            <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+            <!-- Collapsible Customer Details Area -->
+            <div id="customer-details-${cg.customerId}" style="display: none; border-top: 1px solid #f1f5f9; padding: 14px 16px; background: #fafafb; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                <!-- Direct Click to Call row -->
+                <div style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                  <span style="font-size: 12.5px; color: #475569; font-weight: 600;">📞 លេខទូរស័ព្ទ៖</span>
+                  <a href="tel:${phone}" style="color: #2563eb; text-decoration: none; font-weight: 700; font-size: 13px; background: rgba(37,99,235,0.08); padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;" onclick="event.stopPropagation();">
+                    📞 ${phone}
+                  </a>
+                </div>
+                
+                <!-- Address row -->
+                <div style="display: flex; flex-direction: column; gap: 4px; background: white; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                  <span style="font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📍 អាសយដ្ឋាន</span>
+                  <span style="font-size: 12.5px; color: #334155; font-weight: 500;">${address}</span>
+                </div>
+                
+                <!-- Purchased products row -->
+                <div style="display: flex; flex-direction: column; gap: 4px; background: white; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                  <span style="font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">🛍️ ទំនិញដែលបានទិញ</span>
+                  <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">${productsHtml}</div>
+                </div>
+              </div>
+
+              <!-- List of follow-up tasks for this specific customer -->
+              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
+                  📋 បញ្ជីការងារត្រូវធ្វើ (Follow-up Schedules)
+                </div>
         `;
 
         cg.schedules.forEach(s => {
@@ -2473,10 +2539,10 @@
           if (activeFollowupSubTab === 'pending') {
             const taskColor = (s.day <= 5) ? '#f59e0b' : (s.day <= 22 ? '#6366f1' : '#10b981');
             html += `
-              <div style="border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 4px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="background: white; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                   <span style="font-size:11px; font-weight:700; color:${taskColor}; background:rgba(${s.day<=5?'245,158,11':(s.day<=22?'99,102,241':'16,185,129')}, 0.08); padding:2px 8px; border-radius:12px;">🔔 ${dayLabel}</span>
-                  <span style="font-size:11px; color:#64748b;">📅 ថ្ងៃកំណត់៖ ${formattedDate}</span>
+                  <span style="font-size:11px; color:#64748b; font-weight: 500;">📅 កាលបរិច្ឆេទ៖ ${formattedDate}</span>
                 </div>
 
                 <!-- Call Form Container (Inline Expander) -->
@@ -2522,10 +2588,10 @@
             const khCallStatus = s.callStatus === 'No Answer' ? 'គ្មានអ្នកទទួល' : (s.callStatus === 'Busy / Call Back Later' ? 'រវល់ / ទាក់ទងក្រោយ' : (s.callStatus === 'Invalid / Switched Off' ? 'លេខខុស / បិទម៉ាស៊ីន' : 'ទាក់ទងបានសម្រេច'));
             
             html += `
-              <div style="border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="background: white; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                   <span style="font-size:11px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:2px 8px; border-radius:12px;">✅ ${dayLabel} Done</span>
-                  <span style="font-size:11px; color:#64748b;">📅 ${s.completedAt ? new Date(s.completedAt).toLocaleString('km-KH', {hour12:true}) : 'N/A'}</span>
+                  <span style="font-size:11px; color:#64748b; font-weight: 500;">📅 ${s.completedAt ? new Date(s.completedAt).toLocaleString('km-KH', {hour12:true}) : 'N/A'}</span>
                 </div>
                 
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:8px; font-size:11.5px; line-height:1.4;">
@@ -2543,6 +2609,7 @@
         });
 
         html += `
+              </div>
             </div>
           </div>
         `;
@@ -2550,6 +2617,19 @@
 
       container.innerHTML = html || `<div style="text-align:center; color:var(--text-muted); padding:40px 0; font-size:13.5px;">No ${activeFollowupSubTab} follow-ups found.</div>`;
     }
+
+    // Toggle customer card accordion details section
+    window.toggleCustomerDetailsTMA = function(customerId) {
+      const details = document.getElementById(`customer-details-${customerId}`);
+      const arrow = document.getElementById(`expand-icon-${customerId}`);
+      if (details) {
+        const isHidden = details.style.display === 'none';
+        details.style.display = isHidden ? 'block' : 'none';
+        if (arrow) {
+          arrow.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+        }
+      }
+    };
 
     // Toggle Form view
     window.toggleCallFormTMA = function(fId, day) {
