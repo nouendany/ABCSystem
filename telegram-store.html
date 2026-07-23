@@ -1001,6 +1001,41 @@
       padding-bottom: 6px;
       margin-bottom: 4px;
     }
+
+    /* Custom premium scrollbar for seamless layout */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(30, 41, 59, 0.2);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(30, 41, 59, 0.45);
+    }
+
+    /* Collapsible accordion animation details container */
+    .tma-accordion-details {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.3s ease;
+      background: #fafafb;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      border-top: 1px solid transparent;
+      padding: 0 16px;
+    }
+
+    .tma-accordion-details.expanded {
+      opacity: 1;
+      border-top: 1px solid #f1f5f9;
+      padding: 14px 16px;
+    }
   </style>
 </head>
 <body>
@@ -2453,7 +2488,7 @@
           productsHtml = `<span style="font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#64748b; margin-top:2px; display:inline-block;">General Purchase</span>`;
         }
 
-        // Determine first purchase date (Month/Year) - robust lookup
+        // Determine first purchase date (Day/Month/Year) - robust lookup
         let firstPurchaseDate = 'N/A';
         if (cust) {
           let dates = [];
@@ -2473,9 +2508,10 @@
             const validDates = dates.filter(d => !isNaN(d.getTime()));
             if (validDates.length > 0) {
               const earliest = new Date(Math.min(...validDates));
+              const d = String(earliest.getDate()).padStart(2, '0');
               const m = String(earliest.getMonth() + 1).padStart(2, '0');
               const y = earliest.getFullYear();
-              firstPurchaseDate = `${m}/${y}`;
+              firstPurchaseDate = `${d}/${m}/${y}`;
             }
           }
         }
@@ -2501,12 +2537,12 @@
                   ${cg.schedules.length} ${activeFollowupSubTab === 'pending' ? 'ត្រូវហៅ' : 'រួចរាល់'}
                 </span>
                 <!-- Accordion Arrow Icon -->
-                <span id="expand-icon-${cg.customerId}" style="color: #94a3b8; font-size: 11px; font-weight: 700; transition: transform 0.2s ease; margin-left: 2px;">▶</span>
+                <span id="expand-icon-${cg.customerId}" style="color: #94a3b8; font-size: 11px; font-weight: 700; transition: transform 0.25s ease; margin-left: 2px;">▶</span>
               </div>
             </div>
 
             <!-- Collapsible Customer Details Area -->
-            <div id="customer-details-${cg.customerId}" style="display: none; border-top: 1px solid #f1f5f9; padding: 14px 16px; background: #fafafb; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+            <div id="customer-details-${cg.customerId}" class="tma-accordion-details">
               <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
                 <!-- Direct Click to Call row -->
                 <div style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
@@ -2530,7 +2566,7 @@
               </div>
 
               <!-- List of follow-up tasks for this specific customer -->
-              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px;">
                 <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 4px;">
                   📋 បញ្ជីការងារត្រូវធ្វើ (Follow-up Schedules)
                 </div>
@@ -2627,10 +2663,15 @@
       const details = document.getElementById(`customer-details-${customerId}`);
       const arrow = document.getElementById(`expand-icon-${customerId}`);
       if (details) {
-        const isHidden = details.style.display === 'none';
-        details.style.display = isHidden ? 'block' : 'none';
-        if (arrow) {
-          arrow.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+        const isExpanded = details.classList.contains('expanded');
+        if (isExpanded) {
+          details.classList.remove('expanded');
+          details.style.maxHeight = '0px';
+          if (arrow) arrow.style.transform = 'rotate(0deg)';
+        } else {
+          details.classList.add('expanded');
+          details.style.maxHeight = details.scrollHeight + 'px';
+          if (arrow) arrow.style.transform = 'rotate(90deg)';
         }
       }
     };
