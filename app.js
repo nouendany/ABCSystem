@@ -15600,11 +15600,11 @@ CREATE TABLE sale_items (
     let repeatSalePoints = 0;
     let unitsSold = 0;
 
-    if (staffId) {
+    if (staffId || employeeId) {
       // 2. POS Checkout (New/Repeat Customer)
-      const monthTX = state.transactions.filter(t => t.staffId === staffId && t.date && t.date.startsWith(month));
+      const monthTX = state.transactions.filter(t => (t.staffId === staffId || t.staffId === employeeId) && t.date && t.date.startsWith(month));
       monthTX.forEach(t => {
-        const qtySum = t.items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
+        const qtySum = t.items ? t.items.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0) : 0;
         unitsSold += qtySum;
 
         if (t.customerType === 'new') {
