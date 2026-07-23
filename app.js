@@ -381,14 +381,166 @@
 
   function isEmployeeAlreadyInStaff(emp, staffList) {
     if (!emp) return false;
+    if (!staffList) return false;
     const empId = emp.id;
     const empNameNormalized = (emp.fullName || emp.name || '').toLowerCase().replace(/\s+/g, '');
-    
     return staffList.some(s => {
       if (s.id === empId || s.employeeId === empId) return true;
       const staffNameNormalized = (s.name || '').toLowerCase().replace(/\s+/g, '');
       return staffNameNormalized === empNameNormalized;
     });
+  }
+
+  function playNotificationSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Ding (High note)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      gain1.gain.setValueAtTime(0, ctx.currentTime);
+      gain1.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.5);
+      
+      // Dong (Lower note, delayed)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(440.00, ctx.currentTime + 0.15); // A4
+      gain2.gain.setValueAtTime(0, ctx.currentTime + 0.15);
+      gain2.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.2);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+      
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.15);
+      osc2.stop(ctx.currentTime + 0.8);
+    } catch (e) {
+      console.warn("AudioContext failed to play:", e);
+    }
+  }
+
+  function triggerOrderNotification(tx) {
+    if (!tx) return;
+    
+    // Play the alert sound
+    playNotificationSound();
+    
+    // Create/get container
+    let container = document.getElementById('order-notification-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'order-notification-container';
+      container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 380px;
+        width: calc(100% - 40px);
+        pointer-events: none;
+      `;
+      document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'premium-toast-notification';
+    toast.style.cssText = `
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-left: 5px solid var(--primary);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.2);
+      color: #fff;
+      padding: 16px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      backdrop-filter: blur(10px);
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
+    `;
+    
+    const title = state.lang === 'km' ? '🔔 មានការកម្មង់លក់ថ្មី!' : '🔔 New Order Received!';
+    const staffLabel = state.lang === 'km' ? 'បុគ្គលិក' : 'Staff';
+    const custLabel = state.lang === 'km' ? 'អតិថិជន' : 'Customer';
+    
+    // Extract products list description
+    let itemsText = '';
+    if (tx.items && tx.items.length > 0) {
+      itemsText = tx.items.map(item => {
+        const prodName = state.lang === 'km' ? (item.nameKh || item.nameEn) : (item.nameEn || item.nameKh);
+        return `${prodName || item.sku} x${item.qty}`;
+      }).join(', ');
+    } else if (tx.product) {
+      itemsText = tx.product;
+    } else {
+      itemsText = state.lang === 'km' ? 'គ្មានព័ត៌មានទំនិញ' : 'No product details';
+    }
+    
+    toast.innerHTML = `
+      <button class="toast-close-btn" style="
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        font-size: 18px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+      ">×</button>
+      <div style="font-weight: 800; color: var(--primary); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+        ${title}
+      </div>
+      <div style="font-size: 13px; font-weight: 750; color: #fff;">
+        Invoice: <strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong>
+      </div>
+      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">
+        <strong>${staffLabel}:</strong> ${tx.staffName || 'System'} | <strong>${custLabel}:</strong> ${tx.customerName || 'General'}
+      </div>
+      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5); max-height: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        ${itemsText}
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08);">
+        <span style="font-size: 11px; color: var(--text-muted);">${tx.paymentMethod || 'cash'}</span>
+        <strong style="color: var(--success); font-size: 16px;">$${(tx.total || 0).toFixed(2)}</strong>
+      </div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger slide-in transition
+    setTimeout(() => {
+      toast.style.transform = 'translateX(0)';
+    }, 50);
+    
+    // Close button click listener
+    const closeBtn = toast.querySelector('.toast-close-btn');
+    const dismiss = () => {
+      toast.style.transform = 'translateX(120%)';
+      setTimeout(() => {
+        toast.remove();
+      }, 400);
+    };
+    
+    closeBtn.addEventListener('click', dismiss);
+    
+    // Auto-dismiss after 8 seconds
+    setTimeout(dismiss, 8000);
   }
 
   function getFilteredFollowups() {
@@ -8826,6 +8978,7 @@
         }
 
         const setupListener = (colName, stateKey, idKey, renderFns) => {
+          let isInitial = true;
           dbInstance.collection(colName).onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
 
@@ -8879,6 +9032,20 @@
             
             // Save local cache
             safeSetItem('abc_' + (colName === 'stock_logs' ? 'stock_logs' : colName === 'payment_logs' ? 'payment_logs' : colName), JSON.stringify(list));
+
+            // Trigger notification alerts for new transactions in real-time
+            if (colName === 'transactions' && !isInitial) {
+              snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                  const tx = change.doc.data();
+                  if (idKey && !tx[idKey]) {
+                    tx[idKey] = change.doc.id;
+                  }
+                  triggerOrderNotification(tx);
+                }
+              });
+            }
+            isInitial = false;
 
             // Re-render UI views (debounced to prevent rendering bottlenecks during synchronization)
             if (renderFns) {
