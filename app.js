@@ -3481,6 +3481,9 @@
         flp.salesStaffName = staff.name;
         flp.branchId = branchId;
         flp.saleId = txId;
+        flp.customerPhone = customer.phone || '';
+        flp.customerAddress = customer.address || '';
+        flp.productName = itemsDesc;
       } else {
         const flpId = 'FLP-' + String(state.followups.length + 1).padStart(3, '0') + '-' + randSuffix;
         state.followups.push({
@@ -3488,6 +3491,9 @@
           saleId: txId,
           customerId: customerId,
           customerName: customer.name,
+          customerPhone: customer.phone || '',
+          customerAddress: customer.address || '',
+          productName: itemsDesc,
           salesStaffId: staff.id,
           salesStaffName: staff.name,
           branchId: branchId,

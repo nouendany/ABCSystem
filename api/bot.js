@@ -496,13 +496,18 @@ async function handleWebAppOrder(req, res, body) {
         existingFlp = { docId: d.id, ...d.data() };
       });
 
+      const followUpProdName = items.map(it => `${it.nameKh || it.nameEn} x ${it.qty}`).join(', ');
+
       if (existingFlp) {
         await updateDoc(doc(db, "followups", existingFlp.docId), {
           saleId: txId,
           salesStaffId: employee.id,
           salesStaffName: employee.fullName,
           branchId: branchId,
-          schedules: schedules
+          schedules: schedules,
+          customerPhone: customerPhone || '',
+          customerAddress: customerAddress || '',
+          productName: followUpProdName
         });
       } else {
         const flpCountSnap = await getCountFromServer(followupsRef);
@@ -514,6 +519,9 @@ async function handleWebAppOrder(req, res, body) {
           saleId: txId,
           customerId: customerId,
           customerName: customerNameStr,
+          customerPhone: customerPhone || '',
+          customerAddress: customerAddress || '',
+          productName: followUpProdName,
           salesStaffId: employee.id,
           salesStaffName: employee.fullName,
           branchId: branchId,
