@@ -15584,12 +15584,12 @@ CREATE TABLE sale_items (
     const emp = state.employees.find(e => e.id === employeeId);
     if (!emp) return { total: 0, attendance: 0, newCustomer: 0, repeatSale: 0, followUp: 0, testimonial: 0, targetBonus: 0, unitsSold: 0 };
 
-    // 1. Attendance (វត្តមាន): 2 points per clock-in/out
+    // 1. Attendance (វត្តមាន): 1 point per clock-in/out (max 2 points per day)
     const monthAtt = state.attendance.filter(a => a.employeeId === employeeId && a.date && a.date.startsWith(month));
     let attendancePoints = 0;
     monthAtt.forEach(a => {
-      if (a.checkIn) attendancePoints += 2;
-      if (a.checkOut) attendancePoints += 2;
+      if (a.checkIn) attendancePoints += 1;
+      if (a.checkOut) attendancePoints += 1;
     });
 
     // Find linked staff ID
@@ -15813,7 +15813,7 @@ CREATE TABLE sale_items (
         </div>
         <div style="text-align: right;">
           <div style="font-weight: 800; color: var(--primary); font-size: 14px;">+${kpi.attendance} pts</div>
-          <div style="font-size: 10px; color: var(--text-secondary);">${kpi.attendance / 2} Check-ins/outs</div>
+          <div style="font-size: 10px; color: var(--text-secondary);">${kpi.attendance} Check-ins/outs</div>
         </div>
       </div>
 

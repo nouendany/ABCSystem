@@ -2801,12 +2801,12 @@
     function renderKpiScorecardTMA() {
       const currentMonth = new Date().toISOString().slice(0, 7);
 
-      // 1. Attendance: 2 points per checkin/checkout
+      // 1. Attendance: 1 point per checkin/checkout (max 2 points per day)
       const monthAtt = attendanceList.filter(a => a.employeeId === employeeId && a.date && a.date.startsWith(currentMonth));
       let attendancePoints = 0;
       monthAtt.forEach(a => {
-        if (a.checkIn) attendancePoints += 2;
-        if (a.checkOut) attendancePoints += 2;
+        if (a.checkIn) attendancePoints += 1;
+        if (a.checkOut) attendancePoints += 1;
       });
 
       // 2. POS Checkout (New/Repeat)
@@ -2892,7 +2892,7 @@
           </div>
           <div style="text-align:right;">
             <div style="font-weight:700; color:var(--primary);">+${attendancePoints} pts</div>
-            <div style="font-size:10px; color:var(--text-muted);">${attendancePoints/2} logs</div>
+            <div style="font-size:10px; color:var(--text-muted);">${attendancePoints} logs</div>
           </div>
         </div>
 
