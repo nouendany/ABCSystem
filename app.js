@@ -9243,22 +9243,22 @@
             });
 
             if (colName === 'accounts' && isInitial) {
-              const hasDefault = list.some(a => a.id === 'ACC-001');
-              if (!hasDefault) {
-                console.log("Default account ACC-001 is missing. Auto-restoring default accounts...");
-                const cleanAccounts = [
-                  { id: "ACC-001", name: "Main Cash (USD)", nameKh: "គណនេយ្យសាច់ប្រាក់ USD", currency: "USD", balance: 10000, type: "cash", description: "Main cash vault for USD checkouts and general deposits", isDefault: true, status: "active", timestamp: new Date().toISOString() },
-                  { id: "ACC-002", name: "Main Cash (KHR)", nameKh: "គណនេយ្យសាច់ប្រាក់ KHR", currency: "KHR", balance: 0, type: "cash", description: "Main cash vault for KHR checkouts and general deposits", isDefault: false, status: "active", timestamp: new Date().toISOString() },
-                  { id: "ACC-003", name: "ABA Bank (USD)", nameKh: "គណនេយ្យធនាគារ ABA USD", currency: "USD", balance: 5000, type: "bank", description: "Store bank account for ABA USD deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
-                  { id: "ACC-004", name: "ABA Bank (KHR)", nameKh: "គណនេយ្យធនាគារ ABA KHR", currency: "KHR", balance: 0, type: "bank", description: "Store bank account for ABA KHR deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
-                  { id: "ACC-005", name: "Expense Fund (USD)", nameKh: "មូលនិធិចំណាយ USD", currency: "USD", balance: 1000, type: "expense", description: "Standard account for operational expenses", isDefault: false, status: "active", timestamp: new Date().toISOString() }
-                ];
-                cleanAccounts.forEach(acc => {
-                  const existing = list.find(a => a.id === acc.id);
-                  if (!existing) {
-                    dbInstance.collection('accounts').doc(acc.id).set(acc).catch(e => console.error(e));
-                  }
-                });
+              const mainCash = list.find(a => a.id === 'ACC-001');
+              if (!mainCash || mainCash.status !== 'active') {
+                console.log("Main Cash ACC-001 is missing or inactive. Auto-restoring and activating...");
+                const mainCashAcc = {
+                  id: "ACC-001",
+                  name: "Main Cash (USD)",
+                  nameKh: "គណនេយ្យសាច់ប្រាក់ USD",
+                  currency: "USD",
+                  balance: 10000,
+                  type: "cash",
+                  description: "Main cash vault for USD checkouts and general deposits",
+                  isDefault: false,
+                  status: "active",
+                  timestamp: new Date().toISOString()
+                };
+                dbInstance.collection('accounts').doc('ACC-001').set(mainCashAcc).catch(e => console.error(e));
               }
             }
 
@@ -13090,46 +13090,7 @@ CREATE TABLE sale_items (
       });
     }
 
-    const restoreDefaultAccountsBtn = document.getElementById('btn-restore-default-accounts');
-    if (restoreDefaultAccountsBtn) {
-      restoreDefaultAccountsBtn.addEventListener('click', () => {
-        if (!guardAction('add')) return;
-        if (confirm("Are you sure you want to restore all missing default accounts (Main Cash USD/KHR, ABA Bank USD/KHR, Expense Fund USD)?")) {
-          const cleanAccounts = [
-            { id: "ACC-001", name: "Main Cash (USD)", nameKh: "គណនេយ្យសាច់ប្រាក់ USD", currency: "USD", balance: 10000, type: "cash", description: "Main cash vault for USD checkouts and general deposits", isDefault: true, status: "active", timestamp: new Date().toISOString() },
-            { id: "ACC-002", name: "Main Cash (KHR)", nameKh: "គណនេយ្យសាច់ប្រាក់ KHR", currency: "KHR", balance: 0, type: "cash", description: "Main cash vault for KHR checkouts and general deposits", isDefault: false, status: "active", timestamp: new Date().toISOString() },
-            { id: "ACC-003", name: "ABA Bank (USD)", nameKh: "គណនេយ្យធនាគារ ABA USD", currency: "USD", balance: 5000, type: "bank", description: "Store bank account for ABA USD deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
-            { id: "ACC-004", name: "ABA Bank (KHR)", nameKh: "គណនេយ្យធនាគារ ABA KHR", currency: "KHR", balance: 0, type: "bank", description: "Store bank account for ABA KHR deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
-            { id: "ACC-005", name: "Expense Fund (USD)", nameKh: "មូលនិធិចំណាយ USD", currency: "USD", balance: 1000, type: "expense", description: "Standard account for operational expenses", isDefault: false, status: "active", timestamp: new Date().toISOString() }
-          ];
-          
-          let count = 0;
-          cleanAccounts.forEach(acc => {
-            const existing = state.accounts.find(a => a.id === acc.id);
-            if (!existing || existing.status === 'inactive') {
-              count++;
-              if (state.firebaseDb) {
-                state.firebaseDb.collection('accounts').doc(acc.id).set(acc).catch(e => console.error(e));
-              } else {
-                const idx = state.accounts.findIndex(a => a.id === acc.id);
-                if (idx !== -1) {
-                  state.accounts[idx] = acc;
-                } else {
-                  state.accounts.push(acc);
-                }
-              }
-            }
-          });
-          
-          if (!state.firebaseDb) {
-            saveStateToLocalStorage();
-            renderAccountsView();
-            populateAccountDropdowns();
-          }
-          alert(`Restored ${count} default accounts successfully!`);
-        }
-      });
-    }
+
 
     // Create Account Form submit handler
     const createAccountForm = document.getElementById('create-account-form');
