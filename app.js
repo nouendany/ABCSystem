@@ -682,7 +682,6 @@
               document.getElementById('edit-acc-name').value = target.name;
               document.getElementById('edit-acc-currency').value = target.currency;
               document.getElementById('edit-acc-type').value = target.type;
-              document.getElementById('edit-acc-balance').value = target.balance;
               document.getElementById('edit-acc-desc').value = target.description || '';
               document.getElementById('modal-edit-account').classList.add('active-modal');
             }
@@ -2014,6 +2013,21 @@
     const capitalBalanceRielDash = document.getElementById('kpi-capital-balance-riel');
     if (capitalBalanceRielDash) {
       capitalBalanceRielDash.innerText = window.POS_HELPERS.formatKHR(currentCapitalBalance);
+    }
+
+    const totalCashBalance = state.accounts
+      .filter(a => a.status === 'active')
+      .reduce((sum, a) => {
+        const val = a.balance || 0;
+        return sum + (a.currency === 'KHR' ? val / 4000 : val);
+      }, 0);
+    const cashBalanceValDash = document.getElementById('kpi-cash-balance-val');
+    if (cashBalanceValDash) {
+      cashBalanceValDash.innerText = window.POS_HELPERS.formatUSD(totalCashBalance);
+    }
+    const cashBalanceRielDash = document.getElementById('kpi-cash-balance-riel');
+    if (cashBalanceRielDash) {
+      cashBalanceRielDash.innerText = window.POS_HELPERS.formatKHR(totalCashBalance);
     }
 
     const deductedValDash = document.getElementById('kpi-deducted-val');
@@ -5760,6 +5774,21 @@
     const capitalBalanceRielFin = document.getElementById('fin-capital-balance-riel');
     if (capitalBalanceRielFin) {
       capitalBalanceRielFin.innerText = window.POS_HELPERS.formatKHR(currentCapitalBalance);
+    }
+
+    const totalCashBalance = state.accounts
+      .filter(a => a.status === 'active')
+      .reduce((sum, a) => {
+        const val = a.balance || 0;
+        return sum + (a.currency === 'KHR' ? val / 4000 : val);
+      }, 0);
+    const cashBalanceValFin = document.getElementById('fin-cash-balance-val');
+    if (cashBalanceValFin) {
+      cashBalanceValFin.innerText = window.POS_HELPERS.formatUSD(totalCashBalance);
+    }
+    const cashBalanceRielFin = document.getElementById('fin-cash-balance-riel');
+    if (cashBalanceRielFin) {
+      cashBalanceRielFin.innerText = window.POS_HELPERS.formatKHR(totalCashBalance);
     }
 
     const deductedValFin = document.getElementById('fin-deducted-val');
@@ -13148,36 +13177,15 @@ CREATE TABLE sale_items (
         const id = document.getElementById('edit-acc-id').value;
         const name = document.getElementById('edit-acc-name').value.trim();
         const type = document.getElementById('edit-acc-type').value;
-        const balance = parseFloat(document.getElementById('edit-acc-balance').value) || 0;
         const description = document.getElementById('edit-acc-desc').value.trim();
 
         const target = state.accounts.find(a => a.id === id);
         if (target) {
-          const oldBalance = target.balance;
           target.name = name;
           target.nameKh = name;
           target.type = type;
-          target.balance = balance;
           target.description = description;
           target.timestamp = new Date().toISOString();
-
-          // Log an adjustment transaction if balance changed
-          if (oldBalance !== balance) {
-            const diff = parseFloat((balance - oldBalance).toFixed(2));
-            const newTx = {
-              id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
-              date: new Date().toISOString(),
-              type: diff > 0 ? 'deposit' : 'withdrawal',
-              amount: Math.abs(diff),
-              fromAccountId: diff > 0 ? null : target.id,
-              toAccountId: diff > 0 ? target.id : null,
-              description: `Balance Adjustment (កែតម្រូវសមតុល្យទឹកប្រាក់) - Old: ${oldBalance}, New: ${balance}`,
-              referenceId: 'ADJUST',
-              branchId: state.currentBranchId || 'HQ',
-              timestamp: new Date().toISOString()
-            };
-            state.accountTransactions.push(newTx);
-          }
 
           saveStateToLocalStorage();
           document.getElementById('modal-edit-account').classList.remove('active-modal');
