@@ -3727,6 +3727,49 @@
     </div>
   </div>
 
+  <!-- ADJUST ACCOUNT BALANCE / MANUAL DEPOSIT MODAL -->
+  <div class="modal-overlay" id="modal-adjust-balance">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Deposit / Adjust Balance (ដាក់ប្រាក់ / កែតម្រូវ)</h3>
+        <button class="qty-btn" id="btn-close-adjust-balance" type="button">×</button>
+      </div>
+      <form id="adjust-balance-form">
+        <div class="modal-body">
+          <input type="hidden" id="adjust-acc-id">
+          <div class="form-group">
+            <label>Account Name (គណនេយ្យ)</label>
+            <input type="text" class="form-control" id="adjust-acc-name" disabled style="background: rgba(255,255,255,0.05); color:#fff; font-weight:700;">
+          </div>
+          <div class="form-group">
+            <label>Adjustment Type (ប្រភេទប្រតិបត្តិការ)</label>
+            <select class="form-control" id="adjust-type" required>
+              <option value="deposit">Deposit (ដាក់ប្រាក់ចូល / បង្កើនសមតុល្យ)</option>
+              <option value="withdrawal">Withdrawal (ដកប្រាក់ចេញ / បន្ថយសមតុល្យ)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount (ចំនួនទឹកប្រាក់)</label>
+            <input type="number" class="form-control" id="adjust-amount" min="0.01" step="any" required style="font-size: 16px; font-weight: 700; color: var(--primary);">
+          </div>
+          <div class="form-group">
+            <label>កាលបរិច្ឆេទ និងម៉ោង / Date & Time</label>
+            <input type="datetime-local" class="form-control" id="adjust-date-input">
+            <small style="color: var(--text-secondary); font-size: 10px; display: block; margin-top: 4px;">ទុកចំហរ ប្រសិនបើចង់ប្រើប្រាស់ថ្ងៃ និងម៉ោងបច្ចុប្បន្ន / Leave blank to use current date and time</small>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Description / Note (កំណត់ចំណាំ)</label>
+            <input type="text" class="form-control" id="adjust-desc" placeholder="e.g. Deposit for invoice INV-2026-1289-40J" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-adjust-balance">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Load Translation dictionary, Database seed variables, Formatting helper files -->
   <script src="translations.js?v=1.6.0_fix_admin"></script>
   <script src="dummyData.js?v=1.6.0_fix_admin"></script>

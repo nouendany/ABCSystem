@@ -639,9 +639,10 @@
           const typeDisplay = a.type.toUpperCase();
           const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance);
           const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
+          const adjustBtn = `<button class="qty-btn btn-adjust-account" data-id="${a.id}" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Deposit / Adjust Balance">💵</button>`;
           const editBtn = `<button class="qty-btn btn-edit-account" data-id="${a.id}" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Edit Account">✏️</button>`;
           const deleteBtn = `<button class="qty-btn btn-delete-account" data-id="${a.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;" type="button" title="Delete Account">×</button>`;
-          const actionDisplay = `<div style="display:flex; align-items:center; justify-content:center;">${editBtn}${deleteBtn}</div>`;
+          const actionDisplay = `<div style="display:flex; align-items:center; justify-content:center;">${adjustBtn}${editBtn}${deleteBtn}</div>`;
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -684,6 +685,22 @@
               document.getElementById('edit-acc-type').value = target.type;
               document.getElementById('edit-acc-desc').value = target.description || '';
               document.getElementById('modal-edit-account').classList.add('active-modal');
+            }
+          });
+        });
+
+        document.querySelectorAll('.btn-adjust-account').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const target = state.accounts.find(a => a.id === id);
+            if (target) {
+              document.getElementById('adjust-acc-id').value = target.id;
+              document.getElementById('adjust-acc-name').value = state.lang === 'km' ? (target.nameKh || target.name) : target.name;
+              document.getElementById('adjust-type').value = 'deposit';
+              document.getElementById('adjust-amount').value = '';
+              document.getElementById('adjust-date-input').value = '';
+              document.getElementById('adjust-desc').value = '';
+              document.getElementById('modal-adjust-balance').classList.add('active-modal');
             }
           });
         });
@@ -1177,6 +1194,8 @@
     state.companySettings.categories = state.categories;
 
     safeSetItem('abc_users', JSON.stringify(state.users));
+    safeSetItem('abc_accounts', JSON.stringify(state.accounts));
+    safeSetItem('abc_account_transactions', JSON.stringify(state.accountTransactions));
     safeSetItem('abc_branches', JSON.stringify(state.branches));
     safeSetItem('abc_customers', JSON.stringify(state.customers));
     safeSetItem('abc_brands', JSON.stringify(state.brands));
@@ -13343,6 +13362,73 @@ CREATE TABLE sale_items (
         renderAccountsView();
         populateAccountDropdowns();
         alert('Funds transferred successfully!');
+      });
+    }
+
+    // Close Adjust Balance Modal
+    const btnCloseAdjust = document.getElementById('btn-close-adjust-balance');
+    if (btnCloseAdjust) {
+      btnCloseAdjust.addEventListener('click', () => {
+        document.getElementById('modal-adjust-balance').classList.remove('active-modal');
+      });
+    }
+    const btnCancelAdjust = document.getElementById('btn-cancel-adjust-balance');
+    if (btnCancelAdjust) {
+      btnCancelAdjust.addEventListener('click', () => {
+        document.getElementById('modal-adjust-balance').classList.remove('active-modal');
+      });
+    }
+
+    // Submit handler for Adjust Balance Form
+    const adjustBalanceForm = document.getElementById('adjust-balance-form');
+    if (adjustBalanceForm) {
+      adjustBalanceForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!guardAction('add')) return;
+
+        const accId = document.getElementById('adjust-acc-id').value;
+        const type = document.getElementById('adjust-type').value;
+        const amount = parseFloat(document.getElementById('adjust-amount').value) || 0;
+        const dateVal = document.getElementById('adjust-date-input').value;
+        const desc = document.getElementById('adjust-desc').value.trim();
+
+        const acc = state.accounts.find(a => a.id === accId);
+        if (!acc) {
+          alert('Account not found!');
+          return;
+        }
+
+        const dateStr = dateVal ? new Date(dateVal).toISOString() : new Date().toISOString();
+
+        if (type === 'deposit') {
+          acc.balance = parseFloat((acc.balance + amount).toFixed(2));
+        } else if (type === 'withdrawal') {
+          if (acc.balance < amount) {
+            alert('Insufficient funds in this account for withdrawal!');
+            return;
+          }
+          acc.balance = parseFloat((acc.balance - amount).toFixed(2));
+        }
+
+        const newTx = {
+          id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+          date: dateStr,
+          type: type,
+          fromAccountId: type === 'withdrawal' ? accId : null,
+          toAccountId: type === 'deposit' ? accId : null,
+          amount: amount,
+          currency: acc.currency,
+          description: desc,
+          createdBy: state.currentUser ? state.currentUser.username : 'system',
+          timestamp: new Date().toISOString()
+        };
+
+        state.accountTransactions.push(newTx);
+        saveStateToLocalStorage();
+        document.getElementById('modal-adjust-balance').classList.remove('active-modal');
+        renderAccountsView();
+        populateAccountDropdowns();
+        alert('Account balance adjusted successfully!');
       });
     }
 
