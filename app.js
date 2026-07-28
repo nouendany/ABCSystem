@@ -9242,6 +9242,26 @@
               list.push(data);
             });
 
+            if (colName === 'accounts' && isInitial) {
+              const hasDefault = list.some(a => a.id === 'ACC-001');
+              if (!hasDefault) {
+                console.log("Default account ACC-001 is missing. Auto-restoring default accounts...");
+                const cleanAccounts = [
+                  { id: "ACC-001", name: "Main Cash (USD)", nameKh: "គណនេយ្យសាច់ប្រាក់ USD", currency: "USD", balance: 10000, type: "cash", description: "Main cash vault for USD checkouts and general deposits", isDefault: true, status: "active", timestamp: new Date().toISOString() },
+                  { id: "ACC-002", name: "Main Cash (KHR)", nameKh: "គណនេយ្យសាច់ប្រាក់ KHR", currency: "KHR", balance: 0, type: "cash", description: "Main cash vault for KHR checkouts and general deposits", isDefault: false, status: "active", timestamp: new Date().toISOString() },
+                  { id: "ACC-003", name: "ABA Bank (USD)", nameKh: "គណនេយ្យធនាគារ ABA USD", currency: "USD", balance: 5000, type: "bank", description: "Store bank account for ABA USD deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
+                  { id: "ACC-004", name: "ABA Bank (KHR)", nameKh: "គណនេយ្យធនាគារ ABA KHR", currency: "KHR", balance: 0, type: "bank", description: "Store bank account for ABA KHR deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
+                  { id: "ACC-005", name: "Expense Fund (USD)", nameKh: "មូលនិធិចំណាយ USD", currency: "USD", balance: 1000, type: "expense", description: "Standard account for operational expenses", isDefault: false, status: "active", timestamp: new Date().toISOString() }
+                ];
+                cleanAccounts.forEach(acc => {
+                  const existing = list.find(a => a.id === acc.id);
+                  if (!existing) {
+                    dbInstance.collection('accounts').doc(acc.id).set(acc).catch(e => console.error(e));
+                  }
+                });
+              }
+            }
+
             if (colName === 'users') {
               let adminDoc = list.find(u => u.username && u.username.toLowerCase() === 'admin');
               if (!adminDoc) {
