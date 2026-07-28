@@ -639,7 +639,9 @@
           const typeDisplay = a.type.toUpperCase();
           const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance);
           const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
-          const actionDisplay = `<button class="qty-btn btn-delete-account" data-id="${a.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;" type="button" title="Delete Account">×</button>`;
+          const editBtn = `<button class="qty-btn btn-edit-account" data-id="${a.id}" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Edit Account">✏️</button>`;
+          const deleteBtn = `<button class="qty-btn btn-delete-account" data-id="${a.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;" type="button" title="Delete Account">×</button>`;
+          const actionDisplay = `<div style="display:flex; align-items:center; justify-content:center;">${editBtn}${deleteBtn}</div>`;
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -667,6 +669,21 @@
               saveStateToLocalStorage();
               renderAccountsView();
               populateAccountDropdowns();
+            }
+          });
+        });
+
+        document.querySelectorAll('.btn-edit-account').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const target = state.accounts.find(a => a.id === id);
+            if (target) {
+              document.getElementById('edit-acc-id').value = target.id;
+              document.getElementById('edit-acc-name').value = target.name;
+              document.getElementById('edit-acc-currency').value = target.currency;
+              document.getElementById('edit-acc-type').value = target.type;
+              document.getElementById('edit-acc-desc').value = target.description || '';
+              document.getElementById('modal-edit-account').classList.add('active-modal');
             }
           });
         });
@@ -13089,10 +13106,45 @@ CREATE TABLE sale_items (
         document.getElementById('modal-transfer-funds').classList.remove('active-modal');
       });
     }
+    const closeEditAccountBtn = document.getElementById('btn-close-edit-account');
+    if (closeEditAccountBtn) {
+      closeEditAccountBtn.addEventListener('click', () => {
+        document.getElementById('modal-edit-account').classList.remove('active-modal');
+      });
+    }
+    const cancelEditAccountBtn = document.getElementById('btn-cancel-edit-account');
+    if (cancelEditAccountBtn) {
+      cancelEditAccountBtn.addEventListener('click', () => {
+        document.getElementById('modal-edit-account').classList.remove('active-modal');
+      });
+    }
 
+    const editAccountForm = document.getElementById('edit-account-form');
+    if (editAccountForm) {
+      editAccountForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!guardAction('add')) return;
+        const id = document.getElementById('edit-acc-id').value;
+        const name = document.getElementById('edit-acc-name').value.trim();
+        const type = document.getElementById('edit-acc-type').value;
+        const description = document.getElementById('edit-acc-desc').value.trim();
 
+        const target = state.accounts.find(a => a.id === id);
+        if (target) {
+          target.name = name;
+          target.nameKh = name;
+          target.type = type;
+          target.description = description;
+          target.timestamp = new Date().toISOString();
 
-    // Create Account Form submit handler
+          saveStateToLocalStorage();
+          document.getElementById('modal-edit-account').classList.remove('active-modal');
+          renderAccountsView();
+          populateAccountDropdowns();
+          alert('Account updated successfully!');
+        }
+      });
+    }    // Create Account Form submit handler
     const createAccountForm = document.getElementById('create-account-form');
     if (createAccountForm) {
       createAccountForm.addEventListener('submit', (e) => {

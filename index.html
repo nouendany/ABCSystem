@@ -3634,6 +3634,48 @@
     </div>
   </div>
 
+  <!-- EDIT ACCOUNT MODAL -->
+  <div class="modal-overlay" id="modal-edit-account">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Edit Account (កែសម្រួលគណនេយ្យ)</h3>
+        <button class="qty-btn" id="btn-close-edit-account" type="button">×</button>
+      </div>
+      <form id="edit-account-form">
+        <input type="hidden" id="edit-acc-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Account Name (ឈ្មោះគណនេយ្យ)</label>
+            <input type="text" class="form-control" id="edit-acc-name" required placeholder="e.g. ABA Bank Savings">
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:12px;">
+            <div class="form-group">
+              <label>Currency (រូបិយប័ណ្ណ)</label>
+              <input type="text" class="form-control" id="edit-acc-currency" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
+            </div>
+            <div class="form-group">
+              <label>Type (ប្រភេទ)</label>
+              <select class="form-control" id="edit-acc-type" required>
+                <option value="cash">Cash</option>
+                <option value="bank">Bank Account</option>
+                <option value="expense">Expense Fund</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Description (ការពិពណ៌នា)</label>
+            <input type="text" class="form-control" id="edit-acc-desc" placeholder="e.g. For saving store revenue">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-edit-account">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- TRANSFER FUNDS MODAL -->
   <div class="modal-overlay" id="modal-transfer-funds">
     <div class="modal-card" style="max-width: 420px;">
@@ -3685,7 +3727,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Core logic engine application file -->
-  <script src="app.js?v=1.7.6_clean_restore_btn_fix"></script>
+  <script src="app.js?v=1.7.7_edit_account_support"></script>
 
   <!-- Floating Diagnostics Trigger Button -->
   <button id="btn-diagnostics-toggle" style="position:fixed; bottom:16px; right:16px; z-index:999990; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition:all 0.2s ease-in-out; outline:none;" title="Diagnostics (វិភាគប្រព័ន្ធ)">
