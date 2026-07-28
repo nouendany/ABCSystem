@@ -5732,7 +5732,11 @@
     });
 
     let totalExpenses = 0;
-    expenseList.forEach(e => totalExpenses += e.amount);
+    expenseList.forEach(e => {
+      if (e.category !== 'rawMaterials') {
+        totalExpenses += e.amount;
+      }
+    });
 
     const totalDeducted = totalCOGS + totalExpenses;
     const actualProfit = totalRevenue - totalDeducted;
