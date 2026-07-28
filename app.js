@@ -744,7 +744,7 @@
       const sortedTXs = [...filteredTXs].sort((a,b) => new Date(b.date) - new Date(a.date));
 
       if (sortedTXs.length === 0) {
-        ledgerTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No transactions logged</td></tr>`;
+        ledgerTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No transactions logged</td></tr>`;
       } else {
         sortedTXs.forEach(t => {
           let typeDisplay = t.type.toUpperCase();
@@ -773,7 +773,62 @@
             <td><span style="font-size:10px; padding:2px 5px; background:rgba(255,255,255,0.05); border-radius:4px; font-weight:600;">${typeDisplay}</span></td>
             <td style="font-size:11px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${t.description}">${t.description}</td>
             <td style="text-align:right;">${amountDisplay}</td>
+            <td style="text-align:center; padding: 4px 0;">
+              <button class="qty-btn btn-delete-ledger-tx" data-id="${t.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; padding:0; font-size:10px;" type="button" title="Delete Ledger Entry">×</button>
+            </td>
           `;
+
+          tr.querySelector('.btn-delete-ledger-tx').addEventListener('click', () => {
+            if (!guardAction('delete')) return;
+            const confirmMsg = state.lang === 'km' 
+              ? 'តើអ្នកប្រាកដជាចង់លុបប្រតិបត្តិការនេះមែនទេ? (សមតុល្យគណនេយ្យនឹងត្រូវបានកែសម្រួលត្រឡប់មកវិញ)' 
+              : 'Are you sure you want to delete this transaction? (Account balance will be reversed)';
+            if (confirm(confirmMsg)) {
+              // Reverse balance adjustments
+              if (t.type === 'expense' || t.type === 'withdrawal') {
+                const acc = state.accounts.find(a => a.id === t.fromAccountId);
+                if (acc) {
+                  acc.balance = parseFloat((acc.balance + t.amount).toFixed(2));
+                }
+              } else if (t.type === 'deposit' || t.type === 'sale' || t.type === 'debt_payment') {
+                const acc = state.accounts.find(a => a.id === t.toAccountId);
+                if (acc) {
+                  acc.balance = parseFloat((acc.balance - t.amount).toFixed(2));
+                }
+              } else if (t.type === 'transfer') {
+                const srcAcc = state.accounts.find(a => a.id === t.fromAccountId);
+                if (srcAcc) {
+                  srcAcc.balance = parseFloat((srcAcc.balance + t.amount).toFixed(2));
+                }
+                const destAcc = state.accounts.find(a => a.id === t.toAccountId);
+                if (destAcc) {
+                  const refundAmt = t.convertedAmount !== null && t.convertedAmount !== undefined ? t.convertedAmount : t.amount;
+                  destAcc.balance = parseFloat((destAcc.balance - refundAmt).toFixed(2));
+                }
+              }
+
+              // Also delete corresponding expense document if this was a normal expense
+              if (t.type === 'expense') {
+                const expIdx = state.expenses.findIndex(e => {
+                  const isMatchDesc = t.description && t.description.includes(e.description);
+                  const isMatchDateAndAmount = t.date.substring(0, 10) === e.date.substring(0, 10) && Math.abs(t.amount - e.amount) < 0.05;
+                  return isMatchDesc || isMatchDateAndAmount;
+                });
+                if (expIdx !== -1) {
+                  state.expenses.splice(expIdx, 1);
+                }
+              }
+
+              // Remove transaction
+              state.accountTransactions = state.accountTransactions.filter(tx => tx.id !== t.id);
+              saveStateToLocalStorage();
+              renderAccountsView();
+              populateAccountDropdowns();
+              renderFinance();
+              scheduleRender('renderCurrentView', renderCurrentView);
+            }
+          });
+
           ledgerTbody.appendChild(tr);
         });
       }
