@@ -583,9 +583,9 @@
 
     const activeAccounts = state.accounts.filter(a => a.status === 'active');
 
-    const renderOptions = (el, includePlaceholder = false) => {
+    const renderOptions = (el, includePlaceholder = false, placeholderText = "-- Select Account --") => {
       if (!el) return;
-      let html = includePlaceholder ? `<option value="">-- Select Account --</option>` : '';
+      let html = includePlaceholder ? `<option value="">${placeholderText}</option>` : '';
       activeAccounts.forEach(a => {
         const khName = a.nameKh || a.name;
         html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency}) [Balance: ${a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance)}]</option>`;
@@ -596,8 +596,8 @@
     renderOptions(checkoutSelect);
     renderOptions(payDebtSelect);
     renderOptions(expSelect);
-    renderOptions(transferSrc, true);
-    renderOptions(transferDest, true);
+    renderOptions(transferSrc, true, state.lang === 'km' ? "ប្រភពក្រៅប្រព័ន្ធ / ដាក់ប្រាក់ / សងត្រឡប់ (External Source)" : "External Source / Deposit / Refund");
+    renderOptions(transferDest, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យទទួល --" : "-- Select Destination Account --");
 
     // Populate ledger filter
     if (ledgerSelect) {
@@ -6073,6 +6073,22 @@
         tr.querySelector('.btn-delete-exp').addEventListener('click', () => {
           if (!guardAction('delete')) return;
           if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
+            // Find and reverse corresponding account transaction
+            const txIdx = state.accountTransactions.findIndex(t => {
+              const isMatchDesc = exp.description && t.description.includes(exp.description);
+              const isMatchDateAndAmount = t.date.substring(0, 10) === exp.date.substring(0, 10) && Math.abs(t.amount - exp.amount) < 0.05;
+              return t.type === 'expense' && t.fromAccountId && (isMatchDesc || isMatchDateAndAmount);
+            });
+
+            if (txIdx !== -1) {
+              const tx = state.accountTransactions[txIdx];
+              const acc = state.accounts.find(a => a.id === tx.fromAccountId);
+              if (acc) {
+                acc.balance = parseFloat((acc.balance + tx.amount).toFixed(2));
+              }
+              state.accountTransactions.splice(txIdx, 1);
+            }
+
             state.expenses = state.expenses.filter(e => e.id !== exp.id);
             saveStateToLocalStorage();
             renderFinance();
@@ -13206,6 +13222,38 @@ CREATE TABLE sale_items (
         const destId = document.getElementById('transfer-dest-account').value;
         const amount = parseFloat(document.getElementById('transfer-amount').value) || 0;
         const desc = document.getElementById('transfer-desc').value.trim();
+
+        if (!srcId) {
+          // External Source Deposit / Payback / Adjustment
+          const destAcc = state.accounts.find(a => a.id === destId);
+          if (!destAcc) {
+            alert('Please select a destination account!');
+            return;
+          }
+
+          destAcc.balance = parseFloat((destAcc.balance + amount).toFixed(2));
+
+          const newTx = {
+            id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+            date: new Date().toISOString(),
+            type: 'deposit',
+            fromAccountId: null,
+            toAccountId: destId,
+            amount: amount,
+            currency: destAcc.currency,
+            description: `${desc} (ប្រភពក្រៅប្រព័ន្ធ / ដាក់ប្រាក់ / សងត្រឡប់)`,
+            createdBy: state.currentUser ? state.currentUser.username : 'system',
+            timestamp: new Date().toISOString()
+          };
+
+          state.accountTransactions.push(newTx);
+          saveStateToLocalStorage();
+          document.getElementById('modal-transfer-funds').classList.remove('active-modal');
+          renderAccountsView();
+          populateAccountDropdowns();
+          alert('Funds deposited/adjusted successfully!');
+          return;
+        }
 
         if (srcId === destId) {
           alert('Source and destination accounts must be different!');
