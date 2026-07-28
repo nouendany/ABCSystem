@@ -64,7 +64,7 @@
   const migrateKeys = [
     'lang', 'theme', 'users', 'branches', 'customers', 'brands', 'units', 
     'categories', 'products', 'staff', 'transactions', 'expenses', 'stock_logs', 
-    'payment_logs', 'followups', 'commission_rules', 'company_settings', 
+    'payment_logs', 'followups', 'commission_rules', 'company_settings', 'accounts', 'account_transactions', 
     'voided_transactions', 'closing_logs', 'audit_logs', 'current_user'
   ];
   migrateKeys.forEach(key => {
@@ -108,6 +108,8 @@
     attendance: [],
     leaveRequests: [],
     companies: [],
+    accounts: [],
+    accountTransactions: [],
     departments: [],
     teams: [],
     positions: [],
@@ -172,7 +174,9 @@
     payrollItems: [],
     kpis: [],
     voidedTransactions: [],
-    testimonials: []
+    testimonials: [],
+    accounts: [],
+    accountTransactions: []
   };
 
   let firebaseActive = false;
@@ -567,6 +571,173 @@
     return state.customers.filter(c => c.branchId === state.currentUser.branchId || c.id === 'CST-001');
   }
 
+
+  // ==================== ACCOUNTING SYSTEM FUNCTIONS ====================
+  function populateAccountDropdowns() {
+    const checkoutSelect = document.getElementById('checkout-deposit-account');
+    const payDebtSelect = document.getElementById('pay-debt-deposit-account');
+    const expSelect = document.getElementById('exp-account-id');
+    const transferSrc = document.getElementById('transfer-src-account');
+    const transferDest = document.getElementById('transfer-dest-account');
+    const ledgerSelect = document.getElementById('acc-ledger-filter-account');
+
+    const activeAccounts = state.accounts.filter(a => a.status === 'active');
+
+    const renderOptions = (el, includePlaceholder = false) => {
+      if (!el) return;
+      let html = includePlaceholder ? `<option value="">-- Select Account --</option>` : '';
+      activeAccounts.forEach(a => {
+        const khName = a.nameKh || a.name;
+        html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency}) [Balance: ${a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance)}]</option>`;
+      });
+      el.innerHTML = html;
+    };
+
+    renderOptions(checkoutSelect);
+    renderOptions(payDebtSelect);
+    renderOptions(expSelect);
+    renderOptions(transferSrc, true);
+    renderOptions(transferDest, true);
+
+    // Populate ledger filter
+    if (ledgerSelect) {
+      const currentFilterVal = ledgerSelect.value;
+      let html = `<option value="all">All Accounts (គណនេយ្យទាំងអស់)</option>`;
+      activeAccounts.forEach(a => {
+        const khName = a.nameKh || a.name;
+        html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency})</option>`;
+      });
+      ledgerSelect.innerHTML = html;
+      if (currentFilterVal) ledgerSelect.value = currentFilterVal;
+    }
+  }
+
+  function renderAccountsView() {
+    const activeAccounts = state.accounts.filter(a => a.status === 'active');
+
+    // 1. Calculate Totals
+    let totalUsd = 0;
+    let totalKhr = 0;
+    activeAccounts.forEach(a => {
+      if (a.currency === 'USD') totalUsd += a.balance;
+      if (a.currency === 'KHR') totalKhr += a.balance;
+    });
+
+    const totalUsdEl = document.getElementById('acc-total-usd');
+    if (totalUsdEl) totalUsdEl.innerText = window.POS_HELPERS.formatUSD(totalUsd);
+    const totalKhrEl = document.getElementById('acc-total-khr');
+    if (totalKhrEl) totalKhrEl.innerText = window.POS_HELPERS.formatKHR(totalKhr);
+
+    // 2. Render Accounts Directory Table
+    const accountsTbody = document.getElementById('accounting-accounts-list');
+    if (accountsTbody) {
+      accountsTbody.innerHTML = '';
+      if (activeAccounts.length === 0) {
+        accountsTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No accounts found</td></tr>`;
+      } else {
+        activeAccounts.forEach(a => {
+          const typeDisplay = a.type.toUpperCase();
+          const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance);
+          const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
+          const actionDisplay = `<button class="qty-btn btn-delete-account" data-id="${a.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;" type="button" title="Delete Account">×</button>`;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${state.lang === 'km' ? (a.nameKh || a.name) : a.name}</strong></td>
+            <td><span style="font-size:11px; padding:3px 6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px;">${typeDisplay}</span></td>
+            <td style="font-weight:600; color:var(--primary);">${a.currency}</td>
+            <td style="text-align:right; font-weight:750;">${balDisplay}</td>
+            <td style="text-align:center;">${isDefaultDisplay}</td>
+            <td style="display:flex; justify-content:center; align-items:center; height:100%; padding: 4px 0;">${actionDisplay}</td>
+          `;
+          accountsTbody.appendChild(tr);
+        });
+
+        // Bind actions
+        document.querySelectorAll('.btn-make-default-acc').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const target = state.accounts.find(a => a.id === id);
+            if (target) {
+              state.accounts.forEach(a => {
+                if (a.currency === target.currency) {
+                  a.isDefault = (a.id === id);
+                }
+              });
+              saveStateToLocalStorage();
+              renderAccountsView();
+              populateAccountDropdowns();
+            }
+          });
+        });
+
+        document.querySelectorAll('.btn-delete-account').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const target = state.accounts.find(a => a.id === id);
+            if (target) {
+              if (target.isDefault) {
+                alert("Cannot delete a default account! Please set another account as default first.");
+                return;
+              }
+              if (target.balance !== 0) {
+                alert("Cannot delete an account with a non-zero balance! Please transfer all remaining funds to another account first.");
+                return;
+              }
+              if (confirm(`Are you sure you want to delete account: ${target.name}?`)) {
+                target.status = 'inactive';
+                saveStateToLocalStorage();
+                renderAccountsView();
+                populateAccountDropdowns();
+              }
+            }
+          });
+        });
+      }
+    }
+
+    // 3. Render Transactions Ledger
+    const ledgerTbody = document.getElementById('accounting-ledger-list');
+    if (ledgerTbody) {
+      ledgerTbody.innerHTML = '';
+      const filterAccountVal = document.getElementById('acc-ledger-filter-account')?.value || 'all';
+
+      const filteredTXs = state.accountTransactions.filter(t => {
+        if (filterAccountVal === 'all') return true;
+        return t.fromAccountId === filterAccountVal || t.toAccountId === filterAccountVal;
+      });
+
+      const sortedTXs = [...filteredTXs].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      if (sortedTXs.length === 0) {
+        ledgerTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No transactions logged</td></tr>`;
+      } else {
+        sortedTXs.forEach(t => {
+          const typeDisplay = t.type.toUpperCase();
+          let amountDisplay = '';
+          if (t.type === 'transfer') {
+            amountDisplay = `<span style="color:var(--warning); font-weight:700;">	ext{t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+          } else if (t.type === 'expense' || t.type === 'withdrawal') {
+            amountDisplay = `<span style="color:var(--danger); font-weight:700;">-${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+          } else {
+            amountDisplay = `<span style="color:#10b981; font-weight:700;">+${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+          }
+
+          const dateDisplay = window.POS_HELPERS.formatDate(t.date, state.lang);
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-size:10px;">${dateDisplay}</td>
+            <td><span style="font-size:10px; padding:2px 5px; background:rgba(255,255,255,0.05); border-radius:4px; font-weight:600;">${typeDisplay}</span></td>
+            <td style="font-size:11px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${t.description}">${t.description}</td>
+            <td style="text-align:right;">${amountDisplay}</td>
+          `;
+          ledgerTbody.appendChild(tr);
+        });
+      }
+    }
+  }
+
   function getFilteredUsers() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.users;
@@ -610,6 +781,15 @@
       firebaseConfig: ""
     };
 
+    const cleanAccounts = [
+      { id: "ACC-001", name: "Main Cash (USD)", nameKh: "គណនេយ្យសាច់ប្រាក់ USD", currency: "USD", balance: 10000, type: "cash", description: "Main cash vault for USD checkouts and general deposits", isDefault: true, status: "active", timestamp: new Date().toISOString() },
+      { id: "ACC-002", name: "Main Cash (KHR)", nameKh: "គណនេយ្យសាច់ប្រាក់ KHR", currency: "KHR", balance: 0, type: "cash", description: "Main cash vault for KHR checkouts and general deposits", isDefault: false, status: "active", timestamp: new Date().toISOString() },
+      { id: "ACC-003", name: "ABA Bank (USD)", nameKh: "គណនេយ្យធនាគារ ABA USD", currency: "USD", balance: 5000, type: "bank", description: "Store bank account for ABA USD deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
+      { id: "ACC-004", name: "ABA Bank (KHR)", nameKh: "គណនេយ្យធនាគារ ABA KHR", currency: "KHR", balance: 0, type: "bank", description: "Store bank account for ABA KHR deposits and transfers", isDefault: false, status: "active", timestamp: new Date().toISOString() },
+      { id: "ACC-005", name: "Expense Fund (USD)", nameKh: "មូលនិធិចំណាយ USD", currency: "USD", balance: 1000, type: "expense", description: "Standard account for operational expenses", isDefault: false, status: "active", timestamp: new Date().toISOString() }
+    ];
+    seed('abc_accounts', cleanAccounts);
+    seed('abc_account_transactions', []);
     seed('abc_users', cleanUsers);
     seed('abc_branches', cleanBranches);
     seed('abc_customers', cleanCustomers);
@@ -648,6 +828,8 @@
       }
     };
 
+    state.accounts = safeParse('abc_accounts', []);
+    state.accountTransactions = safeParse('abc_account_transactions', []);
     state.users = safeParse('abc_users', []);
 
     // Migration: Update GEDA branding in user names
@@ -659,7 +841,9 @@
       }
     });
     if (usersUpdated) {
-      safeSetItem('abc_users', JSON.stringify(state.users));
+      safeSetItem('abc_accounts', JSON.stringify(state.accounts));
+    safeSetItem('abc_account_transactions', JSON.stringify(state.accountTransactions));
+    safeSetItem('abc_users', JSON.stringify(state.users));
       const savedUser = safeGetSessionItem('abc_current_user');
       if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
@@ -756,6 +940,8 @@
     });
 
     lastSyncedState = {
+      accounts: JSON.parse(JSON.stringify(state.accounts)),
+      accountTransactions: JSON.parse(JSON.stringify(state.accountTransactions)),
       users: JSON.parse(JSON.stringify(state.users)),
       branches: JSON.parse(JSON.stringify(state.branches)),
       customers: JSON.parse(JSON.stringify(state.customers)),
@@ -1029,6 +1215,8 @@
       };
 
       try {
+        syncChanges('accounts', state.accounts, lastSyncedState.accounts, 'id');
+        syncChanges('account_transactions', state.accountTransactions, lastSyncedState.accountTransactions, 'id');
         syncChanges('users', state.users, lastSyncedState.users, 'id');
         syncChanges('branches', state.branches, lastSyncedState.branches, 'id');
         syncChanges('customers', state.customers, lastSyncedState.customers, 'id');
@@ -3072,6 +3260,17 @@
 
   function switchCheckoutMethod(method, totalDue) {
     state.checkoutMethod = method;
+    
+    // Auto-select corresponding account in checkout dropdown
+    const checkoutSelect = document.getElementById('checkout-deposit-account');
+    if (checkoutSelect) {
+      if (method === 'cash') {
+        checkoutSelect.value = 'ACC-001'; // Default USD Cash
+      } else if (method === 'khqr' || method === 'bank' || method === 'card') {
+        checkoutSelect.value = 'ACC-003'; // Default ABA USD
+      }
+    }
+
     document.querySelectorAll('.checkout-method-card').forEach(card => card.classList.remove('active'));
     
     const activeCard = document.getElementById('pay-card-' + method);
@@ -3553,6 +3752,35 @@
       updatedBy: state.currentUser ? state.currentUser.username : 'system',
       timestamp: new Date().toISOString()
     };
+
+    // Credit selected checkout deposit account
+    const depositAccId = document.getElementById('checkout-deposit-account')?.value;
+    if (depositAccId && state.checkoutMethod !== 'cod') {
+      const depAcc = state.accounts.find(a => a.id === depositAccId);
+      if (depAcc) {
+        let depositAmount = total;
+        if (depAcc.currency === 'KHR') {
+          const rate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
+          depositAmount = Math.round(total * rate);
+        }
+        depAcc.balance = parseFloat((depAcc.balance + depositAmount).toFixed(2));
+        
+        // Log to account transactions
+        const newAccTx = {
+          id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+          date: new Date().toISOString(),
+          type: 'sale',
+          fromAccountId: null,
+          toAccountId: depositAccId,
+          amount: depositAmount,
+          currency: depAcc.currency,
+          description: `Sales income from invoice: ${invoiceNo}`,
+          createdBy: state.currentUser ? state.currentUser.username : 'system',
+          timestamp: new Date().toISOString()
+        };
+        state.accountTransactions.push(newAccTx);
+      }
+    }
 
     state.transactions.push(newTX);
     saveStateToLocalStorage();
@@ -9065,6 +9293,8 @@
           });
         };
 
+        setupListener('accounts', 'accounts', 'id', [renderAccountsView, populateAccountDropdowns]);
+        setupListener('account_transactions', 'accountTransactions', 'id', [renderAccountsView]);
         setupListener('users', 'users', 'id', []);
         setupListener('branches', 'branches', 'id', [populatePOSSelects, renderCurrentView]);
         setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects, renderFinance, renderCurrentView]);
@@ -9184,6 +9414,8 @@
             });
           };
 
+          migrateCollection('accounts', state.accounts, 'id');
+          migrateCollection('account_transactions', state.accountTransactions, 'id');
           migrateCollection('users', state.users, 'id');
           migrateCollection('branches', state.branches, 'id');
           migrateCollection('customers', state.customers, 'id');
@@ -11564,6 +11796,7 @@ CREATE TABLE sale_items (
     document.getElementById('btn-add-expense-modal').addEventListener('click', () => {
       if (!guardAction('add')) return;
       document.getElementById('expense-form').reset();
+      populateAccountDropdowns();
       const expKhrEl = document.getElementById('exp-amount-khr');
       if (expKhrEl) expKhrEl.value = '0';
       const carrierGroup = document.getElementById('exp-carrier-group');
@@ -12232,6 +12465,35 @@ CREATE TABLE sale_items (
       if (customer) {
         customer.outstandingDebt = Math.max(0, customer.outstandingDebt - amount);
         
+        // Credit the selected account for debt collection
+        const depAccId = document.getElementById('pay-debt-deposit-account')?.value;
+        if (depAccId) {
+          const depAcc = state.accounts.find(a => a.id === depAccId);
+          if (depAcc) {
+            let depositAmount = amount;
+            if (depAcc.currency === 'KHR') {
+              const rate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
+              depositAmount = Math.round(amount * rate);
+            }
+            depAcc.balance = parseFloat((depAcc.balance + depositAmount).toFixed(2));
+
+            // Log to account transactions
+            const newAccTx = {
+              id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+              date: new Date().toISOString(),
+              type: 'debt_payment',
+              fromAccountId: null,
+              toAccountId: depAccId,
+              amount: depositAmount,
+              currency: depAcc.currency,
+              description: `Debt payoff from customer: ${customer.name}`,
+              createdBy: state.currentUser ? state.currentUser.username : 'system',
+              timestamp: new Date().toISOString()
+            };
+            state.accountTransactions.push(newAccTx);
+          }
+        }
+
         const activeBranch = state.currentUser?.branchId === 'all' ? 'BR-001' : (state.currentUser?.branchId || 'BR-001');
         // Log payoff collection
         state.paymentLogs.push({
@@ -12278,6 +12540,36 @@ CREATE TABLE sale_items (
         updatedBy: state.currentUser ? state.currentUser.username : 'system',
         timestamp: new Date().toISOString()
       };
+
+      // Subtract expense from selected account
+      const expAccId = document.getElementById('exp-account-id')?.value;
+      if (expAccId) {
+        const expAcc = state.accounts.find(a => a.id === expAccId);
+        if (expAcc) {
+          // If USD account, use USD amount, else use KHR amount
+          let expAmount = amount;
+          if (expAcc.currency === 'KHR') {
+            const expAmountKhrEl = document.getElementById('exp-amount-khr');
+            expAmount = parseFloat(expAmountKhrEl?.value) || Math.round(amount * (window.POS_HELPERS?.EXCHANGE_RATE || 4100));
+          }
+          expAcc.balance = parseFloat((expAcc.balance - expAmount).toFixed(2));
+
+          // Log to account transactions
+          const newAccTx = {
+            id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+            date: expenseDate,
+            type: 'expense',
+            fromAccountId: expAccId,
+            toAccountId: null,
+            amount: expAmount,
+            currency: expAcc.currency,
+            description: `Operational Expense: ${description} (${category})`,
+            createdBy: state.currentUser ? state.currentUser.username : 'system',
+            timestamp: new Date().toISOString()
+          };
+          state.accountTransactions.push(newAccTx);
+        }
+      }
 
       state.expenses.push(newExp);
       saveStateToLocalStorage();
@@ -12723,8 +13015,185 @@ CREATE TABLE sale_items (
           } else if (activeTab === 'closing') {
             document.getElementById('finance-tab-closing').style.display = 'block';
             renderSalesClosingView();
+          } else if (activeTab === 'accounts') {
+            document.getElementById('finance-tab-accounts').style.display = 'block';
+            renderAccountsView();
+            populateAccountDropdowns();
           }
         });
+      });
+    }
+
+    // Accounting UI Dialog triggers
+    const addAccountBtn = document.getElementById('btn-add-account-modal');
+    if (addAccountBtn) {
+      addAccountBtn.addEventListener('click', () => {
+        if (!guardAction('add')) return;
+        document.getElementById('create-account-form').reset();
+        document.getElementById('modal-create-account').classList.add('active-modal');
+      });
+    }
+
+    const closeCreateAccountBtn = document.getElementById('btn-close-create-account');
+    if (closeCreateAccountBtn) {
+      closeCreateAccountBtn.addEventListener('click', () => {
+        document.getElementById('modal-create-account').classList.remove('active-modal');
+      });
+    }
+    const cancelCreateAccountBtn = document.getElementById('btn-cancel-create-account');
+    if (cancelCreateAccountBtn) {
+      cancelCreateAccountBtn.addEventListener('click', () => {
+        document.getElementById('modal-create-account').classList.remove('active-modal');
+      });
+    }
+
+    const transferFundsBtn = document.getElementById('btn-transfer-funds-modal');
+    if (transferFundsBtn) {
+      transferFundsBtn.addEventListener('click', () => {
+        if (!guardAction('add')) return;
+        document.getElementById('transfer-funds-form').reset();
+        populateAccountDropdowns();
+        document.getElementById('modal-transfer-funds').classList.add('active-modal');
+      });
+    }
+
+    const closeTransferFundsBtn = document.getElementById('btn-close-transfer-funds');
+    if (closeTransferFundsBtn) {
+      closeTransferFundsBtn.addEventListener('click', () => {
+        document.getElementById('modal-transfer-funds').classList.remove('active-modal');
+      });
+    }
+    const cancelTransferFundsBtn = document.getElementById('btn-cancel-transfer-funds');
+    if (cancelTransferFundsBtn) {
+      cancelTransferFundsBtn.addEventListener('click', () => {
+        document.getElementById('modal-transfer-funds').classList.remove('active-modal');
+      });
+    }
+
+    // Create Account Form submit handler
+    const createAccountForm = document.getElementById('create-account-form');
+    if (createAccountForm) {
+      createAccountForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!guardAction('add')) return;
+        const name = document.getElementById('new-acc-name').value.trim();
+        const currency = document.getElementById('new-acc-currency').value;
+        const type = document.getElementById('new-acc-type').value;
+        const balance = parseFloat(document.getElementById('new-acc-balance').value) || 0;
+        const description = document.getElementById('new-acc-desc').value.trim();
+
+        const newId = 'ACC-' + String(state.accounts.length + 1).padStart(3, '0');
+        const newAcc = {
+          id: newId,
+          name,
+          nameKh: name,
+          currency,
+          balance,
+          type,
+          description,
+          isDefault: false,
+          status: 'active',
+          timestamp: new Date().toISOString()
+        };
+
+        state.accounts.push(newAcc);
+
+        if (balance > 0) {
+          const newTx = {
+            id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+            date: new Date().toISOString(),
+            type: 'deposit',
+            fromAccountId: null,
+            toAccountId: newId,
+            amount: balance,
+            currency,
+            description: `Initial deposit for ${name} account`,
+            createdBy: state.currentUser ? state.currentUser.username : 'system',
+            timestamp: new Date().toISOString()
+          };
+          state.accountTransactions.push(newTx);
+        }
+
+        saveStateToLocalStorage();
+        document.getElementById('modal-create-account').classList.remove('active-modal');
+        renderAccountsView();
+        populateAccountDropdowns();
+        alert('New account registered successfully!');
+      });
+    }
+
+    // Transfer Funds Form submit handler
+    const transferFundsForm = document.getElementById('transfer-funds-form');
+    if (transferFundsForm) {
+      transferFundsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!guardAction('add')) return;
+        const srcId = document.getElementById('transfer-src-account').value;
+        const destId = document.getElementById('transfer-dest-account').value;
+        const amount = parseFloat(document.getElementById('transfer-amount').value) || 0;
+        const desc = document.getElementById('transfer-desc').value.trim();
+
+        if (srcId === destId) {
+          alert('Source and destination accounts must be different!');
+          return;
+        }
+
+        const srcAcc = state.accounts.find(a => a.id === srcId);
+        const destAcc = state.accounts.find(a => a.id === destId);
+
+        if (!srcAcc || !destAcc) return;
+
+        if (srcAcc.balance < amount) {
+          alert('Insufficient funds in the source account!');
+          return;
+        }
+
+        // Deduct from source
+        srcAcc.balance = parseFloat((srcAcc.balance - amount).toFixed(2));
+
+        // Credit to destination with conversion if needed
+        let finalDestAmount = amount;
+        let convertedStr = '';
+        if (srcAcc.currency !== destAcc.currency) {
+          const rate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
+          if (srcAcc.currency === 'USD' && destAcc.currency === 'KHR') {
+            finalDestAmount = Math.round(amount * rate);
+            convertedStr = ` (Converted from ${window.POS_HELPERS.formatUSD(amount)} to ${window.POS_HELPERS.formatKHR(finalDestAmount)})`;
+          } else if (srcAcc.currency === 'KHR' && destAcc.currency === 'USD') {
+            finalDestAmount = parseFloat((amount / rate).toFixed(2));
+            convertedStr = ` (Converted from ${window.POS_HELPERS.formatKHR(amount)} to ${window.POS_HELPERS.formatUSD(finalDestAmount)})`;
+          }
+        }
+
+        destAcc.balance = parseFloat((destAcc.balance + finalDestAmount).toFixed(2));
+
+        const newTx = {
+          id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+          date: new Date().toISOString(),
+          type: 'transfer',
+          fromAccountId: srcId,
+          toAccountId: destId,
+          amount: amount,
+          currency: srcAcc.currency,
+          convertedAmount: srcAcc.currency !== destAcc.currency ? finalDestAmount : null,
+          description: `${desc}${convertedStr}`,
+          createdBy: state.currentUser ? state.currentUser.username : 'system',
+          timestamp: new Date().toISOString()
+        };
+
+        state.accountTransactions.push(newTx);
+        saveStateToLocalStorage();
+        document.getElementById('modal-transfer-funds').classList.remove('active-modal');
+        renderAccountsView();
+        populateAccountDropdowns();
+        alert('Funds transferred successfully!');
+      });
+    }
+
+    const ledgerFilterEl = document.getElementById('acc-ledger-filter-account');
+    if (ledgerFilterEl) {
+      ledgerFilterEl.addEventListener('change', () => {
+        renderAccountsView();
       });
     }
 
@@ -15997,6 +16466,7 @@ CREATE TABLE sale_items (
       });
     }
     
+    populateAccountDropdowns();
     translateApp();
     renderCurrentView();
     updateLowStockAlertCount();

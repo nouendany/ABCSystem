@@ -1283,6 +1283,7 @@
         <div class="pos-categories-slider" id="finance-tabs" style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
           <span class="category-tab active" data-finance-tab="ledger">Financial Ledger</span>
           <span class="category-tab" data-finance-tab="closing" data-translate="salesClosing">Sales Closing</span>
+          <span class="category-tab" data-finance-tab="accounts">Accounting Systems (គណនេយ្យ)</span>
         </div>
 
         <div id="finance-tab-ledger" class="finance-tab-content">
@@ -1439,6 +1440,78 @@
       </div>
         
         <!-- TAB 2: Sales Closing (Advanced Update Requirement 1) -->
+        <!-- Accounts Tab View Panel -->
+        <div id="finance-tab-accounts" class="finance-tab-content" style="display:none; margin-top:16px;">
+          <div class="table-actions-row" style="align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+            <button class="btn btn-primary" id="btn-add-account-modal" type="button">Create New Account</button>
+            <button class="btn btn-outline" id="btn-transfer-funds-modal" type="button">Transfer Funds (ផ្ទេរប្រាក់)</button>
+          </div>
+
+          <div class="kpi-grid finance-kpis" style="margin-bottom:20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+            <div class="kpi-card" style="border-left-color: var(--primary);">
+              <div class="kpi-details">
+                <h4>Total Cash & Bank Balance (USD)</h4>
+                <div class="kpi-value" id="acc-total-usd">$0.00</div>
+              </div>
+              <div class="kpi-icon-wrapper">💵</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: #10b981;">
+              <div class="kpi-details">
+                <h4>Total Cash & Bank Balance (KHR)</h4>
+                <div class="kpi-value" id="acc-total-khr">0 ៛</div>
+              </div>
+              <div class="kpi-icon-wrapper">🇰🇭</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; flex-wrap: wrap;">
+            <div class="glass-card">
+              <div class="table-header">
+                <h3>Accounts Directory (បញ្ជីគណនេយ្យ)</h3>
+              </div>
+              <div class="table-responsive" style="padding: 10px;">
+                <table class="pos-table">
+                  <thead>
+                    <tr>
+                      <th>Account Name</th>
+                      <th>Type</th>
+                      <th>Currency</th>
+                      <th style="text-align: right;">Balance</th>
+                      <th style="text-align: center;">Default</th>
+                      <th style="text-align: center;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="accounting-accounts-list">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="table-header" style="justify-content: space-between; align-items: center; padding-right:16px;">
+                <h3>Transactions Ledger (ចរន្តសាច់ប្រាក់)</h3>
+                <select id="acc-ledger-filter-account" class="form-control" style="width: 150px; font-size: 12px; height: 30px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px;">
+                  <option value="all">All Accounts</option>
+                </select>
+              </div>
+              <div class="table-responsive" style="padding: 10px;">
+                <table class="pos-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Details</th>
+                      <th style="text-align: right;">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="accounting-ledger-list">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="finance-tab-closing" class="finance-tab-content" style="display:none;">
           <div class="settings-split-grid">
             <!-- Active Day Closing controls -->
@@ -2238,7 +2311,12 @@
         </div>
         
         <!-- Cash payments received drawer -->
-        <div class="cash-container" id="checkout-cash-drawer">
+        <div class="form-group" style="margin-top: 12px; margin-bottom: 12px;">
+            <label>Deposit To Account (ដាក់ប្រាក់ចូលទៅគណនេយ្យ)</label>
+            <select class="form-control" id="checkout-deposit-account" required style="font-weight: 600; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary);"></select>
+          </div>
+
+          <div class="cash-container" id="checkout-cash-drawer">
           <div class="form-group">
             <label data-translate="cashReceived">Cash Received ($)</label>
             <input type="number" class="form-control" id="checkout-cash-input" value="0" min="0" step="0.01" style="font-size: 16px; font-weight: 700; color: var(--primary);">
@@ -2524,7 +2602,7 @@
             <select class="form-control" id="exp-shipping-carrier"></select>
           </div>
 
-          <div class="checkout-method-grid" style="margin-bottom:0;">
+          <div class="checkout-method-grid" style="margin-bottom:12px;">
             <div class="form-group">
               <label data-translate="amount">Amount ($)</label>
               <input type="number" class="form-control" id="exp-amount" min="0.00" step="0.01" required value="0.00">
@@ -2533,6 +2611,10 @@
               <label>Amount (៛ Riel)</label>
               <input type="number" class="form-control" id="exp-amount-khr" min="0" step="100" value="0">
             </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label>Deduct From Account (ដកប្រាក់ចេញពីគណនេយ្យ)</label>
+            <select class="form-control" id="exp-account-id" required style="font-weight: 600; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary);"></select>
           </div>
           <div class="form-group">
             <label>កាលបរិច្ឆេទ និងម៉ោង / Date & Time</label>
@@ -2963,13 +3045,17 @@
             <label data-translate="paymentAmount">Payoff Amount ($)</label>
             <input type="number" class="form-control" id="pay-debt-amount" min="0.01" step="0.01" required value="0.00" style="font-size:16px; font-weight:700; text-align:center; color:var(--primary);">
           </div>
-          <div class="form-group" style="margin-bottom:0;">
+          <div class="form-group" style="margin-bottom:12px;">
             <label data-translate="paymentMethod">Payment Method</label>
             <select class="form-control" id="pay-debt-method">
               <option value="cash" data-translate="cash">Cash</option>
               <option value="khqr" data-translate="khqr">ABA Pay / KHQR</option>
               <option value="bank" data-translate="bank">Bank Transfer</option>
             </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Deposit To Account (ដាក់ប្រាក់ចូលទៅគណនេយ្យ)</label>
+            <select class="form-control" id="pay-debt-deposit-account" required style="font-weight: 600; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary);"></select>
           </div>
         </div>
         <div class="modal-footer">
@@ -3497,6 +3583,89 @@
         <span>➕</span>
         <span data-translate="addNewNote">Add New Note (បន្ថែមចំណាំ)</span>
       </button>
+    </div>
+  </div>
+
+  <!-- CREATE ACCOUNT MODAL -->
+  <div class="modal-overlay" id="modal-create-account">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Create New Account</h3>
+        <button class="qty-btn" id="btn-close-create-account" type="button">×</button>
+      </div>
+      <form id="create-account-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Account Name (ឈ្មោះគណនេយ្យ)</label>
+            <input type="text" class="form-control" id="new-acc-name" required placeholder="e.g. ABA Bank Savings">
+          </div>
+          <div class="checkout-method-grid" style="margin-bottom:12px;">
+            <div class="form-group">
+              <label>Currency (រូបិយប័ណ្ណ)</label>
+              <select class="form-control" id="new-acc-currency" required>
+                <option value="USD">USD ($)</option>
+                <option value="KHR">KHR (៛)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Type (ប្រភេទ)</label>
+              <select class="form-control" id="new-acc-type" required>
+                <option value="cash">Cash</option>
+                <option value="bank">Bank Account</option>
+                <option value="expense">Expense Fund</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Starting Balance (សមតុល្យដើមគ្រា)</label>
+            <input type="number" class="form-control" id="new-acc-balance" min="0" step="0.01" value="0.00" required>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Description (ការពិពណ៌នា)</label>
+            <input type="text" class="form-control" id="new-acc-desc" placeholder="e.g. For saving store revenue">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-create-account">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TRANSFER FUNDS MODAL -->
+  <div class="modal-overlay" id="modal-transfer-funds">
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>Transfer Funds (ផ្ទេរប្រាក់)</h3>
+        <button class="qty-btn" id="btn-close-transfer-funds" type="button">×</button>
+      </div>
+      <form id="transfer-funds-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Source Account (គណនេយ្យប្រភព/ដកប្រាក់)</label>
+            <select class="form-control" id="transfer-src-account" required></select>
+          </div>
+          <div class="form-group">
+            <label>Destination Account (គណនេយ្យគោលដៅ/ដាក់ប្រាក់)</label>
+            <select class="form-control" id="transfer-dest-account" required></select>
+          </div>
+          <div class="form-group">
+            <label>Transfer Amount (ចំនួនទឹកប្រាក់)</label>
+            <input type="number" class="form-control" id="transfer-amount" min="0.01" step="0.01" value="0.00" required style="font-size: 16px; font-weight: 700; color: var(--primary);">
+            <small style="color:var(--text-secondary); font-size:11px;" id="transfer-rate-help">ប្រសិនបើផ្ទេរខុសរូបិយប័ណ្ណ វានឹងបំប្លែងស្វ័យប្រវត្តិតាមអត្រាប្តូរប្រាក់ ១ ដុល្លារ = ៤,១០០ ៛ / Cross-currency transfers convert automatically at 1 USD = 4,100 KHR</small>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Description (កំណត់ចំណាំ)</label>
+            <input type="text" class="form-control" id="transfer-desc" placeholder="e.g. Allocation for weekly operational expenses" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btn-cancel-transfer-funds">Cancel</button>
+          <button type="submit" class="btn btn-primary">Transfer</button>
+        </div>
+      </form>
     </div>
   </div>
 
