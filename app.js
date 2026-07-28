@@ -747,10 +747,18 @@
         ledgerTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No transactions logged</td></tr>`;
       } else {
         sortedTXs.forEach(t => {
-          const typeDisplay = t.type.toUpperCase();
+          let typeDisplay = t.type.toUpperCase();
+          if (state.lang === 'km') {
+            if (t.type === 'sale') typeDisplay = 'លក់ចេញ';
+            else if (t.type === 'expense') typeDisplay = 'ចំណាយ';
+            else if (t.type === 'withdrawal') typeDisplay = 'ដកប្រាក់';
+            else if (t.type === 'deposit') typeDisplay = 'ដាក់ប្រាក់';
+            else if (t.type === 'transfer') typeDisplay = 'ផ្ទេរប្រាក់';
+            else if (t.type === 'debt_payment') typeDisplay = 'សងបំណុល';
+          }
           let amountDisplay = '';
           if (t.type === 'transfer') {
-            amountDisplay = `<span style="color:var(--warning); font-weight:700;">	ext{t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+            amountDisplay = `<span style="color:var(--warning); font-weight:700;">${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
           } else if (t.type === 'expense' || t.type === 'withdrawal') {
             amountDisplay = `<span style="color:var(--danger); font-weight:700;">-${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
           } else {
@@ -1301,7 +1309,9 @@
           payrollItems: JSON.parse(JSON.stringify(state.payrollItems)),
           kpis: JSON.parse(JSON.stringify(state.kpis)),
           voidedTransactions: JSON.parse(JSON.stringify(state.voidedTransactions)),
-          testimonials: JSON.parse(JSON.stringify(state.testimonials))
+          testimonials: JSON.parse(JSON.stringify(state.testimonials)),
+          accounts: JSON.parse(JSON.stringify(state.accounts)),
+          accountTransactions: JSON.parse(JSON.stringify(state.accountTransactions))
         };
       } catch (err) {
         console.error("Cloud sync diff error:", err);
