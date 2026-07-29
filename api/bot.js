@@ -394,8 +394,14 @@ async function handleWebAppOrder(req, res, body) {
       } else {
         // Create new customer
         purchaseCountVal = 1;
-        const custCountSnap = await getCountFromServer(customersRef);
-        const nextCustNum = 1000 + custCountSnap.data().count + 1;
+        const custSnap = await getDocs(customersRef);
+        let maxIdNum = 0;
+        custSnap.forEach(d => {
+          const cId = d.id;
+          const num = parseInt(cId.replace("CST-", "")) || 0;
+          if (num > maxIdNum) maxIdNum = num;
+        });
+        const nextCustNum = maxIdNum + 1;
         customerId = "CST-" + nextCustNum;
         customerNameStr = customerName || "New Customer";
         
