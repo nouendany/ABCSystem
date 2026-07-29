@@ -12636,6 +12636,20 @@ CREATE TABLE sale_items (
       if (customer) {
         customer.outstandingDebt = Math.max(0, customer.outstandingDebt - amount);
         
+        // Allocate payment to historical unpaid transactions (keeps transaction ledger status in sync)
+        let remainingPayment = amount;
+        const custTxs = state.transactions
+          .filter(t => t.customerId === cId && (t.outstandingDebt || 0) > 0)
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        custTxs.forEach(t => {
+          if (remainingPayment <= 0) return;
+          const currentTxDebt = t.outstandingDebt || 0;
+          const allocated = Math.min(remainingPayment, currentTxDebt);
+          t.outstandingDebt = parseFloat((currentTxDebt - allocated).toFixed(2));
+          remainingPayment = parseFloat((remainingPayment - allocated).toFixed(2));
+        });
+        
         // Credit the selected account for debt collection
         const depAccId = document.getElementById('pay-debt-deposit-account')?.value;
         if (depAccId) {
