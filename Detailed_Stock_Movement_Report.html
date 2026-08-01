@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Detailed Stock Movement Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Kantumruy+Pro:wght@400;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', 'Kantumruy Pro', 'Khmer OS Battambang', sans-serif;
+      margin: 40px;
+      color: #2d3748;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #1a365d;
+      font-size: 26px;
+      margin-bottom: 5px;
+      font-weight: 700;
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      color: #718096;
+      margin-bottom: 30px;
+    }
+    
+    h2 {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #2b6cb0;
+      font-size: 18px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    h3 {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #4a5568;
+      font-size: 15px;
+      margin-top: 25px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      font-size: 13px;
+    }
+    
+    th {
+      background-color: #ebf8ff;
+      color: #2b6cb0;
+      text-align: left;
+      padding: 12px 10px;
+      font-weight: 700;
+      border: 1px solid #cbd5e0;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    
+    td {
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    
+    .sku-badge {
+      background-color: #edf2f7;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #4a5568;
+      font-weight: bold;
+    }
+    
+    .qty-plus {
+      color: #38a169;
+      font-weight: bold;
+    }
+    
+    .qty-minus {
+      color: #e53e3e;
+      font-weight: bold;
+    }
+    
+    ul {
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+    
+    li {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    
+    .page-break {
+      page-break-before: always;
+    }
+    
+    .footer {
+      margin-top: 50px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      font-size: 11px;
+      color: #a0aec0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div style="text-align: center; margin-bottom: 40px;">
+    <h1>របាយការណ៍លម្អិតអំពីចលនាស្តុកទំនិញ</h1>
+    <div class="subtitle">កាលបរិច្ឆេទសរុប៖ <strong>១៦ មិថុនា ២០២៦ ដល់ ០១ សីហា ២០២៦</strong></div>
+  </div>
+
+  <h2>ផ្នែកទី ១៖ តារាងសរុបរួម (១៦ មិថុនា ដល់ ០១ សីហា ២០២៦)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 15%;">SKU</th>
+        <th style="width: 35%;">ឈ្មោះទំនិញ</th>
+        <th style="width: 12.5%; text-align: center;">ស្តុកដើមគ្រា (16-Jun)</th>
+        <th style="width: 12.5%; text-align: center;">ថែមស្តុកសរុប</th>
+        <th style="width: 12.5%; text-align: center;">លក់ចេញសរុប</th>
+        <th style="width: 12.5%; text-align: center;">ស្តុកចុងគ្រា (01-Aug)</th>
+      </tr>
+    </thead>
+    <tbody>
+  
+      <tr>
+        <td><span class="sku-badge">ABC-001</span></td>
+        <td><strong>COOPER SUNSCREEN</strong><br><span style="font-size:10px; color:#718096;">COOPER SUNSCREEN</span></td>
+        <td style="text-align: center; font-weight: bold;">424</td>
+        <td style="text-align: center;" class="qty-plus">+35</td>
+        <td style="text-align: center;" class="qty-minus">-185</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">274</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-002</span></td>
+        <td><strong>XSOM GEL PLUS</strong><br><span style="font-size:10px; color:#718096;">XSOM GEL PLUS</span></td>
+        <td style="text-align: center; font-weight: bold;">167</td>
+        <td style="text-align: center;" class="qty-plus">+441</td>
+        <td style="text-align: center;" class="qty-minus">-177</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">431</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-003</span></td>
+        <td><strong>AMINO ACID CLEANSER</strong><br><span style="font-size:10px; color:#718096;">AMINO ACID CLEANSER</span></td>
+        <td style="text-align: center; font-weight: bold;">195</td>
+        <td style="text-align: center;" class="qty-plus">+8</td>
+        <td style="text-align: center;" class="qty-minus">-49</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">154</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-004</span></td>
+        <td><strong>ANTIMELASMA</strong><br><span style="font-size:10px; color:#718096;">ANTIMELASMA</span></td>
+        <td style="text-align: center; font-weight: bold;">258</td>
+        <td style="text-align: center;" class="qty-plus">+351</td>
+        <td style="text-align: center;" class="qty-minus">-344</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">265</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-005</span></td>
+        <td><strong>SERUM B-BOOSTER</strong><br><span style="font-size:10px; color:#718096;">SERUM B-BOOSTER</span></td>
+        <td style="text-align: center; font-weight: bold;">90</td>
+        <td style="text-align: center;" class="qty-plus">+312</td>
+        <td style="text-align: center;" class="qty-minus">-47</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">355</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-006</span></td>
+        <td><strong>KEY ACNE</strong><br><span style="font-size:10px; color:#718096;">KEY ACNE</span></td>
+        <td style="text-align: center; font-weight: bold;">6</td>
+        <td style="text-align: center;" class="qty-plus">+42</td>
+        <td style="text-align: center;" class="qty-minus">-48</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">0</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-007</span></td>
+        <td><strong>KEY COLLAGEN PEPTIDES</strong><br><span style="font-size:10px; color:#718096;">KEY COLLAGEN PEPTIDES</span></td>
+        <td style="text-align: center; font-weight: bold;">99</td>
+        <td style="text-align: center;" class="qty-plus">+41</td>
+        <td style="text-align: center;" class="qty-minus">-80</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">60</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-008</span></td>
+        <td><strong>HYDROGEL MASK</strong><br><span style="font-size:10px; color:#718096;">HYDROGEL MASK</span></td>
+        <td style="text-align: center; font-weight: bold;">199</td>
+        <td style="text-align: center;" class="qty-plus">+2</td>
+        <td style="text-align: center;" class="qty-minus">-19</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">182</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-009</span></td>
+        <td><strong>VITAMIN TRANEX</strong><br><span style="font-size:10px; color:#718096;">VITAMIN TRANEX</span></td>
+        <td style="text-align: center; font-weight: bold;">36</td>
+        <td style="text-align: center;" class="qty-plus">+28</td>
+        <td style="text-align: center;" class="qty-minus">-57</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">7</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-010</span></td>
+        <td><strong>KEY BODY WASH</strong><br><span style="font-size:10px; color:#718096;">KEY BODY WASH</span></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-0</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">0</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-011</span></td>
+        <td><strong>BB CREAM</strong><br><span style="font-size:10px; color:#718096;">BB CREAM</span></td>
+        <td style="text-align: center; font-weight: bold;">16</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-4</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">12</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-012</span></td>
+        <td><strong>KEY SHAMPOO</strong><br><span style="font-size:10px; color:#718096;">KEY SHAMPOO</span></td>
+        <td style="text-align: center; font-weight: bold;">4</td>
+        <td style="text-align: center;" class="qty-plus">+116</td>
+        <td style="text-align: center;" class="qty-minus">-29</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">91</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-013</span></td>
+        <td><strong>ACNE SERUM</strong><br><span style="font-size:10px; color:#718096;">ACNE SERUM</span></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+10</td>
+        <td style="text-align: center;" class="qty-minus">-5</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">5</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">HM-SHEET</span></td>
+        <td><strong>ម៉ាស់ HYDROGEL (សន្លឹក)</strong><br><span style="font-size:10px; color:#718096;">HYDROGEL MASK (Sheet)</span></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+10</td>
+        <td style="text-align: center;" class="qty-minus">-2</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">8</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <h2>ផ្នែកទី ២៖ របាយការណ៍ផ្នែកទី១ (១៦ មិថុនា ដល់ ៣០ មិថុនា ២០២៦)</h2>
+  
+  <h3>២.១ តារាងសង្ខេបស្តុក (June 16 - June 30)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 15%;">SKU</th>
+        <th style="width: 35%;">ឈ្មោះទំនិញ</th>
+        <th style="width: 12.5%; text-align: center;">ស្តុកដើមគ្រា (16-Jun)</th>
+        <th style="width: 12.5%; text-align: center;">ថែមស្តុក</th>
+        <th style="width: 12.5%; text-align: center;">លក់ចេញសរុប</th>
+        <th style="width: 12.5%; text-align: center;">ស្តុកចុងគ្រា (30-Jun)</th>
+      </tr>
+    </thead>
+    <tbody>
+  
+      <tr>
+        <td><span class="sku-badge">ABC-001</span></td>
+        <td><strong>COOPER SUNSCREEN</strong></td>
+        <td style="text-align: center; font-weight: bold;">424</td>
+        <td style="text-align: center;" class="qty-plus">+29</td>
+        <td style="text-align: center;" class="qty-minus">-41</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">412</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-002</span></td>
+        <td><strong>XSOM GEL PLUS</strong></td>
+        <td style="text-align: center; font-weight: bold;">167</td>
+        <td style="text-align: center;" class="qty-plus">+36</td>
+        <td style="text-align: center;" class="qty-minus">-59</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">144</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-003</span></td>
+        <td><strong>AMINO ACID CLEANSER</strong></td>
+        <td style="text-align: center; font-weight: bold;">195</td>
+        <td style="text-align: center;" class="qty-plus">+6</td>
+        <td style="text-align: center;" class="qty-minus">-13</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">188</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-004</span></td>
+        <td><strong>ANTIMELASMA</strong></td>
+        <td style="text-align: center; font-weight: bold;">258</td>
+        <td style="text-align: center;" class="qty-plus">+47</td>
+        <td style="text-align: center;" class="qty-minus">-74</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">231</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-005</span></td>
+        <td><strong>SERUM B-BOOSTER</strong></td>
+        <td style="text-align: center; font-weight: bold;">90</td>
+        <td style="text-align: center;" class="qty-plus">+10</td>
+        <td style="text-align: center;" class="qty-minus">-14</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">86</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-006</span></td>
+        <td><strong>KEY ACNE</strong></td>
+        <td style="text-align: center; font-weight: bold;">6</td>
+        <td style="text-align: center;" class="qty-plus">+26</td>
+        <td style="text-align: center;" class="qty-minus">-12</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">20</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-007</span></td>
+        <td><strong>KEY COLLAGEN PEPTIDES</strong></td>
+        <td style="text-align: center; font-weight: bold;">99</td>
+        <td style="text-align: center;" class="qty-plus">+21</td>
+        <td style="text-align: center;" class="qty-minus">-44</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">76</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-008</span></td>
+        <td><strong>HYDROGEL MASK</strong></td>
+        <td style="text-align: center; font-weight: bold;">199</td>
+        <td style="text-align: center;" class="qty-plus">+1</td>
+        <td style="text-align: center;" class="qty-minus">-8</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">192</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-009</span></td>
+        <td><strong>VITAMIN TRANEX</strong></td>
+        <td style="text-align: center; font-weight: bold;">36</td>
+        <td style="text-align: center;" class="qty-plus">+5</td>
+        <td style="text-align: center;" class="qty-minus">-20</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">21</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-010</span></td>
+        <td><strong>KEY BODY WASH</strong></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-0</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">0</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-011</span></td>
+        <td><strong>BB CREAM</strong></td>
+        <td style="text-align: center; font-weight: bold;">16</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-0</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">16</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-012</span></td>
+        <td><strong>KEY SHAMPOO</strong></td>
+        <td style="text-align: center; font-weight: bold;">4</td>
+        <td style="text-align: center;" class="qty-plus">+8</td>
+        <td style="text-align: center;" class="qty-minus">-11</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">1</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-013</span></td>
+        <td><strong>ACNE SERUM</strong></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-0</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">0</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">HM-SHEET</span></td>
+        <td><strong>ម៉ាស់ HYDROGEL (សន្លឹក)</strong></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+10</td>
+        <td style="text-align: center;" class="qty-minus">-0</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">10</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>២.២ ប្រវត្តិនៃការបន្ថែមស្តុកលម្អិត (June 16 - June 30)</h3>
+  
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">COOPER SUNSCREEN (ABC-001)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:06</code> | ចំនួន៖ <span class="qty-plus">+25</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:55</code> | ចំនួន៖ <span class="qty-plus">+4</span> | សម្គាល់៖ <em>Manual adjustment: ស្តុក</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">XSOM GEL PLUS (ABC-002)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:07</code> | ចំនួន៖ <span class="qty-plus">+33</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 12:38</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1005</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 16:09</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1054-HHQ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-27 10:09</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1073-01J</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">AMINO ACID CLEANSER (ABC-003)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:07</code> | ចំនួន៖ <span class="qty-plus">+5</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 16:00</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1053-0VS</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">ANTIMELASMA (ABC-004)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:08</code> | ចំនួន៖ <span class="qty-plus">+43</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 12:38</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1005</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 12:51</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1005</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 16:09</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1054-HHQ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-27 10:09</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1073-01J</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">SERUM B-BOOSTER (ABC-005)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:09</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">KEY ACNE (ABC-006)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:09</code> | ចំនួន៖ <span class="qty-plus">+4</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 07:00</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: ចែមុំថែសេរ៉ូម មុន 10*11.7$=117$ ដកជាមួយ Collagen 20=290</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 16:00</code> | ចំនួន៖ <span class="qty-plus">+2</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1053-0VS</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-30 20:33</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: ចែថែមចំនួន 10ឯកតា</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">KEY COLLAGEN PEPTIDES (ABC-007)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:10</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 17:57</code> | ចំនួន៖ <span class="qty-plus">+20</span> | សម្គាល់៖ <em>Received 20 units from branch BR-001</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">HYDROGEL MASK (ABC-008)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:11</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">VITAMIN TRANEX (ABC-009)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:11</code> | ចំនួន៖ <span class="qty-plus">+4</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-26 16:09</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1054-HHQ</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">KEY SHAMPOO (ABC-012)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-24 18:53</code> | ចំនួន៖ <span class="qty-plus">+8</span> | សម្គាល់៖ <em>Manual adjustment: ស្តុកចែមំុឌៀវ</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">ម៉ាស់ HYDROGEL (សន្លឹក) (HM-SHEET)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-06-28 11:32</code> | ចំនួន៖ <span class="qty-plus">+5</span> | សម្គាល់៖ <em>Split Pack: Add 5 units converted from 1 box(es) of ABC-008</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-06-28 11:33</code> | ចំនួន៖ <span class="qty-plus">+5</span> | សម្គាល់៖ <em>Split Pack: Add 5 units converted from 1 box(es) of ABC-008</em></li>  </ul>
+      </div>
+  <h3>២.៣ របាយការណ៍លក់លម្អិតតាមបុគ្គលិកលក់ (June 16 - June 30)</h3>
+  
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">COOPER SUNSCREEN (ABC-001)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>11</code> ឯកតា</li>
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>8</code> ឯកតា</li>
+          <li><strong>Seyla</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>4</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>13</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">XSOM GEL PLUS (ABC-002)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>20</code> ឯកតា</li>
+          <li><strong>Seyla</strong> លក់បាន៖ <code>8</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>5</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>23</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">AMINO ACID CLEANSER (ABC-003)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Seyla</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>4</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">ANTIMELASMA (ABC-004)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>28</code> ឯកតា</li>
+          <li><strong>Seyla</strong> លក់បាន៖ <code>6</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>3</code> ឯកតា</li>
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>11</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>23</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>1</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">SERUM B-BOOSTER (ABC-005)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Seyla</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>4</code> ឯកតា</li>
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>7</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">KEY ACNE (ABC-006)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Seyla</strong> លក់បាន៖ <code>3</code> ឯកតា</li>
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>3</code> ឯកតា</li>
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>1</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">KEY COLLAGEN PEPTIDES (ABC-007)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Srey lin</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>20</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>20</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">HYDROGEL MASK (ABC-008)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>3</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">VITAMIN TRANEX (ABC-009)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>5</code> ឯកតា</li>
+          <li><strong>Yuk Thetrinda</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>12</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">KEY SHAMPOO (ABC-012)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>POM Yary</strong> លក់បាន៖ <code>2</code> ឯកតា</li>
+          <li><strong>Seyla</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>4</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>4</code> ឯកតា</li>  </ul>
+      </div>
+  <div class="page-break"></div>
+
+  <h2>ផ្នែកទី ៣៖ របាយការណ៍ផ្នែកទី២ (០១ កក្កដា ដល់ ០១ សីហា ២០២៦)</h2>
+  
+  <h3>៣.១ តារាងសង្ខេបស្តុក (July 1 - August 1)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 15%;">SKU</th>
+        <th style="width: 35%;">ឈ្មោះទំនិញ</th>
+        <th style="width: 12.5%; text-align: center;">ស្តុកដើមគ្រា (01-Jul)</th>
+        <th style="width: 12.5%; text-align: center;">ថែមស្តុក</th>
+        <th style="width: 12.5%; text-align: center;">លក់ចេញសរុប</th>
+        <th style="width: 12.5%; text-align: center;">ស្តុកចុងគ្រា (01-Aug)</th>
+      </tr>
+    </thead>
+    <tbody>
+  
+      <tr>
+        <td><span class="sku-badge">ABC-001</span></td>
+        <td><strong>COOPER SUNSCREEN</strong></td>
+        <td style="text-align: center; font-weight: bold;">412</td>
+        <td style="text-align: center;" class="qty-plus">+6</td>
+        <td style="text-align: center;" class="qty-minus">-144</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">274</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-002</span></td>
+        <td><strong>XSOM GEL PLUS</strong></td>
+        <td style="text-align: center; font-weight: bold;">144</td>
+        <td style="text-align: center;" class="qty-plus">+405</td>
+        <td style="text-align: center;" class="qty-minus">-118</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">431</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-003</span></td>
+        <td><strong>AMINO ACID CLEANSER</strong></td>
+        <td style="text-align: center; font-weight: bold;">188</td>
+        <td style="text-align: center;" class="qty-plus">+2</td>
+        <td style="text-align: center;" class="qty-minus">-36</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">154</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-004</span></td>
+        <td><strong>ANTIMELASMA</strong></td>
+        <td style="text-align: center; font-weight: bold;">231</td>
+        <td style="text-align: center;" class="qty-plus">+304</td>
+        <td style="text-align: center;" class="qty-minus">-270</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">265</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-005</span></td>
+        <td><strong>SERUM B-BOOSTER</strong></td>
+        <td style="text-align: center; font-weight: bold;">86</td>
+        <td style="text-align: center;" class="qty-plus">+302</td>
+        <td style="text-align: center;" class="qty-minus">-33</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">355</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-006</span></td>
+        <td><strong>KEY ACNE</strong></td>
+        <td style="text-align: center; font-weight: bold;">20</td>
+        <td style="text-align: center;" class="qty-plus">+16</td>
+        <td style="text-align: center;" class="qty-minus">-36</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">0</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-007</span></td>
+        <td><strong>KEY COLLAGEN PEPTIDES</strong></td>
+        <td style="text-align: center; font-weight: bold;">76</td>
+        <td style="text-align: center;" class="qty-plus">+20</td>
+        <td style="text-align: center;" class="qty-minus">-36</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">60</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-008</span></td>
+        <td><strong>HYDROGEL MASK</strong></td>
+        <td style="text-align: center; font-weight: bold;">192</td>
+        <td style="text-align: center;" class="qty-plus">+1</td>
+        <td style="text-align: center;" class="qty-minus">-11</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">182</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-009</span></td>
+        <td><strong>VITAMIN TRANEX</strong></td>
+        <td style="text-align: center; font-weight: bold;">21</td>
+        <td style="text-align: center;" class="qty-plus">+23</td>
+        <td style="text-align: center;" class="qty-minus">-37</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">7</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-010</span></td>
+        <td><strong>KEY BODY WASH</strong></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-0</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">0</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-011</span></td>
+        <td><strong>BB CREAM</strong></td>
+        <td style="text-align: center; font-weight: bold;">16</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-4</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">12</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-012</span></td>
+        <td><strong>KEY SHAMPOO</strong></td>
+        <td style="text-align: center; font-weight: bold;">1</td>
+        <td style="text-align: center;" class="qty-plus">+108</td>
+        <td style="text-align: center;" class="qty-minus">-18</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">91</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">ABC-013</span></td>
+        <td><strong>ACNE SERUM</strong></td>
+        <td style="text-align: center; font-weight: bold;">0</td>
+        <td style="text-align: center;" class="qty-plus">+10</td>
+        <td style="text-align: center;" class="qty-minus">-5</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">5</td>
+      </tr>
+      <tr>
+        <td><span class="sku-badge">HM-SHEET</span></td>
+        <td><strong>ម៉ាស់ HYDROGEL (សន្លឹក)</strong></td>
+        <td style="text-align: center; font-weight: bold;">10</td>
+        <td style="text-align: center;" class="qty-plus">+0</td>
+        <td style="text-align: center;" class="qty-minus">-2</td>
+        <td style="text-align: center; font-weight: bold; background-color:#ebf8ff;">8</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>៣.២ ប្រវត្តិនៃការបន្ថែមស្តុកលម្អិត (July 1 - August 1)</h3>
+  
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">COOPER SUNSCREEN (ABC-001)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:14</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1106-ORG</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:19</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1106-CPE</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-04 07:00</code> | ចំនួន៖ <span class="qty-plus">+2</span> | សម្គាល់៖ <em>Manual adjustment: យកពីចែមុំ ឌៀវ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-18 23:17</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1237-M2U</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-28 12:05</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1250-HQU</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">XSOM GEL PLUS (ABC-002)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 07:00</code> | ចំនួន៖ <span class="qty-plus">+400</span> | សម្គាល់៖ <em>Manual adjustment: ថែមស្តុកពីចែមុំ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:14</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1106-ORG</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:19</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1106-CPE</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-18 23:17</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1237-M2U</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-22 09:18</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1252-UYQ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-28 12:05</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1250-HQU</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">AMINO ACID CLEANSER (ABC-003)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:14</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1106-ORG</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:19</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1106-CPE</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">ANTIMELASMA (ABC-004)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 07:00</code> | ចំនួន៖ <span class="qty-plus">+300</span> | សម្គាល់៖ <em>Manual adjustment: ថែមស្តុកពីចែមុំ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-04 07:00</code> | ចំនួន៖ <span class="qty-plus">+2</span> | សម្គាល់៖ <em>Manual adjustment: បូកថែម២</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-28 12:05</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1250-HQU</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-31 14:21</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1311-M0H</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">SERUM B-BOOSTER (ABC-005)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 07:00</code> | ចំនួន៖ <span class="qty-plus">+200</span> | សម្គាល់៖ <em>Manual adjustment: ថែមស្តុកពីចែមុំ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-04 07:00</code> | ចំនួន៖ <span class="qty-plus">+100</span> | សម្គាល់៖ <em>Manual adjustment: បញ្ចូលថែម 100 គង្គ្រប់ 300</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-18 23:17</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1237-M2U</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-31 14:21</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1311-M0H</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">KEY ACNE (ABC-006)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 17:40</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: ចែមុំថែសេរ៉ូម មុន 10*11.7$=117$</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 18:43</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1110-5VJ</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-04 07:00</code> | ចំនួន៖ <span class="qty-plus">+2</span> | សម្គាល់៖ <em>Manual adjustment: ថែម2</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-16 21:50</code> | ចំនួន៖ <span class="qty-plus">+3</span> | សម្គាល់៖ <em>Received 3 units from branch BR-001 with extra price +$12.70/unit (ចែមុំខ្ចី, ថ្ងៃទី 05-07-26)</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">KEY COLLAGEN PEPTIDES (ABC-007)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:50</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Received 10 units from branch BR-003</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-02 15:51</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Received 10 units from branch BR-003</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">HYDROGEL MASK (ABC-008)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-04 07:00</code> | ចំនួន៖ <span class="qty-plus">+1</span> | សម្គាល់៖ <em>Manual adjustment: ថែមមួយបង្រ្គប់</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">VITAMIN TRANEX (ABC-009)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-29 07:00</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: ទិញស្តុកពីចែមុំថែម 10ឯកតា 10.40$</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-29 07:00</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: ថែមស្តុកពីចែមុំ 10 ឯកតា 114.00$</em></li>
+          <li>ថ្ងៃវេលា៖ <code>2026-07-31 14:21</code> | ចំនួន៖ <span class="qty-plus">+3</span> | សម្គាល់៖ <em>Restored stock from voided transaction INV-2026-1311-M0H</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">KEY SHAMPOO (ABC-012)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-01 07:00</code> | ចំនួន៖ <span class="qty-plus">+108</span> | សម្គាល់៖ <em>Manual adjustment: ថែមស្តុកពីចែមុំ</em></li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #2b6cb0;">ACNE SERUM (ABC-013)</span>
+        <ul style="margin-top: 5px;">
+          <li>ថ្ងៃវេលា៖ <code>2026-07-20 07:00</code> | ចំនួន៖ <span class="qty-plus">+10</span> | សម្គាល់៖ <em>Manual adjustment: ចែមុំ សងត្រឡប៣, ទិញថែម ៧ បង្គ្រប់ចំនួន ១០ឯកតា</em></li>  </ul>
+      </div>
+  <h3>៣.៣ របាយការណ៍លក់លម្អិតតាមបុគ្គលិកលក់ (July 1 - August 1)</h3>
+  
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">COOPER SUNSCREEN (ABC-001)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>92</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>52</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">XSOM GEL PLUS (ABC-002)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>113</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>5</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">AMINO ACID CLEANSER (ABC-003)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>34</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">ANTIMELASMA (ABC-004)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>163</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>7</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>100</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">SERUM B-BOOSTER (ABC-005)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>30</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>3</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">KEY ACNE (ABC-006)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>7</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>27</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">KEY COLLAGEN PEPTIDES (ABC-007)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Unknown</strong> លក់បាន៖ <code>20</code> ឯកតា</li>
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>14</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">HYDROGEL MASK (ABC-008)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>9</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">VITAMIN TRANEX (ABC-009)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>26</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>1</code> ឯកតា</li>
+          <li><strong>Unknown</strong> លក់បាន៖ <code>10</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">BB CREAM (ABC-011)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>4</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">KEY SHAMPOO (ABC-012)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>13</code> ឯកតា</li>
+          <li><strong>ABC Comapny</strong> លក់បាន៖ <code>5</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">ACNE SERUM (ABC-013)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>5</code> ឯកតា</li>  </ul>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <span style="font-weight: bold; color: #4a5568;">ម៉ាស់ HYDROGEL (សន្លឹក) (HM-SHEET)</span>
+        <ul style="margin-top: 5px;">
+          <li><strong>Telegram Bot</strong> លក់បាន៖ <code>2</code> ឯកតា</li>  </ul>
+      </div>
+  <div class="footer">
+    របាយការណ៍នេះត្រូវបានបង្កើតឡើងដោយស្វ័យប្រវត្តិចេញពីប្រព័ន្ធ ERP & POS របស់ក្រុមហ៊ុន ABC System<br>
+    កាលបរិច្ឆេទបង្កើត៖ 2026-08-01 | ទំព័រ 1 នៃ 1
+  </div>
+
+</body>
+</html>

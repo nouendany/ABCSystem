@@ -3380,10 +3380,11 @@
     // Auto-select corresponding account in checkout dropdown
     const checkoutSelect = document.getElementById('checkout-deposit-account');
     if (checkoutSelect) {
+      // Route all POS payments to ABC Team-018509821 (ACC-003) by default, per owner's request
       if (method === 'cash') {
-        checkoutSelect.value = 'ACC-001'; // Default USD Cash
+        checkoutSelect.value = 'ACC-003'; // Default to ABC Team-018509821
       } else if (method === 'khqr' || method === 'bank' || method === 'card') {
-        checkoutSelect.value = 'ACC-003'; // Default ABA USD
+        checkoutSelect.value = 'ACC-003'; // Default to ABC Team-018509821
       }
     }
 
@@ -5026,6 +5027,12 @@
     document.getElementById('pay-debt-current-val').innerText = window.POS_HELPERS.formatUSD(debtVal);
     document.getElementById('pay-debt-amount').value = debtVal.toFixed(2);
     document.getElementById('pay-debt-amount').max = debtVal;
+
+    // Default pay debt collection account to ABC Team-018509821 (ACC-003) per owner's request
+    const payDebtSelect = document.getElementById('pay-debt-deposit-account');
+    if (payDebtSelect) {
+      payDebtSelect.value = 'ACC-003';
+    }
 
     document.getElementById('modal-pay-debt').classList.add('active-modal');
   }
