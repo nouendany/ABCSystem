@@ -72,7 +72,7 @@
       text-align: center;
     }
     .kpi-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: #64748b;
       margin-bottom: 8px;
@@ -101,6 +101,12 @@
     }
     .kpi-card.highlight-warning .kpi-value {
       color: var(--warning);
+    }
+    .kpi-card.highlight-primary {
+      border-left: 5px solid var(--primary);
+    }
+    .kpi-card.highlight-primary .kpi-value {
+      color: var(--primary);
     }
     .section-title {
       font-size: 18px;
@@ -163,6 +169,10 @@
       background: rgba(245, 158, 11, 0.1);
       color: var(--warning);
     }
+    .badge-primary {
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--primary);
+    }
     @media print {
       body {
         background-color: white;
@@ -184,22 +194,22 @@
   <div class="container">
     <header>
       <div class="logo-title">របាយការណ៍ហិរញ្ញវត្ថុរួមលម្អិត (Reconciled Financial Report)</div>
-      <div class="report-subtitle">ទិន្នន័យចំណូល ចំណាយ និងប្រាក់ជំពាក់របស់គណនេយ្យ ABC Team</div>
+      <div class="report-subtitle">ទិន្នន័យចំណូល ចំណាយ ផ្ទេរប្រាក់ និងប្រាក់សល់គណនេយ្យ ABC Team</div>
       <div class="date-meta">គិតចាប់ពីថ្ងៃទី ១៦ មិថុនា ២០២៦ ដល់បច្ចុប្បន្ន (០២ សីហា ២០២៦)</div>
     </header>
 
     <div class="kpi-grid">
       <div class="kpi-card highlight-success">
-        <div class="kpi-label">លុយលក់បានជាសាច់ប្រាក់ (Sales Cash In)</div>
-        <div class="kpi-value">$12,610.12</div>
-      </div>
-      <div class="kpi-card highlight-success">
-        <div class="kpi-label">លុយភ្ញៀវសងជំពាក់ (Debt Payments)</div>
-        <div class="kpi-value">$5,764.00</div>
+        <div class="kpi-label">ចំណូលអតិថិជនសរុប (Customer Cash In)</div>
+        <div class="kpi-value">$18,374.12</div>
       </div>
       <div class="kpi-card highlight-danger">
-        <div class="kpi-label">ចំណាយប្រតិបត្តិការ (Total Expenses)</div>
+        <div class="kpi-label">ផ្ទេរចេញទៅចំណាយ (Transfer Out to Expense Fund)</div>
         <div class="kpi-value">$4,591.75</div>
+      </div>
+      <div class="kpi-card highlight-primary">
+        <div class="kpi-label">សមតុល្យសល់ចុងក្រោយ (Net Balance in ABC Team)</div>
+        <div class="kpi-value">$13,782.37</div>
       </div>
       <div class="kpi-card highlight-warning">
         <div class="kpi-label">ប្រាក់អតិថិជនជំពាក់សរុប (Customer Debt)</div>
@@ -207,9 +217,20 @@
       </div>
     </div>
 
-    <!-- 1. EXPENSES TABLE -->
+    <!-- 1. FLOW ACCOUNT EXPLANATION -->
+    <div style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.1); border-radius: 8px; padding: 16px; margin-bottom: 24px; font-size: 13px;">
+      <strong>ℹ️ ការពន្យល់អំពីចរន្តហិរញ្ញវត្ថុ (Flow Explanation)៖</strong>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li><strong>ចំណូលពីអតិថិជនសរុប ($18,374.12)</strong> គឺហូរចូលគណនេយ្យ <strong>ABC Team-018509821</strong> ដោយផ្ទាល់។</li>
+        <li>ប្រព័ន្ធកត់ត្រាការ <strong>ផ្ទេរប្រាក់ (Transfer) ចំនួន -$4,591.75</strong> ពីគណនី ABC Team ទៅកាន់គណនី <strong>Expense Fund (មូលនិធិចំណាយ)</strong>។</li>
+        <li>សមតុល្យសល់ចុងក្រោយក្នុងគណនី ABC Team គឺ <strong>$13,782.37</strong> (ត្រូវគ្នាទៅនឹងគណនី ABA Bank ជាក់ស្តែងខាងក្រៅ)។</li>
+        <li>គណនី <strong>Expense Fund (មូលនិធិចំណាយ)</strong> ទទួលបានកញ្ចប់ថវិកាផ្ទេរចូលចំនួន $4,591.75 ហើយចំណាយប្រតិបត្តិការទាំង ៧១ ច្រកត្រូវបានកាត់ចេញវិញអស់ នាំឱ្យសមតុល្យសល់ស្មើ <strong>$0.00</strong> (ចំណាយអស់ពីមូលនិធិ)។</li>
+      </ul>
+    </div>
+
+    <!-- 2. EXPENSES TABLE -->
     <div class="section-title">
-      <span>១. របាយការណ៍លម្អិតអំពីការចំណាយ (Detailed Operational Expenses)</span>
+      <span>១. របាយការណ៍លម្អិតអំពីការចំណាយ (Detailed Operational Expenses from Expense Fund)</span>
       <span class="badge badge-danger">សរុប៖ $4,591.75</span>
     </div>
     <table>
@@ -723,7 +744,7 @@
       </tbody>
     </table>
 
-    <!-- 2. DEBT PAYMENTS TABLE -->
+    <!-- 3. DEBT PAYMENTS TABLE -->
     <div class="section-title">
       <span>២. របាយការណ៍លម្អិតអំពីការប្រមូលប្រាក់ជំពាក់ (Customer Debt Payoffs)</span>
       <span class="badge badge-success">សរុប៖ $5,764.00</span>
@@ -1759,7 +1780,7 @@
       </tbody>
     </table>
 
-    <!-- 3. CUSTOMER OUTSTANDING DEBT -->
+    <!-- 4. CUSTOMER OUTSTANDING DEBT -->
     <div class="section-title">
       <span>៣. បញ្ជីអតិថិជនជំពាក់ប្រាក់បច្ចុប្បន្ន (Current Customer Debts)</span>
       <span class="badge badge-warning">សរុប៖ $727.60</span>
