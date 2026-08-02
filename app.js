@@ -3870,28 +3870,31 @@
       timestamp: new Date().toISOString()
     };
 
-    // Credit selected checkout deposit account
-    const depositAccId = document.getElementById('checkout-deposit-account')?.value;
-    if (depositAccId && state.checkoutMethod !== 'cod') {
-      const depAcc = state.accounts.find(a => a.id === depositAccId);
+    // Credit selected checkout deposit account (only for the actually paid amount at checkout)
+    const paidAmount = total - outstandingDebt;
+    if (paidAmount > 0 && state.checkoutMethod !== 'cod') {
+      // Route POS paid amount directly to ABC Team account (ACC-003) as requested, falling back to selected account if not found
+      const targetAccId = 'ACC-003';
+      const depositAccId = document.getElementById('checkout-deposit-account')?.value;
+      const depAcc = state.accounts.find(a => a.id === targetAccId) || state.accounts.find(a => a.id === depositAccId);
       if (depAcc) {
-        let depositAmount = total;
+        let depositAmount = paidAmount;
         if (depAcc.currency === 'KHR') {
           const rate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
-          depositAmount = Math.round(total * rate);
+          depositAmount = Math.round(paidAmount * rate);
         }
         depAcc.balance = parseFloat((depAcc.balance + depositAmount).toFixed(2));
         
         // Log to account transactions
         const newAccTx = {
-          id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
-          date: new Date().toISOString(),
+          id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + randSuffix,
+          date: txDate,
           type: 'sale',
           fromAccountId: null,
-          toAccountId: depositAccId,
+          toAccountId: depAcc.id,
           amount: depositAmount,
           currency: depAcc.currency,
-          description: `Sales income from invoice: ${invoiceNo}`,
+          description: `Sales income from invoice: ${invoiceNo} (Paid: ${window.POS_HELPERS.formatUSD(paidAmount)})`,
           createdBy: state.currentUser ? state.currentUser.username : 'system',
           timestamp: new Date().toISOString()
         };
@@ -4814,6 +4817,28 @@
           let finalMethod = 'cash';
           if (choice.trim() === '2') finalMethod = 'khqr';
           else if (choice.trim() === '3') finalMethod = 'bank';
+
+          // Prompt for deposit account selection
+          const activeAccs = state.accounts.filter(a => a.status === 'active');
+          if (activeAccs.length === 0) {
+            alert(isKh ? "មិនមានគណនេយ្យសកម្មក្នុងប្រព័ន្ធទេ!" : "No active accounts found in the system!");
+            return;
+          }
+          let accPrompt = isKh
+            ? `សូមជ្រើសរើសគណនេយ្យសម្រាប់ដាក់ប្រាក់ចូល (បញ្ចូលលេខ):\n`
+            : `Please select the deposit account (Enter number):\n`;
+          activeAccs.forEach((a, i) => {
+            const displayName = isKh ? (a.nameKh || a.name) : a.name;
+            accPrompt += `${i + 1}: ${displayName} (${a.currency})\n`;
+          });
+          const accChoice = prompt(accPrompt, "1");
+          if (accChoice === null) return; // Cancelled
+          const accIndex = parseInt(accChoice.trim()) - 1;
+          const chosenAcc = activeAccs[accIndex];
+          if (!chosenAcc) {
+            alert(isKh ? "គណនេយ្យមិនត្រឹមត្រូវ!" : "Invalid account selection!");
+            return;
+          }
           
           const tx = state.transactions.find(t => (t.invoiceNo || t.id) === invoiceNo);
           if (tx) {
@@ -4821,6 +4846,29 @@
             tx.paymentMethod = finalMethod;
             
             customer.outstandingDebt = Math.max(0, (customer.outstandingDebt || 0) - txDebt);
+
+            // Credit the chosen account
+            let depositAmount = txDebt;
+            if (chosenAcc.currency === 'KHR') {
+              const rate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
+              depositAmount = Math.round(txDebt * rate);
+            }
+            chosenAcc.balance = parseFloat((chosenAcc.balance + depositAmount).toFixed(2));
+
+            // Log to account transactions
+            const newAccTx = {
+              id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+              date: new Date().toISOString(),
+              type: 'debt_payment',
+              fromAccountId: null,
+              toAccountId: chosenAcc.id,
+              amount: depositAmount,
+              currency: chosenAcc.currency,
+              description: `Paid invoice ${invoiceNo} from customer: ${customer.name}`,
+              createdBy: state.currentUser ? state.currentUser.username : 'system',
+              timestamp: new Date().toISOString()
+            };
+            state.accountTransactions.push(newAccTx);
             
             const activeBranch = state.currentUser?.branchId === 'all' ? 'BR-001' : (state.currentUser?.branchId || 'BR-001');
             state.paymentLogs.push({
@@ -4830,7 +4878,7 @@
               customerName: customer.name,
               amount: txDebt,
               paymentMethod: finalMethod,
-              notes: `Paid invoice ${invoiceNo} via Customer History modal`,
+              notes: `Paid invoice ${invoiceNo} via Customer History modal (Deposited to: ${chosenAcc.name})`,
               branchId: activeBranch,
               createdBy: state.currentUser ? state.currentUser.username : 'system',
               updatedBy: state.currentUser ? state.currentUser.username : 'system',
