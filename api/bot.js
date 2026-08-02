@@ -538,6 +538,48 @@ async function handleWebAppOrder(req, res, body) {
       console.error("Error creating/updating CRM follow-up for Telegram order:", flpErr);
     }
 
+    // Route paid amount to ABC Team account (ACC-003) if transaction is paid
+    if (!isDebt && total > 0) {
+      try {
+        const accRef = doc(db, "accounts", "ACC-003");
+        const accSnap = await getDoc(accRef);
+        if (accSnap.exists()) {
+          const accData = accSnap.data();
+          let depositAmount = total;
+          if (accData.currency === 'KHR') {
+            const rate = settings.exchangeRate || 4100;
+            depositAmount = Math.round(total * rate);
+          }
+          const newBalance = parseFloat(((accData.balance || 0) + depositAmount).toFixed(2));
+          await updateDoc(accRef, {
+            balance: newBalance,
+            timestamp: new Date().toISOString()
+          });
+
+          // Log to account_transactions collection in Firestore
+          const actxColl = collection(db, "account_transactions");
+          const actxCountSnap = await getCountFromServer(actxColl);
+          const nextActxNum = 1000 + actxCountSnap.data().count + 1;
+          const actxId = "ACTX-" + nextActxNum + "-" + randSuffix;
+
+          await setDoc(doc(db, "account_transactions", actxId), {
+            id: actxId,
+            date: new Date().toISOString(),
+            type: 'sale',
+            fromAccountId: null,
+            toAccountId: "ACC-003",
+            amount: depositAmount,
+            currency: accData.currency || "USD",
+            description: `Sales income from storefront invoice: ${invoiceNo} (Paid: $${total})`,
+            createdBy: employee.fullName || "storefront",
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (accErr) {
+        console.error("Error updating ACC-003 balance or logging account tx for TG order:", accErr);
+      }
+    }
+
     // Helpers for Khmer numerals, HTML escaping, and Date formatting
     const khmerNumbers = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
     const toKhmerNum = (num) => String(num).split('').map(char => khmerNumbers[parseInt(char)] || char).join('');
