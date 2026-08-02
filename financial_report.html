@@ -1,0 +1,1902 @@
+
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <title>របាយការណ៍ហិរញ្ញវត្ថុរួម - ABC Team</title>
+  <link href="https://fonts.googleapis.com/css2?family=Koh+Santepheap:wght@400;700&family=Kantumruy+Pro:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f8fafc;
+      --text: #0f172a;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Kantumruy Pro', 'Koh Santepheap', 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 40px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 3px double var(--border);
+      padding-bottom: 24px;
+    }
+    .logo-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .report-subtitle {
+      font-size: 16px;
+      color: #64748b;
+    }
+    .date-meta {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .kpi-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .kpi-card.highlight-success {
+      border-left: 5px solid var(--success);
+    }
+    .kpi-card.highlight-success .kpi-value {
+      color: var(--success);
+    }
+    .kpi-card.highlight-danger {
+      border-left: 5px solid var(--danger);
+    }
+    .kpi-card.highlight-danger .kpi-value {
+      color: var(--danger);
+    }
+    .kpi-card.highlight-warning {
+      border-left: 5px solid var(--warning);
+    }
+    .kpi-card.highlight-warning .kpi-value {
+      color: var(--warning);
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+    th {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 600;
+      text-align: left;
+      padding: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      color: #334155;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .font-monospace {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+    }
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-title">របាយការណ៍ហិរញ្ញវត្ថុរួមលម្អិត (Reconciled Financial Report)</div>
+      <div class="report-subtitle">ទិន្នន័យចំណូល ចំណាយ និងប្រាក់ជំពាក់របស់គណនេយ្យ ABC Team</div>
+      <div class="date-meta">គិតចាប់ពីថ្ងៃទី ១៦ មិថុនា ២០២៦ ដល់បច្ចុប្បន្ន (០២ សីហា ២០២៦)</div>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi-card highlight-success">
+        <div class="kpi-label">លុយលក់បានជាសាច់ប្រាក់ (Sales Cash In)</div>
+        <div class="kpi-value">$12,610.12</div>
+      </div>
+      <div class="kpi-card highlight-success">
+        <div class="kpi-label">លុយភ្ញៀវសងជំពាក់ (Debt Payments)</div>
+        <div class="kpi-value">$5,764.00</div>
+      </div>
+      <div class="kpi-card highlight-danger">
+        <div class="kpi-label">ចំណាយប្រតិបត្តិការ (Total Expenses)</div>
+        <div class="kpi-value">$4,591.75</div>
+      </div>
+      <div class="kpi-card highlight-warning">
+        <div class="kpi-label">ប្រាក់អតិថិជនជំពាក់សរុប (Customer Debt)</div>
+        <div class="kpi-value">$727.60</div>
+      </div>
+    </div>
+
+    <!-- 1. EXPENSES TABLE -->
+    <div class="section-title">
+      <span>១. របាយការណ៍លម្អិតអំពីការចំណាយ (Detailed Operational Expenses)</span>
+      <span class="badge badge-danger">សរុប៖ $4,591.75</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>កាលបរិច្ឆេទ (Date)</th>
+          <th>ប្រភេទចំណាយ (Category)</th>
+          <th>ចំណាំ/ការពិពណ៌នា (Description)</th>
+          <th class="text-right">ទឹកប្រាក់ (Amount)</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>29 កក្កដា 2026, 07:00 AM</td>
+            <td><span class="badge badge-danger">rawMaterials</span></td>
+            <td>Stock Purchase: ABC-009 (VITAMIN TRANEX) x 10 @ $11.40 (Ref: ថែមស្តុកពីចែមុំ 10 ឯកតា 114.00$)</td>
+            <td class="text-right font-monospace">$114.00</td>
+          </tr>
+        
+          <tr>
+            <td>27 កក្កដា 2026, 06:19 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>ទីតាំងថ្មី បង់១កក់២</td>
+            <td class="text-right font-monospace">$840.00</td>
+          </tr>
+        
+          <tr>
+            <td>25 កក្កដា 2026, 07:28 AM</td>
+            <td><span class="badge badge-danger">rawMaterials</span></td>
+            <td>ទិញ Key Acne ពីចែមុំ 7ឯកតា</td>
+            <td class="text-right font-monospace">$81.90</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 09:52 AM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 09:51 AM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 08:41 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>6 កក្កដា 2026, 03:16 PM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>6 កក្កដា 2026, 03:15 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>6 កក្កដា 2026, 03:14 PM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>5 កក្កដា 2026, 03:18 PM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>5 កក្កដា 2026, 03:18 PM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>5 កក្កដា 2026, 03:17 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 09:43 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>Home rental daily</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 02:16 PM</td>
+            <td><span class="badge badge-danger">ថាឌែន,ដកប្រាក់ $21.5 To Acc- SOEM SITHA</span></td>
+            <td>ចែញពីគណនេយ្យ THEARA IM</td>
+            <td class="text-right font-monospace">$21.50</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 11:31 AM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>បុគ្គលឹក</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 11:23 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 02:56 AM</td>
+            <td><span class="badge badge-danger">ថាឌែន,ដកប្រាក់ $9.96 To Acc- CHEA PHANY</span></td>
+            <td>េចញពីគណនេយ្យ THEARA IM</td>
+            <td class="text-right font-monospace">$9.96</td>
+          </tr>
+        
+          <tr>
+            <td>3 កក្កដា 2026, 11:41 AM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>Daily salary</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>3 កក្កដា 2026, 11:39 AM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>Rental home dialy</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>3 កក្កដា 2026, 11:37 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>2 កក្កដា 2026, 04:13 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>អីវ៉ាន់​  ១១កញ្ចប់</td>
+            <td class="text-right font-monospace">$17.07</td>
+          </tr>
+        
+          <tr>
+            <td>2 កក្កដា 2026, 01:04 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>Home rental daily</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>2 កក្កដា 2026, 12:59 PM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>ប្រាក់បៀវត្តន៍ប្រចាំថ្ងៃ</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>2 កក្កដា 2026, 11:31 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>ចំណាយលើការ BOOSTR page</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>1 កក្កដា 2026, 01:05 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>Home rental daily</td>
+            <td class="text-right font-monospace">$16.12</td>
+          </tr>
+        
+          <tr>
+            <td>1 កក្កដា 2026, 01:03 PM</td>
+            <td><span class="badge badge-danger">salaries</span></td>
+            <td>Daily salary</td>
+            <td class="text-right font-monospace">$21.29</td>
+          </tr>
+        
+          <tr>
+            <td>1 កក្កដា 2026, 01:01 PM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Booster page daily</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>30 មិថុនា 2026, 06:59 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$4.00</td>
+          </tr>
+        
+          <tr>
+            <td>30 មិថុនា 2026, 06:40 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$10.24</td>
+          </tr>
+        
+          <tr>
+            <td>30 មិថុនា 2026, 08:09 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>29 មិថុនា 2026, 07:01 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$5.00</td>
+          </tr>
+        
+          <tr>
+            <td>29 មិថុនា 2026, 06:39 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$1.46</td>
+          </tr>
+        
+          <tr>
+            <td>29 មិថុនា 2026, 02:12 PM</td>
+            <td><span class="badge badge-danger">ទិញផ្លែឈើសែន</span></td>
+            <td>ទិញផ្លែឈើសែន</td>
+            <td class="text-right font-monospace">$5.50</td>
+          </tr>
+        
+          <tr>
+            <td>29 មិថុនា 2026, 08:13 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 មិថុនា 2026, 07:02 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$2.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 មិថុនា 2026, 06:37 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$3.17</td>
+          </tr>
+        
+          <tr>
+            <td>28 មិថុនា 2026, 02:11 PM</td>
+            <td><span class="badge badge-danger">សន្តិសុខ</span></td>
+            <td>បង់ថ្លៃសន្តិសុខ</td>
+            <td class="text-right font-monospace">$15.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 មិថុនា 2026, 08:11 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$180.00</td>
+          </tr>
+        
+          <tr>
+            <td>27 មិថុនា 2026, 06:37 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$4.76</td>
+          </tr>
+        
+          <tr>
+            <td>27 មិថុនា 2026, 03:59 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$2.00</td>
+          </tr>
+        
+          <tr>
+            <td>27 មិថុនា 2026, 07:14 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$90.00</td>
+          </tr>
+        
+          <tr>
+            <td>26 មិថុនា 2026, 06:36 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$15.73</td>
+          </tr>
+        
+          <tr>
+            <td>26 មិថុនា 2026, 08:12 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$90.00</td>
+          </tr>
+        
+          <tr>
+            <td>25 មិថុនា 2026, 06:57 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$4.00</td>
+          </tr>
+        
+          <tr>
+            <td>25 មិថុនា 2026, 06:34 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$4.76</td>
+          </tr>
+        
+          <tr>
+            <td>25 មិថុនា 2026, 07:05 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$90.00</td>
+          </tr>
+        
+          <tr>
+            <td>24 មិថុនា 2026, 09:54 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$150.00</td>
+          </tr>
+        
+          <tr>
+            <td>23 មិថុនា 2026, 07:59 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$3.00</td>
+          </tr>
+        
+          <tr>
+            <td>23 មិថុនា 2026, 06:33 PM</td>
+            <td><span class="badge badge-danger">rent</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$4.76</td>
+          </tr>
+        
+          <tr>
+            <td>23 មិថុនា 2026, 09:47 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$90.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 មិថុនា 2026, 07:51 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$2.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 មិថុនា 2026, 06:34 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$7.93</td>
+          </tr>
+        
+          <tr>
+            <td>22 មិថុនា 2026, 09:52 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$90.00</td>
+          </tr>
+        
+          <tr>
+            <td>21 មិថុនា 2026, 06:50 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$4.00</td>
+          </tr>
+        
+          <tr>
+            <td>21 មិថុនា 2026, 06:34 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$4.76</td>
+          </tr>
+        
+          <tr>
+            <td>21 មិថុនា 2026, 07:55 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$90.00</td>
+          </tr>
+        
+          <tr>
+            <td>20 មិថុនា 2026, 06:46 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$4.00</td>
+          </tr>
+        
+          <tr>
+            <td>20 មិថុនា 2026, 01:54 PM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$75.00</td>
+          </tr>
+        
+          <tr>
+            <td>19 មិថុនា 2026, 06:46 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$2.00</td>
+          </tr>
+        
+          <tr>
+            <td>19 មិថុនា 2026, 06:35 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$7.93</td>
+          </tr>
+        
+          <tr>
+            <td>19 មិថុនា 2026, 07:49 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$70.00</td>
+          </tr>
+        
+          <tr>
+            <td>18 មិថុនា 2026, 07:47 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$10.00</td>
+          </tr>
+        
+          <tr>
+            <td>18 មិថុនា 2026, 07:34 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$7.93</td>
+          </tr>
+        
+          <tr>
+            <td>18 មិថុនា 2026, 02:47 PM</td>
+            <td><span class="badge badge-danger">ទិញ BM Verify</span></td>
+            <td>BM Boost 3ads*2</td>
+            <td class="text-right font-monospace">$250.00</td>
+          </tr>
+        
+          <tr>
+            <td>18 មិថុនា 2026, 01:52 PM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$70.00</td>
+          </tr>
+        
+          <tr>
+            <td>17 មិថុនា 2026, 07:46 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$4.00</td>
+          </tr>
+        
+          <tr>
+            <td>17 មិថុនា 2026, 06:33 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$7.93</td>
+          </tr>
+        
+          <tr>
+            <td>17 មិថុនា 2026, 07:45 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$70.00</td>
+          </tr>
+        
+          <tr>
+            <td>16 មិថុនា 2026, 07:44 PM</td>
+            <td><span class="badge badge-danger">ដឹកជញ្ជូន នៅភ្នំពេញ</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន ភ្នំពេញ</td>
+            <td class="text-right font-monospace">$1.00</td>
+          </tr>
+        
+          <tr>
+            <td>16 មិថុនា 2026, 06:17 PM</td>
+            <td><span class="badge badge-danger">ជឹកជញ្ជូន វីរៈប៊ុនថាំ VET</span></td>
+            <td>ថ្លៃដឹកជញ្ជូន វិរៈប៊ុនថាំ</td>
+            <td class="text-right font-monospace">$1.59</td>
+          </tr>
+        
+          <tr>
+            <td>16 មិថុនា 2026, 07:43 AM</td>
+            <td><span class="badge badge-danger">marketing</span></td>
+            <td>Boost Page</td>
+            <td class="text-right font-monospace">$70.00</td>
+          </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- 2. DEBT PAYMENTS TABLE -->
+    <div class="section-title">
+      <span>២. របាយការណ៍លម្អិតអំពីការប្រមូលប្រាក់ជំពាក់ (Customer Debt Payoffs)</span>
+      <span class="badge badge-success">សរុប៖ $5,764.00</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>កាលបរិច្ឆេទ (Date)</th>
+          <th>ឈ្មោះអតិថិជន (Customer)</th>
+          <th>វិធីបង់ប្រាក់ (Method)</th>
+          <th>សម្គាល់ (Notes)</th>
+          <th class="text-right">ទឹកប្រាក់សង (Amount)</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>31 កក្កដា 2026, 10:59 AM</td>
+            <td><strong>Sok Heang</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:53 AM</td>
+            <td><strong>Chantha Yat</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>Chhary Sky</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$49.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>ហន វាលវែង</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>កូនឆ្មា តូចកំសត់</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$55.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>សេង មករា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>Ny Monirth</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$22.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>ម៉ានិច មុនីនាថ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$17.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>ឃុន ណូយ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>ចាន់ និ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>ម៉ាក់ វុទ្ធី</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>សាំ ណារី 1</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$51.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:52 AM</td>
+            <td><strong>ធីតា ចន្រ្ទា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$18.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>នាថ នាថ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>ឆាំ មុំ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>Ma Rina</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>ម៉ាក់ ចាន់រ៉ា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$56.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>(kul sreymom )</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$41.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>ស្រីពៅពោធ៍សាត់</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>ម៉ាក់សុជាតា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$39.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:51 AM</td>
+            <td><strong>Thi Ny</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$56.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:50 AM</td>
+            <td><strong>Pisey Hok</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:50 AM</td>
+            <td><strong>Seng Kalyan</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$47.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:48 AM</td>
+            <td><strong>Sarim veng</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:48 AM</td>
+            <td><strong>ស្រីណែតកំពុងឆ្នាំង</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:48 AM</td>
+            <td><strong>Vayne Eey</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:48 AM</td>
+            <td><strong>Korm srey Noeng</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$33.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:48 AM</td>
+            <td><strong>Chy sophary</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:48 AM</td>
+            <td><strong>Oun NaNa</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$40.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:46 AM</td>
+            <td><strong>ស្រីនាង វិឆ័យ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$36.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:44 AM</td>
+            <td><strong>Vichita Ly Hour</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:44 AM</td>
+            <td><strong>Bour Channy</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:44 AM</td>
+            <td><strong>Pi Na</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$41.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:44 AM</td>
+            <td><strong>Thun   SreyNeth</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:43 AM</td>
+            <td><strong>Kim Sithy</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$82.00</td>
+          </tr>
+        
+          <tr>
+            <td>28 កក្កដា 2026, 11:42 AM</td>
+            <td><strong>គ្រួសារ រីករាយ</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:48 PM</td>
+            <td><strong>ម៉ាក់​ ធីតា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>ម៉ាក់​ លីហ្សា​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>ចាន់ណា​ តាំង​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Leang Thyda</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$33.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Da Da</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Thyda Ra</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$95.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Ros Sovann</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>សុខ​ លីណា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$51.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>លីហួរ​ ណាខាវ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$85.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>March Kimleang</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Bii YaHorng</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>សូលីតា​ សំណាង​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Chantou Thoeurn</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Sophea Chan</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$85.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:47 PM</td>
+            <td><strong>Rino Gneth</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$109.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:46 PM</td>
+            <td><strong>សុខ​ អេង</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:46 PM</td>
+            <td><strong>សួង​ សាវឿន</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:46 PM</td>
+            <td><strong>អា​ ឌីន</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:07 PM</td>
+            <td><strong>Heng Heng Pc</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1238-0GY via Customer History modal</td>
+            <td class="text-right font-monospace">$96.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:07 PM</td>
+            <td><strong>Sapha Ouk</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1236-ZS7 via Customer History modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:07 PM</td>
+            <td><strong>Son</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1223-V67 via Customer History modal</td>
+            <td class="text-right font-monospace">$68.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:06 PM</td>
+            <td><strong>Ah Mo</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1221-FOL via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:06 PM</td>
+            <td><strong>Keo Phalla</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Paid invoice INV-2026-1215-ZXS via Customer History modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:06 PM</td>
+            <td><strong>សា​ អែម</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1213-GUS via Customer History modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:06 PM</td>
+            <td><strong>Keo Kim Heng</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1210-KTD via Customer History modal</td>
+            <td class="text-right font-monospace">$36.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:06 PM</td>
+            <td><strong>Rath Srey</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1206-PS0 via Customer History modal</td>
+            <td class="text-right font-monospace">$85.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:06 PM</td>
+            <td><strong>Lim Daly</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1199-I4D via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:05 PM</td>
+            <td><strong>Da Vy</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Paid invoice INV-2026-1195-H2W via Customer History modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:05 PM</td>
+            <td><strong>Sok Vandy</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1193-LZW via Customer History modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 04:05 PM</td>
+            <td><strong>Salena Thai</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1191-9VX via Customer History modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:41 PM</td>
+            <td><strong>ណា រិន</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1018 via Customer History modal</td>
+            <td class="text-right font-monospace">$33.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:41 PM</td>
+            <td><strong>Sok Heang</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1088-AYY via Customer History modal</td>
+            <td class="text-right font-monospace">$62.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:40 PM</td>
+            <td><strong>ស៊ាង ហៃ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1108-IWT via Customer History modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:32 PM</td>
+            <td><strong>គន្ធា មុនី</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1107-2ME via Customer History modal</td>
+            <td class="text-right font-monospace">$85.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:31 PM</td>
+            <td><strong>Leng Muyly</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1100-3FJ via Customer History modal</td>
+            <td class="text-right font-monospace">$55.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:31 PM</td>
+            <td><strong>Sopheap Tep</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1098-M8V via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:30 PM</td>
+            <td><strong>ចែមចែមុំសាច់គោ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1096-IKS via Customer History modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:29 PM</td>
+            <td><strong>នឿន លក្ខិណា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1090-DNO via Customer History modal</td>
+            <td class="text-right font-monospace">$45.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:28 PM</td>
+            <td><strong>សុខ​ ខាន</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1089-A23 via Customer History modal</td>
+            <td class="text-right font-monospace">$96.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:28 PM</td>
+            <td><strong>Ringette Lim</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1081-8B2 via Customer History modal</td>
+            <td class="text-right font-monospace">$96.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:28 PM</td>
+            <td><strong>Amey Leakmey</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1079-5PO via Customer History modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:28 PM</td>
+            <td><strong>Hem Rotha</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1077-SNJ via Customer History modal</td>
+            <td class="text-right font-monospace">$56.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:28 PM</td>
+            <td><strong>Hem Rotha</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1168-WSJ via Customer History modal</td>
+            <td class="text-right font-monospace">$21.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:27 PM</td>
+            <td><strong>ខេង សុគា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1074-WWJ via Customer History modal</td>
+            <td class="text-right font-monospace">$61.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:27 PM</td>
+            <td><strong>លេីលោកនេះគ្មានអ្វីថិតថេរទេ💔💔💔</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1071-FH6 via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:27 PM</td>
+            <td><strong>Sokha Vannsey</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1056-34C via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:27 PM</td>
+            <td><strong>Sokda Eung</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1055-DD4 via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>22 កក្កដា 2026, 03:26 PM</td>
+            <td><strong>សិ ឡា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1030 via Customer History modal</td>
+            <td class="text-right font-monospace">$55.00</td>
+          </tr>
+        
+          <tr>
+            <td>17 កក្កដា 2026, 04:25 PM</td>
+            <td><strong>ម៉ាក់​ រស្មី​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$40.00</td>
+          </tr>
+        
+          <tr>
+            <td>15 កក្កដា 2026, 04:52 PM</td>
+            <td><strong>Horn Horn</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1174-0JW via Customer History modal</td>
+            <td class="text-right font-monospace">$97.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 03:28 PM</td>
+            <td><strong>Sok Heang</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1088-AYY via Customer History modal</td>
+            <td class="text-right font-monospace">$62.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:58 PM</td>
+            <td><strong>Phi Malis</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1176-YZB via Customer History modal</td>
+            <td class="text-right font-monospace">$41.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:57 PM</td>
+            <td><strong>Maria Chhit</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1170-TP5 via Customer History modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:57 PM</td>
+            <td><strong>Bii YaHorng</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:56 PM</td>
+            <td><strong>Chantou Thoeurn</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:56 PM</td>
+            <td><strong>សូលីតា​ សំណាង​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:55 PM</td>
+            <td><strong>Ringette Lim</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$96.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:55 PM</td>
+            <td><strong>Amey Leakmey</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:54 PM</td>
+            <td><strong>Hem Rotha</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$21.00</td>
+          </tr>
+        
+          <tr>
+            <td>13 កក្កដា 2026, 02:47 PM</td>
+            <td><strong>Hem Rotha</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Paid invoice INV-2026-1077-SNJ via Customer History modal</td>
+            <td class="text-right font-monospace">$56.00</td>
+          </tr>
+        
+          <tr>
+            <td>12 កក្កដា 2026, 10:58 PM</td>
+            <td><strong>អា​ ឌីន</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>10 កក្កដា 2026, 04:49 PM</td>
+            <td><strong>ចាន់ណា​ តាំង​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>10 កក្កដា 2026, 04:49 PM</td>
+            <td><strong>Leang Thyda</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$33.00</td>
+          </tr>
+        
+          <tr>
+            <td>10 កក្កដា 2026, 04:48 PM</td>
+            <td><strong>ម៉ាក់​ ធីតា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td>10 កក្កដា 2026, 04:48 PM</td>
+            <td><strong>Phourng Saren</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$45.00</td>
+          </tr>
+        
+          <tr>
+            <td>9 កក្កដា 2026, 08:53 PM</td>
+            <td><strong>ម៉ាក់​ លីហ្សា​</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>9 កក្កដា 2026, 08:53 PM</td>
+            <td><strong>សុខ​ លីណា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$51.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 10:09 PM</td>
+            <td><strong>Ros Sovann</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 10:09 PM</td>
+            <td><strong>Da Da</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 04:52 PM</td>
+            <td><strong>ខេង សុគា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$61.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 04:43 PM</td>
+            <td><strong>លេីលោកនេះគ្មានអ្វីថិតថេរទេ💔💔💔</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 04:32 PM</td>
+            <td><strong>សុខ​ ខាន</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$96.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 04:14 PM</td>
+            <td><strong>March Kimleang</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 01:31 PM</td>
+            <td><strong>Pheaktra Thuok</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 01:30 PM</td>
+            <td><strong>Sokha Vannsey</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 01:29 PM</td>
+            <td><strong>Sokda Eung</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 01:29 PM</td>
+            <td><strong>សិ ឡា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$55.00</td>
+          </tr>
+        
+          <tr>
+            <td>7 កក្កដា 2026, 09:24 AM</td>
+            <td><strong>Thyda Ra</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$95.00</td>
+          </tr>
+        
+          <tr>
+            <td>6 កក្កដា 2026, 10:25 AM</td>
+            <td><strong>លីហួរ​ ណាខាវ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$85.00</td>
+          </tr>
+        
+          <tr>
+            <td>5 កក្កដា 2026, 10:13 AM</td>
+            <td><strong>នឿន លក្ខិណា</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$45.00</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 09:05 PM</td>
+            <td><strong>Sopheap Tep</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 09:04 PM</td>
+            <td><strong>Leng Muyly</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$55.00</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 08:34 PM</td>
+            <td><strong>ស៊ាង ហៃ</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 04:37 PM</td>
+            <td><strong>ចែមចែមុំសាច់គោ</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>4 កក្កដា 2026, 04:36 PM</td>
+            <td><strong>Sophea Chan</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$85.00</td>
+          </tr>
+        
+          <tr>
+            <td>2 កក្កដា 2026, 03:43 PM</td>
+            <td><strong>Rino Gneth</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$109.00</td>
+          </tr>
+        
+          <tr>
+            <td>2 កក្កដា 2026, 03:32 PM</td>
+            <td><strong>Sok Heang</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$62.00</td>
+          </tr>
+        
+          <tr>
+            <td>27 មិថុនា 2026, 10:08 AM</td>
+            <td><strong>សោភណ្ឌ័ តាកែវ</strong></td>
+            <td><span class="badge badge-success">cash</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td>26 មិថុនា 2026, 05:25 PM</td>
+            <td><strong>សុខ​ អេង</strong></td>
+            <td><span class="badge badge-success">khqr</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$34.00</td>
+          </tr>
+        
+          <tr>
+            <td>26 មិថុនា 2026, 05:16 PM</td>
+            <td><strong>ណា រិន</strong></td>
+            <td><span class="badge badge-success">bank</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$33.00</td>
+          </tr>
+        
+          <tr>
+            <td>26 មិថុនា 2026, 04:18 PM</td>
+            <td><strong>វី យោ</strong></td>
+            <td><span class="badge badge-success">bank</span></td>
+            <td>Debt payoff logged via modal</td>
+            <td class="text-right font-monospace">$17.00</td>
+          </tr>
+        
+      </tbody>
+    </table>
+
+    <!-- 3. CUSTOMER OUTSTANDING DEBT -->
+    <div class="section-title">
+      <span>៣. បញ្ជីអតិថិជនជំពាក់ប្រាក់បច្ចុប្បន្ន (Current Customer Debts)</span>
+      <span class="badge badge-warning">សរុប៖ $727.60</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ឈ្មោះអតិថិជន (Customer Name)</th>
+          <th>លេខទូរស័ព្ទ (Phone Number)</th>
+          <th class="text-right">ទឹកប្រាក់ជំពាក់ (Outstanding Debt)</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td><strong>Ah Roth</strong></td>
+            <td class="font-monospace">016502620</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$86.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>លេង ស្រីណាន</strong></td>
+            <td class="font-monospace">088 8932657</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$68.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Nearly phal Nouv</strong></td>
+            <td class="font-monospace">015276718</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Ma Rina</strong></td>
+            <td class="font-monospace">095411202</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$53.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Horn Horn</strong></td>
+            <td class="font-monospace">081629933</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$41.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Solo Nano</strong></td>
+            <td class="font-monospace">088 842 9646</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$41.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Sreynouch Net</strong></td>
+            <td class="font-monospace">015373555</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$41.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Annei Zaa</strong></td>
+            <td class="font-monospace">0719452610</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>នារី​រឹងមាំ</strong></td>
+            <td class="font-monospace">០១៥៤៤៨៩៦៧</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Curly Lun</strong></td>
+            <td class="font-monospace">081290668</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$38.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>ចែ ហេង</strong></td>
+            <td class="font-monospace">081829972</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$33.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Van Sarey</strong></td>
+            <td class="font-monospace">011668835</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>មនុស្ស ឯកា</strong></td>
+            <td class="font-monospace">070245730</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$32.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>DANY</strong></td>
+            <td class="font-monospace">0977198442</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$31.45</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Ny Monirth</strong></td>
+            <td class="font-monospace">0966666035</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$23.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>សុខ​ លីណា</strong></td>
+            <td class="font-monospace">077236362</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$21.90</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Leap</strong></td>
+            <td class="font-monospace">0962805624</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$21.25</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Na Sreynith</strong></td>
+            <td class="font-monospace">010231780</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$19.00</td>
+          </tr>
+        
+          <tr>
+            <td><strong>Mak meily</strong></td>
+            <td class="font-monospace">089700345</td>
+            <td class="text-right font-monospace" style="color:var(--danger); font-weight:700;">$17.00</td>
+          </tr>
+        
+      </tbody>
+    </table>
+    
+    <div style="text-align: center; margin-top: 40px;" class="no-print">
+      <button onclick="window.print()" style="background:var(--primary); color:white; border:none; padding:12px 24px; font-size:14px; font-weight:700; border-radius:8px; cursor:pointer; box-shadow:0 4px 10px rgba(37,99,235,0.2);">
+        🖨️ បោះពុម្ព ឬ រក្សាទុកជា PDF (Print / Save as PDF)
+      </button>
+    </div>
+  </div>
+</body>
+</html>
+    
