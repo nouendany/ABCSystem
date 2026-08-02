@@ -9459,25 +9459,8 @@
               list.push(data);
             });
 
-            if (colName === 'accounts' && isInitial) {
-              const mainCash = list.find(a => a.id === 'ACC-001');
-              if (!mainCash || mainCash.status !== 'active') {
-                console.log("Main Cash ACC-001 is missing or inactive. Auto-restoring and activating...");
-                const mainCashAcc = {
-                  id: "ACC-001",
-                  name: "Main Cash (USD)",
-                  nameKh: "គណនេយ្យសាច់ប្រាក់ USD",
-                  currency: "USD",
-                  balance: 10000,
-                  type: "cash",
-                  description: "Main cash vault for USD checkouts and general deposits",
-                  isDefault: false,
-                  status: "active",
-                  timestamp: new Date().toISOString()
-                };
-                dbInstance.collection('accounts').doc('ACC-001').set(mainCashAcc).catch(e => console.error(e));
-              }
-            }
+            
+            
 
             if (colName === 'users') {
               let adminDoc = list.find(u => u.username && u.username.toLowerCase() === 'admin');
