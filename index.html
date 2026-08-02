@@ -1503,11 +1503,16 @@
             </div>
 
             <div class="glass-card">
-              <div class="table-header" style="justify-content: space-between; align-items: center; padding-right:16px;">
+              <div class="table-header" style="justify-content: space-between; align-items: center; padding-right:16px; flex-wrap: wrap; gap: 8px;">
                 <h3>Transactions Ledger (ចរន្តសាច់ប្រាក់)</h3>
-                <select id="acc-ledger-filter-account" class="premium-select">
-                  <option value="all">All Accounts</option>
-                </select>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <input type="date" id="acc-ledger-filter-start-date" class="premium-select" style="padding: 4px 10px; font-size: 12px; height: 32px; font-family: inherit; color: var(--text-primary); background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);" title="Start Date">
+                  <span style="color:var(--text-muted); font-size:11px;">to</span>
+                  <input type="date" id="acc-ledger-filter-end-date" class="premium-select" style="padding: 4px 10px; font-size: 12px; height: 32px; font-family: inherit; color: var(--text-primary); background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);" title="End Date">
+                  <select id="acc-ledger-filter-account" class="premium-select" style="height: 32px;">
+                    <option value="all">All Accounts</option>
+                  </select>
+                </div>
               </div>
               <div class="table-responsive" style="padding: 10px;">
                 <table class="pos-table">

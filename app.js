@@ -735,10 +735,21 @@
     if (ledgerTbody) {
       ledgerTbody.innerHTML = '';
       const filterAccountVal = document.getElementById('acc-ledger-filter-account')?.value || 'all';
+      const startDateVal = document.getElementById('acc-ledger-filter-start-date')?.value || '';
+      const endDateVal = document.getElementById('acc-ledger-filter-end-date')?.value || '';
 
       const filteredTXs = state.accountTransactions.filter(t => {
-        if (filterAccountVal === 'all') return true;
-        return t.fromAccountId === filterAccountVal || t.toAccountId === filterAccountVal;
+        // Account filter
+        const matchesAccount = filterAccountVal === 'all' || t.fromAccountId === filterAccountVal || t.toAccountId === filterAccountVal;
+        if (!matchesAccount) return false;
+
+        // Date range filter
+        if (t.date) {
+          const txDateStr = t.date.split('T')[0]; // Format: YYYY-MM-DD
+          if (startDateVal && txDateStr < startDateVal) return false;
+          if (endDateVal && txDateStr > endDateVal) return false;
+        }
+        return true;
       });
 
       const sortedTXs = [...filteredTXs].sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -13569,6 +13580,20 @@ CREATE TABLE sale_items (
     const ledgerFilterEl = document.getElementById('acc-ledger-filter-account');
     if (ledgerFilterEl) {
       ledgerFilterEl.addEventListener('change', () => {
+        renderAccountsView();
+      });
+    }
+
+    const ledgerStartEl = document.getElementById('acc-ledger-filter-start-date');
+    if (ledgerStartEl) {
+      ledgerStartEl.addEventListener('input', () => {
+        renderAccountsView();
+      });
+    }
+
+    const ledgerEndEl = document.getElementById('acc-ledger-filter-end-date');
+    if (ledgerEndEl) {
+      ledgerEndEl.addEventListener('input', () => {
         renderAccountsView();
       });
     }
