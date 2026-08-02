@@ -1,0 +1,1101 @@
+
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <title>របាយការណ៍លក់ និងចលនាស្តុកទំនិញលម្អិត</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Kantumruy+Pro:wght@300;400;600;700&display=swap');
+    
+    body {
+      font-family: 'Kantumruy Pro', 'Outfit', sans-serif;
+      color: #1a202c;
+      background-color: #ffffff;
+      margin: 40px;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px double #cbd5e0;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .company-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2b6cb0;
+      margin: 0;
+    }
+    .report-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #4a5568;
+      margin: 5px 0 0 0;
+    }
+    .report-meta {
+      text-align: right;
+      font-size: 13px;
+      color: #718096;
+    }
+    .report-meta table {
+      margin-left: auto;
+    }
+    .report-meta td {
+      padding: 2px 5px;
+    }
+    h2 {
+      font-size: 18px;
+      color: #2b6cb0;
+      border-left: 5px solid #2b6cb0;
+      padding-left: 10px;
+      margin-top: 40px;
+      margin-bottom: 15px;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+    table.data-table th {
+      background-color: #ebf8ff;
+      color: #2b6cb0;
+      border: 1px solid #cbd5e0;
+      padding: 10px 12px;
+      font-weight: 600;
+      text-align: left;
+    }
+    table.data-table td {
+      border: 1px solid #cbd5e0;
+      padding: 8px 12px;
+    }
+    table.data-table tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: 600; }
+    
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .kpi-card {
+      background-color: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .kpi-label {
+      font-size: 13px;
+      color: #718096;
+      font-weight: 600;
+    }
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2b6cb0;
+      margin-top: 5px;
+    }
+    
+    .staff-card {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 25px;
+      page-break-inside: avoid;
+    }
+    .staff-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid #edf2f7;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .staff-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .staff-total {
+      font-size: 16px;
+      font-weight: 700;
+      color: #48bb78;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      font-size: 11px;
+      color: #a0aec0;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 15px;
+    }
+    @media print {
+      body { margin: 20px; }
+      .no-print { display: none; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-container">
+    <div>
+      <h1 class="company-title">ក្រុមហ៊ុន ABC System</h1>
+      <h2 class="report-title" style="border:none; padding:0; margin:0;">របាយការណ៍លក់ និងចលនាស្តុកទំនិញលម្អិត</h2>
+    </div>
+    <div class="report-meta">
+      <table>
+        <tr>
+          <td class="bold">កាលបរិច្ឆេទសរុប៖</td>
+          <td>១៦ មិថុនា ២០២៦ ដល់ ០២ សីហា ២០២៦</td>
+        </tr>
+        <tr>
+          <td class="bold">ថ្ងៃបង្កើតរបាយការណ៍៖</td>
+          <td>2026-08-02</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="kpi-container">
+    <div class="kpi-card">
+      <div class="kpi-label">ទឹកប្រាក់លក់សរុប (Total Revenue)</div>
+      <div class="kpi-value">$13416.72</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ចំនួនការកម្មង់លក់ (Total Invoices)</div>
+      <div class="kpi-value">319 វិក្កយបត្រ</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">បុគ្គលិកលក់សរុប (Active Staff)</div>
+      <div class="kpi-value">10 នាក់</div>
+    </div>
+  </div>
+
+  <h2>១. របាយការណ៍ចលនាស្តុកទំនិញលម្អិត (June 16 - August 2)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 100px;">SKU</th>
+        <th>ឈ្មោះទំនិញ (Khmer/English)</th>
+        <th class="text-center" style="width: 110px;">ស្តុកដើមគ្រា<br>(16-Jun)</th>
+        <th class="text-center" style="width: 110px;">បន្ថែមស្តុក<br>(Total In)</th>
+        <th class="text-center" style="width: 110px;">លក់ចេញ/ដកស្តុក<br>(Total Out)</th>
+        <th class="text-center" style="width: 110px;">ស្តុកចុងគ្រា<br>(02-Aug)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">ABC-001</td>
+        <td>COOPER SUNSCREEN <br><span style="font-size:11px; color:#718096;">COOPER SUNSCREEN</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">424</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+35</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-186</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">273</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-002</td>
+        <td>XSOM GEL PLUS <br><span style="font-size:11px; color:#718096;">XSOM GEL PLUS</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">167</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+441</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-182</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">426</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-003</td>
+        <td>AMINO ACID CLEANSER <br><span style="font-size:11px; color:#718096;">AMINO ACID CLEANSER</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">195</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+8</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-49</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">154</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-004</td>
+        <td>ANTIMELASMA <br><span style="font-size:11px; color:#718096;">ANTIMELASMA</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">258</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+351</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-346</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">263</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-005</td>
+        <td>SERUM B-BOOSTER <br><span style="font-size:11px; color:#718096;">SERUM B-BOOSTER</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">90</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+312</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-47</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">355</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-006</td>
+        <td>KEY ACNE <br><span style="font-size:11px; color:#718096;">KEY ACNE</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">6</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+42</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-48</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">0</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-007</td>
+        <td>KEY COLLAGEN PEPTIDES <br><span style="font-size:11px; color:#718096;">KEY COLLAGEN PEPTIDES</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">99</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+41</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-80</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">60</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-008</td>
+        <td>HYDROGEL MASK <br><span style="font-size:11px; color:#718096;">HYDROGEL MASK</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">199</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+2</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-19</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">182</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-009</td>
+        <td>VITAMIN TRANEX <br><span style="font-size:11px; color:#718096;">VITAMIN TRANEX</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">36</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+28</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-58</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">6</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-010</td>
+        <td>KEY BODY WASH <br><span style="font-size:11px; color:#718096;">KEY BODY WASH</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">0</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+0</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-0</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">0</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-011</td>
+        <td>BB CREAM <br><span style="font-size:11px; color:#718096;">BB CREAM</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">16</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+0</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-4</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">12</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-012</td>
+        <td>KEY SHAMPOO <br><span style="font-size:11px; color:#718096;">KEY SHAMPOO</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">4</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+116</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-29</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">91</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-013</td>
+        <td>ACNE SERUM <br><span style="font-size:11px; color:#718096;">ACNE SERUM</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">0</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+10</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-5</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">5</td>
+      </tr>
+      <tr>
+        <td class="bold">HM-SHEET</td>
+        <td>ម៉ាស់ HYDROGEL (សន្លឹក) <br><span style="font-size:11px; color:#718096;">HYDROGEL MASK (Sheet)</span></td>
+        <td class="text-center bold" style="background-color: #f7fafc;">0</td>
+        <td class="text-center" style="color: #48bb78; font-weight: 600;">+10</td>
+        <td class="text-center" style="color: #e53e3e; font-weight: 600;">-2</td>
+        <td class="text-center bold" style="background-color: #ebf8ff; color: #2b6cb0;">8</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <h2>២. របាយការណ៍លក់តាមបុគ្គលិកនីមួយៗ (Sales by Staff Performance)</h2>
+  <p style="font-size:13px; color:#718096; margin-bottom: 20px;">បញ្ជីរាយនាមបុគ្គលិកលក់ និងព័ត៌មានលម្អិតអំពីចំនួនលក់បាន ទឹកប្រាក់ចំណូល និងមុខទំនិញដែលបានលក់ចេញ៖</p>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">POM Yary</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $5618.30 (130 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">104</td>
+          <td class="text-right bold" style="color:#48bb78;">$1768.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">73</td>
+          <td class="text-right bold" style="color:#48bb78;">$1533.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">42</td>
+          <td class="text-right bold" style="color:#48bb78;">$630.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-009</td>
+          <td>VITAMIN TRANEX</td>
+          <td class="text-center bold" style="color:#2d3748;">31</td>
+          <td class="text-right bold" style="color:#48bb78;">$527.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">22</td>
+          <td class="text-right bold" style="color:#48bb78;">$528.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">17</td>
+          <td class="text-right bold" style="color:#48bb78;">$257.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-012</td>
+          <td>KEY SHAMPOO</td>
+          <td class="text-center bold" style="color:#2d3748;">13</td>
+          <td class="text-right bold" style="color:#48bb78;">$15.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-006</td>
+          <td>KEY ACNE</td>
+          <td class="text-center bold" style="color:#2d3748;">6</td>
+          <td class="text-right bold" style="color:#48bb78;">$108.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-008</td>
+          <td>HYDROGEL MASK</td>
+          <td class="text-center bold" style="color:#2d3748;">6</td>
+          <td class="text-right bold" style="color:#48bb78;">$102.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-007</td>
+          <td>KEY COLLAGEN PEPTIDES</td>
+          <td class="text-center bold" style="color:#2d3748;">4</td>
+          <td class="text-right bold" style="color:#48bb78;">$96.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-013</td>
+          <td>ACNE SERUM</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$39.80</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">Yuk Thetrinda</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $2492.87 (60 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">45</td>
+          <td class="text-right bold" style="color:#48bb78;">$765.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">33</td>
+          <td class="text-right bold" style="color:#48bb78;">$495.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">33</td>
+          <td class="text-right bold" style="color:#48bb78;">$693.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">13</td>
+          <td class="text-right bold" style="color:#48bb78;">$312.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-007</td>
+          <td>KEY COLLAGEN PEPTIDES</td>
+          <td class="text-center bold" style="color:#2d3748;">11</td>
+          <td class="text-right bold" style="color:#48bb78;">$264.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">9</td>
+          <td class="text-right bold" style="color:#48bb78;">$135.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-009</td>
+          <td>VITAMIN TRANEX</td>
+          <td class="text-center bold" style="color:#2d3748;">5</td>
+          <td class="text-right bold" style="color:#48bb78;">$85.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-006</td>
+          <td>KEY ACNE</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$54.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-011</td>
+          <td>BB CREAM</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$48.00</td>
+        </tr>
+        <tr>
+          <td class="bold">HM-SHEET</td>
+          <td>ម៉ាស់ HYDROGEL (សន្លឹក)</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$7.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-008</td>
+          <td>HYDROGEL MASK</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$34.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-012</td>
+          <td>KEY SHAMPOO</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$3.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-013</td>
+          <td>ACNE SERUM</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$19.90</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">Srey Lin</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $1773.00 (42 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">36</td>
+          <td class="text-right bold" style="color:#48bb78;">$612.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">25</td>
+          <td class="text-right bold" style="color:#48bb78;">$525.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">19</td>
+          <td class="text-right bold" style="color:#48bb78;">$285.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">8</td>
+          <td class="text-right bold" style="color:#48bb78;">$120.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-012</td>
+          <td>KEY SHAMPOO</td>
+          <td class="text-center bold" style="color:#2d3748;">4</td>
+          <td class="text-right bold" style="color:#48bb78;">$6.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-009</td>
+          <td>VITAMIN TRANEX</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$51.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$48.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-008</td>
+          <td>HYDROGEL MASK</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$34.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-007</td>
+          <td>KEY COLLAGEN PEPTIDES</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$48.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-011</td>
+          <td>BB CREAM</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$16.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">ABC Comapny</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $968.65 (19 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">53</td>
+          <td class="text-right bold" style="color:#48bb78;">$795.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-007</td>
+          <td>KEY COLLAGEN PEPTIDES</td>
+          <td class="text-center bold" style="color:#2d3748;">22</td>
+          <td class="text-right bold" style="color:#48bb78;">$528.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">8</td>
+          <td class="text-right bold" style="color:#48bb78;">$136.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">5</td>
+          <td class="text-right bold" style="color:#48bb78;">$105.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-012</td>
+          <td>KEY SHAMPOO</td>
+          <td class="text-center bold" style="color:#2d3748;">5</td>
+          <td class="text-right bold" style="color:#48bb78;">$3.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-008</td>
+          <td>HYDROGEL MASK</td>
+          <td class="text-center bold" style="color:#2d3748;">4</td>
+          <td class="text-right bold" style="color:#48bb78;">$68.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$45.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-006</td>
+          <td>KEY ACNE</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$54.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$72.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-009</td>
+          <td>VITAMIN TRANEX</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$17.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">អ៊ឹម ធារ៉ា</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $638.40 (19 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">13</td>
+          <td class="text-right bold" style="color:#48bb78;">$221.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">13</td>
+          <td class="text-right bold" style="color:#48bb78;">$273.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">4</td>
+          <td class="text-right bold" style="color:#48bb78;">$60.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$45.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-006</td>
+          <td>KEY ACNE</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$18.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-013</td>
+          <td>ACNE SERUM</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$19.90</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">ឃឿន សីលា</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $600.00 (15 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">13</td>
+          <td class="text-right bold" style="color:#48bb78;">$195.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">11</td>
+          <td class="text-right bold" style="color:#48bb78;">$187.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">7</td>
+          <td class="text-right bold" style="color:#48bb78;">$147.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$15.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$24.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-009</td>
+          <td>VITAMIN TRANEX</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$17.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">Srey lin</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $523.00 (14 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">11</td>
+          <td class="text-right bold" style="color:#48bb78;">$187.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">8</td>
+          <td class="text-right bold" style="color:#48bb78;">$120.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">5</td>
+          <td class="text-right bold" style="color:#48bb78;">$105.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$30.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-006</td>
+          <td>KEY ACNE</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$18.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$24.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-007</td>
+          <td>KEY COLLAGEN PEPTIDES</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$24.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">Seyla</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $403.60 (10 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">8</td>
+          <td class="text-right bold" style="color:#48bb78;">$168.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">5</td>
+          <td class="text-right bold" style="color:#48bb78;">$85.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-006</td>
+          <td>KEY ACNE</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$54.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$48.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$30.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$30.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-012</td>
+          <td>KEY SHAMPOO</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$0.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">Phai Chanthou</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $345.90 (9 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">4</td>
+          <td class="text-right bold" style="color:#48bb78;">$84.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">4</td>
+          <td class="text-right bold" style="color:#48bb78;">$68.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-008</td>
+          <td>HYDROGEL MASK</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$51.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-009</td>
+          <td>VITAMIN TRANEX</td>
+          <td class="text-center bold" style="color:#2d3748;">3</td>
+          <td class="text-right bold" style="color:#48bb78;">$51.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">2</td>
+          <td class="text-right bold" style="color:#48bb78;">$30.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-012</td>
+          <td>KEY SHAMPOO</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$3.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-003</td>
+          <td>AMINO ACID CLEANSER</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$15.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-013</td>
+          <td>ACNE SERUM</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$19.90</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-005</td>
+          <td>SERUM B-BOOSTER</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$24.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="staff-card">
+    <div class="staff-header">
+      <div class="staff-name">👤 បុគ្គលិក៖ <span style="color:#2b6cb0; font-size:18px;">អឹុម ធារ៉ា</span></div>
+      <div class="staff-total">ទឹកប្រាក់លក់សរុប៖ $53.00 (1 វិក្កយបត្រ)</div>
+    </div>
+    <table class="data-table" style="margin-bottom:0; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="width: 120px;">SKU</th>
+          <th>ឈ្មោះទំនិញ</th>
+          <th class="text-center" style="width: 100px;">ចំនួនលក់បាន</th>
+          <th class="text-right" style="width: 150px;">ទឹកប្រាក់សរុប ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">ABC-001</td>
+          <td>COOPER SUNSCREEN</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$15.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-002</td>
+          <td>XSOM GEL PLUS</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$21.00</td>
+        </tr>
+        <tr>
+          <td class="bold">ABC-004</td>
+          <td>ANTIMELASMA</td>
+          <td class="text-center bold" style="color:#2d3748;">1</td>
+          <td class="text-right bold" style="color:#48bb78;">$17.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="page-break"></div>
+
+  <h2>៣. របាយការណ៍លម្អិតតាមមុខទំនិញលក់បាន (Overall Product Sales Breakdown)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 100px;">SKU</th>
+        <th>ឈ្មោះទំនិញ</th>
+        <th class="text-center" style="width: 120px;">ចំនួនលក់បានសរុប</th>
+        <th class="text-right" style="width: 150px;">ទឹកប្រាក់លក់សរុប ($)</th>
+        <th>...</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">ABC-004</td>
+        <td class="bold" style="color:#2d3748;">ANTIMELASMA</td>
+        <td class="text-center bold" style="color:#2b6cb0;">238</td>
+        <td class="text-right bold" style="color:#48bb78;">$4046.00</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (104), Seyla (5), Srey lin (11), Yuk Thetrinda (45), Srey Lin (36), ឃឿន សីលា (11), អឹុម ធារ៉ា (1), អ៊ឹម ធារ៉ា (13), ABC Comapny (8), Phai Chanthou (4)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-001</td>
+        <td class="bold" style="color:#2d3748;">COOPER SUNSCREEN</td>
+        <td class="text-center bold" style="color:#2b6cb0;">177</td>
+        <td class="text-right bold" style="color:#48bb78;">$2655.00</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (42), Srey lin (8), Seyla (2), Yuk Thetrinda (33), ឃឿន សីលា (13), Srey Lin (19), អឹុម ធារ៉ា (1), អ៊ឹម ធារ៉ា (4), ABC Comapny (53), Phai Chanthou (2)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-002</td>
+        <td class="bold" style="color:#2d3748;">XSOM GEL PLUS</td>
+        <td class="text-center bold" style="color:#2b6cb0;">174</td>
+        <td class="text-right bold" style="color:#48bb78;">$3654.00</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (73), Seyla (8), Srey lin (5), Yuk Thetrinda (33), ឃឿន សីលា (7), Srey Lin (25), អឹុម ធារ៉ា (1), អ៊ឹម ធារ៉ា (13), ABC Comapny (5), Phai Chanthou (4)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-003</td>
+        <td class="bold" style="color:#2d3748;">AMINO ACID CLEANSER</td>
+        <td class="text-center bold" style="color:#2b6cb0;">46</td>
+        <td class="text-right bold" style="color:#48bb78;">$692.00</td>
+        <td style="font-size:12px; color:#4a5568;">Seyla (2), Srey lin (2), POM Yary (17), Yuk Thetrinda (9), Srey Lin (8), អ៊ឹម ធារ៉ា (3), ABC Comapny (3), ឃឿន សីលា (1), Phai Chanthou (1)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-005</td>
+        <td class="bold" style="color:#2d3748;">SERUM B-BOOSTER</td>
+        <td class="text-center bold" style="color:#2b6cb0;">45</td>
+        <td class="text-right bold" style="color:#48bb78;">$1080.00</td>
+        <td style="font-size:12px; color:#4a5568;">Seyla (2), POM Yary (22), Srey lin (1), Srey Lin (2), Yuk Thetrinda (13), ឃឿន សីលា (1), ABC Comapny (3), Phai Chanthou (1)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-009</td>
+        <td class="bold" style="color:#2d3748;">VITAMIN TRANEX</td>
+        <td class="text-center bold" style="color:#2b6cb0;">44</td>
+        <td class="text-right bold" style="color:#48bb78;">$748.00</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (31), Yuk Thetrinda (5), Srey Lin (3), ឃឿន សីលា (1), ABC Comapny (1), Phai Chanthou (3)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-007</td>
+        <td class="bold" style="color:#2d3748;">KEY COLLAGEN PEPTIDES</td>
+        <td class="text-center bold" style="color:#2b6cb0;">40</td>
+        <td class="text-right bold" style="color:#48bb78;">$960.00</td>
+        <td style="font-size:12px; color:#4a5568;">Srey lin (1), POM Yary (4), Yuk Thetrinda (11), ABC Comapny (22), Srey Lin (2)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-012</td>
+        <td class="bold" style="color:#2d3748;">KEY SHAMPOO</td>
+        <td class="text-center bold" style="color:#2b6cb0;">25</td>
+        <td class="text-right bold" style="color:#48bb78;">$30.00</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (13), Seyla (1), Srey Lin (4), ABC Comapny (5), Phai Chanthou (1), Yuk Thetrinda (1)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-006</td>
+        <td class="bold" style="color:#2d3748;">KEY ACNE</td>
+        <td class="text-center bold" style="color:#2b6cb0;">17</td>
+        <td class="text-right bold" style="color:#48bb78;">$306.00</td>
+        <td style="font-size:12px; color:#4a5568;">Seyla (3), POM Yary (6), Srey lin (1), Yuk Thetrinda (3), ABC Comapny (3), អ៊ឹម ធារ៉ា (1)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-008</td>
+        <td class="bold" style="color:#2d3748;">HYDROGEL MASK</td>
+        <td class="text-center bold" style="color:#2b6cb0;">17</td>
+        <td class="text-right bold" style="color:#48bb78;">$289.00</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (6), Srey Lin (2), ABC Comapny (4), Phai Chanthou (3), Yuk Thetrinda (2)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-013</td>
+        <td class="bold" style="color:#2d3748;">ACNE SERUM</td>
+        <td class="text-center bold" style="color:#2b6cb0;">5</td>
+        <td class="text-right bold" style="color:#48bb78;">$99.50</td>
+        <td style="font-size:12px; color:#4a5568;">POM Yary (2), Phai Chanthou (1), អ៊ឹម ធារ៉ា (1), Yuk Thetrinda (1)</td>
+      </tr>
+      <tr>
+        <td class="bold">ABC-011</td>
+        <td class="bold" style="color:#2d3748;">BB CREAM</td>
+        <td class="text-center bold" style="color:#2b6cb0;">4</td>
+        <td class="text-right bold" style="color:#48bb78;">$64.00</td>
+        <td style="font-size:12px; color:#4a5568;">Srey Lin (1), Yuk Thetrinda (3)</td>
+      </tr>
+      <tr>
+        <td class="bold">HM-SHEET</td>
+        <td class="bold" style="color:#2d3748;">ម៉ាស់ HYDROGEL (សន្លឹក)</td>
+        <td class="text-center bold" style="color:#2b6cb0;">2</td>
+        <td class="text-right bold" style="color:#48bb78;">$7.00</td>
+        <td style="font-size:12px; color:#4a5568;">Yuk Thetrinda (2)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    របាយការណ៍នេះត្រូវបានបង្កើតឡើងដោយស្វ័យប្រវត្តិចេញពីប្រព័ន្ធ ERP & POS របស់ក្រុមហ៊ុន ABC System<br>
+    កាលបរិច្ឆេទបង្កើត៖ 8/2/2026, 4:49:45 PM | ក្រុមហ៊ុន ABC System 2026
+  </div>
+
+</body>
+</html>
