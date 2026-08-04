@@ -2035,6 +2035,9 @@
     if (typeof updateMarqueeUI === 'function') {
       updateMarqueeUI();
     }
+    if (typeof updateKpisVisibility === 'function') {
+      updateKpisVisibility();
+    }
   }
 
   // Live ticking clock
@@ -16830,6 +16833,42 @@ CREATE TABLE sale_items (
     }
   }
 
+  let kpisVisible = localStorage.getItem('abc_kpis_visible') !== 'false';
+
+  function updateKpisVisibility() {
+    const grid = document.getElementById('dashboard-kpis-grid');
+    const textSpan = document.getElementById('kpis-toggle-text');
+    const iconSpan = document.getElementById('kpis-toggle-icon');
+    
+    if (grid) {
+      grid.style.display = kpisVisible ? 'grid' : 'none';
+    }
+    if (textSpan) {
+      const key = kpisVisible ? 'hideFinancials' : 'showFinancials';
+      textSpan.setAttribute('data-translate', key);
+      const val = window.POS_TRANSLATIONS[state.lang][key];
+      if (val) {
+        textSpan.textContent = val;
+      }
+    }
+    if (iconSpan) {
+      iconSpan.textContent = kpisVisible ? '👁️' : '🕶️';
+    }
+  }
+
+  function setupKpiVisibilityToggle() {
+    const btnToggleKpis = document.getElementById('btn-toggle-kpis');
+    if (btnToggleKpis) {
+      updateKpisVisibility();
+
+      btnToggleKpis.addEventListener('click', () => {
+        kpisVisible = !kpisVisible;
+        localStorage.setItem('abc_kpis_visible', kpisVisible);
+        updateKpisVisibility();
+      });
+    }
+  }
+
   // ==================== END HRMS UPGRADE LOGIC ====================
 
   // Bind main DOM event
@@ -16851,6 +16890,7 @@ CREATE TABLE sale_items (
     setupKpiEventListeners();
     setupTestimonialEventListeners();
     setupKpiDetailsEventListeners();
+    setupKpiVisibilityToggle();
     setupSecurityEventListeners();
     setupStickyNotes();
     setupMarquee();

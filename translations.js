@@ -5,6 +5,8 @@ window.POS_TRANSLATIONS = {
     // Navigation & General
     appName: "ABC",
     dashboard: "Dashboard Analytics",
+    hideFinancials: "Hide Financial Cards",
+    showFinancials: "Show Financial Cards",
     pos: "Billing POS",
     inventory: "Products & Inventory",
     finance: "Financial Ledger",
@@ -541,6 +543,8 @@ window.POS_TRANSLATIONS = {
     // Navigation & General
     appName: "ប្រព័ន្ធ ABC",
     dashboard: "ផ្ទាំងវិភាគទិន្នន័យទូទៅ",
+    hideFinancials: "លាក់ព័ត៌មានហិរញ្ញវត្ថុ",
+    showFinancials: "បង្ហាញព័ត៌មានហិរញ្ញវត្ថុ",
     pos: "ផ្នែកលក់ទំនិញ POS",
     inventory: "ទំនិញ និងស្តុក",
     finance: "សៀវភៅចំណូល-ចំណាយ",

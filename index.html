@@ -376,8 +376,16 @@
           </div>
         </div>
 
+        <!-- Toggle Financial Cards Bar -->
+        <div class="kpi-toggle-bar" style="display: flex; justify-content: flex-end; margin: 0 0 12px 0;">
+          <button class="btn btn-secondary btn-sm" id="btn-toggle-kpis" style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: var(--radius-md); cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); transition: all 0.2s ease;">
+            <span id="kpis-toggle-icon">👁️</span> 
+            <span id="kpis-toggle-text" data-translate="hideFinancials">Hide Financial Cards</span>
+          </button>
+        </div>
+
         <!-- Metric KPI Cards Widget Row -->
-        <div class="kpi-grid dashboard-kpis">
+        <div class="kpi-grid dashboard-kpis" id="dashboard-kpis-grid">
           <div class="kpi-card kpi-capital" style="border-left-color:var(--warning);">
             <div class="kpi-details">
               <h4 data-translate="startingCapital">Starting Capital</h4>
