@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ABC System Deployment Checklist</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', 'Kantumruy Pro', 'Khmer OS Battambang', sans-serif;
+      margin: 40px;
+      color: #2d3748;
+      line-height: 1.5;
+      background-color: #ffffff;
+    }
+    
+    .header-container {
+      border-bottom: 3px solid #2f855a;
+      padding-bottom: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .header-container h1 {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #22543d;
+      font-size: 22px;
+      margin: 0 0 5px 0;
+      font-weight: 700;
+    }
+    
+    .header-container .subtitle {
+      font-size: 13px;
+      color: #718096;
+      margin: 0;
+    }
+
+    .section-title {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #2f855a;
+      font-size: 15px;
+      background-color: #f0fff4;
+      padding: 8px 12px;
+      border-left: 5px solid #2f855a;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      font-weight: 600;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .todo-list {
+      list-style-type: none;
+      padding-left: 0;
+      margin-bottom: 25px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #718096;
+      border-radius: 3px;
+      margin-right: 12px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .todo-content {
+      flex-grow: 1;
+    }
+
+    .todo-title {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 2px;
+    }
+
+    .todo-desc {
+      color: #718096;
+      font-size: 11px;
+    }
+
+    .info-box {
+      background-color: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      padding: 15px;
+      border-radius: 0 6px 6px 0;
+      font-size: 12px;
+      margin-bottom: 30px;
+    }
+
+    .info-box h4 {
+      margin-top: 0;
+      margin-bottom: 5px;
+      color: #2b6cb0;
+      font-weight: bold;
+    }
+    
+    .page-break {
+      page-break-before: always;
+    }
+    
+    @media print {
+      body {
+        margin: 20px;
+        font-size: 11px;
+      }
+      .todo-item {
+        page-break-inside: avoid;
+      }
+    }
+    
+    .footer {
+      margin-top: 40px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 15px;
+      font-size: 10px;
+      color: #a0aec0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header-container">
+    <h1>បញ្ជីការងាររៀបចំ និងផ្ទេរប្រព័ន្ធជូនអតិថិជន (Owner Setup & Handover Checklist)</h1>
+    <div class="subtitle">ឯកសារណែនាំ និងជំហានការងារសម្រាប់ម្ចាស់ប្រព័ន្ធ ABC System យកទៅអនុវត្តពេលមានអតិថិជនថ្មី</div>
+  </div>
+
+  <div class="info-box">
+    <h4>💡 អត្ថប្រយោជន៍នៃឯកសារនេះ៖</h4>
+    ជំហានការងារទាំងនេះ នឹងធានាថា លោកអ្នកអាចដំឡើងប្រព័ន្ធជូនអតិថិជនថ្មីបានលឿន គ្មានកំហុសបច្ចេកទេស និងបង្ហាញពីភាពអាជីពខ្ពស់ក្នុងការថែទាំអតិថិជន។
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="section-title">វគ្គទី ១៖ ប្រមូលព័ត៌មាន និងតម្រូវការរបស់អតិថិជន (Requirement Gathering)</div>
+  <ul class="todo-list">
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ប្រមូលព័ត៌មានហាង និងសាខា (Store & Branch Details)</div>
+        <div class="todo-desc">សួរនាំពីឈ្មោះហាងជាភាសាខ្មែរ/អង់គ្លេស, អាសយដ្ឋានហាង, លេខទូរស័ព្ទ និងចំនួនសាខាដែលត្រូវបង្កើត។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ប្រមូលបញ្ជីមុខទំនិញ និងស្តុកដើម (Product Catalog & Initial Stock)</div>
+        <div class="todo-desc">ឱ្យអតិថិជនរៀបចំបញ្ជីមុខទំនិញ (SKU, ឈ្មោះខ្មែរ/អង់គ្លេស, តម្លៃដើម, តម្លៃលក់, និងចំនួនស្តុកនៅក្នុងសាខានីមួយៗ)។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ប្រមូលបញ្ជីឈ្មោះបុគ្គលិក និងគណនីធនាគារ (Staff List & Bank Accounts)</div>
+        <div class="todo-desc">សួររកឈ្មោះបុគ្គលិកដែលត្រូវប្រើប្រព័ន្ធ, លេខ Telegram ID របស់ពួកគេ (សម្រាប់ស្កេនវត្តមាន) និងលេខគណនីធនាគារ ABA របស់ហាងសម្រាប់ទទួលលុយ។</div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Phase 2 -->
+  <div class="section-title">វគ្គទី ២៖ ការរៀបចំផ្នែកបច្ចេកទេស (Technical & System Setup)</div>
+  <ul class="todo-list">
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">បង្កើត Database Firebase និងគម្រោង Vercel ថ្មី (Firebase & Vercel Initialization)</div>
+        <div class="todo-desc">បង្កើត Firebase project ថ្មីដាច់ដោយឡែកសម្រាប់អតិថិជននោះ រួចទាញកូដពី GitHub ទៅ Deploy លើ Vercel របស់ពួកគេ (ប្រសិនបើប្រើជម្រើសបំបែក Server ដាច់ពីគ្នា)។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">បញ្ចូលទិន្នន័យដំបូងទៅក្នុង Firestore (Data Seeding)</div>
+        <div class="todo-desc">ប្រើប្រាស់កូដ Script ដើម្បីបញ្ចូល (Seed) ទិន្នន័យទំនិញ, សាខា, បុគ្គលិក, និងគណនីធនាគារ ទៅក្នុង Firestore Database របស់អតិថិជន។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">បង្កើត និងភ្ជាប់ Telegram Bot (Telegram Bot Setup)</div>
+        <div class="todo-desc">បង្កើត Telegram Bot ថ្មីតាម BotFather (មួយសម្រាប់ HR/Attendance និងមួយទៀតសម្រាប់ Sales WebApp Store) រួចយក Token ទៅបញ្ចូលក្នុងប្រព័ន្ធកំណត់ Settings របស់ពួកគេ។</div>
+      </div>
+    </li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <!-- Phase 3 -->
+  <div class="section-title">វគ្គទី ៣៖ ការដំឡើង និងតភ្ជាប់ឧបករណ៍នៅហាងផ្ទាល់ (Hardware Onsite Integration)</div>
+  <ul class="todo-list">
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ដំឡើង និងតភ្ជាប់ម៉ាស៊ីនព្រីនវិក្កយបត្រ (Receipt Printer Setup)</div>
+        <div class="todo-desc">ភ្ជាប់ម៉ាស៊ីនព្រីនកំដៅទៅនឹងកុំព្យូទ័រ ឬ iPad របស់ហាងតាមរយៈ USB/Bluetooth ឬ Network រួចធ្វើការ Test ព្រីនចេញពីកម្មវិធី POS ដើម្បីផ្ទៀងផ្ទាត់ទំហំក្រដាស (80mm/58mm) និងភាសាខ្មែរ។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ដំឡើងម៉ាស៊ីនស្កេនបាកូដ (Barcode Scanner Test)</div>
+        <div class="todo-desc">ដោតភ្ជាប់ម៉ាស៊ីនស្កេន រួចតេស្តស្កេនលេខកូដទំនិញនៅលើផ្ទាំង POS ធានាថាវាដំណើរការស្វែងរកមុខទំនិញបានលឿន និងត្រឹមត្រូវ។</div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Phase 4 -->
+  <div class="section-title">វគ្គទី ៤៖ ការបណ្តុះបណ្តាល និងប្រគល់ប្រព័ន្ធ (User Training & Handover)</div>
+  <ul class="todo-list">
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">បណ្តុះបណ្តាលបុគ្គលិកលក់ និងអ្នកគ្រប់គ្រងស្តុក (Staff Hands-on Training)</div>
+        <div class="todo-desc">ចំណាយពេល ១ ទៅ ២ ម៉ោងបង្រៀនបុគ្គលិកឱ្យចេះស្កេនវត្តមានការងារ, របៀបលក់កាត់ស្តុក, របៀបបញ្ចូលស្តុក និងកត់ត្រាការជំពាក់។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ប្រគល់ឯកសារណែនាំ និងគណនី (Documents & Account Handover)</div>
+        <div class="todo-desc">ផ្ញើសៀវភៅណែនាំការប្រើប្រាស់ (User Manual), វីដេអូបង្រៀនខ្លីៗ និងក្រដាសព័ត៌មានគណនី Admin/Passwords ជូនម្ចាស់ហាង។</div>
+      </div>
+    </li>
+    <li class="todo-item">
+      <div class="checkbox"></div>
+      <div class="todo-content">
+        <div class="todo-title">ស៊ីញ៉ូលើកិច្ចសន្យា និងទទួលការទូទាត់ (Contract Signing & Payment)</div>
+        <div class="todo-desc">ឱ្យអតិថិជនចុះហត្ថលេខាទទួលប្រព័ន្ធ និងចុះហត្ថលេខាលើកិច្ចសន្យាសេវាកម្ម រួចទូទាត់ប្រាក់ថ្លៃដំឡើង និងជាវប្រចាំឆ្នាំ។</div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Footer -->
+  <div class="footer">
+    បញ្ជីការងារនេះត្រូវបានរៀបចំឡើងដោយស្វ័យប្រវត្តិចេញពីប្រព័ន្ធ ERP & POS របស់ក្រុមហ៊ុន ABC System<br>
+    កាលបរិច្ឆេទបង្កើត៖ 2026-08-04T16:49:34.588Z
+  </div>
+
+</body>
+</html>
