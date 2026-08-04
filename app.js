@@ -12441,12 +12441,39 @@ CREATE TABLE sale_items (
       const facebookLink = document.getElementById('cust-facebook').value.trim();
       const birthday = document.getElementById('cust-birthday').value;
 
+      // Clean and normalize phone number
+      const normalizePhone = (ph) => {
+        if (!ph) return "";
+        let cleaned = ph.replace(/\D/g, "");
+        if (cleaned.startsWith("855")) {
+          cleaned = "0" + cleaned.substring(3);
+        }
+        return cleaned;
+      };
+
+      const normalizedPhone = normalizePhone(phone);
+
+      // Prevent duplicate customer phone registration
+      const duplicate = state.customers.find(c => 
+        c.id !== editId && 
+        c.status === 'active' && 
+        normalizePhone(c.phone) === normalizedPhone
+      );
+
+      if (duplicate) {
+        alert(state.lang === 'km' 
+          ? `លេខទូរស័ព្ទនេះមានក្នុងប្រព័ន្ធរួចហើយ! (អតិថិជន: ${duplicate.name})` 
+          : `This phone number already exists! (Customer: ${duplicate.name})`
+        );
+        return;
+      }
+
       if (editId !== '') {
         if (!guardAction('edit')) return;
         const customer = state.customers.find(c => c.id === editId);
         if (customer) {
           customer.name = name;
-          customer.phone = phone;
+          customer.phone = normalizedPhone || phone;
           customer.facebookLink = facebookLink;
           customer.address = address;
           customer.source = source;
@@ -12526,7 +12553,7 @@ CREATE TABLE sale_items (
         const newCust = {
           id: newId,
           name,
-          phone,
+          phone: normalizedPhone || phone,
           facebookLink,
           address,
           source,

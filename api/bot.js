@@ -331,9 +331,18 @@ async function handleWebAppOrder(req, res, body) {
     let purchaseCountVal = 1;
     let isVipUser = false;
     
+    // Clean and normalize the phone number
+    let normalizedPhone = "";
     if (customerPhone && customerPhone !== "-") {
+      normalizedPhone = customerPhone.replace(/\D/g, "");
+      if (normalizedPhone.startsWith("855")) {
+        normalizedPhone = "0" + normalizedPhone.substring(3);
+      }
+    }
+
+    if (normalizedPhone) {
       const customersRef = collection(db, "customers");
-      const custQuery = query(customersRef, where("phone", "==", customerPhone));
+      const custQuery = query(customersRef, where("phone", "==", normalizedPhone));
       const custSnap = await getDocs(custQuery);
       
       let existingCust = null;
@@ -414,7 +423,7 @@ async function handleWebAppOrder(req, res, body) {
         const newCustData = {
           id: customerId,
           name: customerNameStr,
-          phone: customerPhone,
+          phone: normalizedPhone,
           facebookLink: req.body.customerFacebook || "",
           address: customerAddress || "-",
           source: req.body.customerSource || "Facebook Page",
