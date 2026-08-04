@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ABC System Pricing & Quotation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', 'Kantumruy Pro', 'Khmer OS Battambang', sans-serif;
+      margin: 40px;
+      color: #2d3748;
+      line-height: 1.6;
+      background-color: #ffffff;
+    }
+    
+    .header-container {
+      border-bottom: 3px solid #2b6cb0;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .company-logo {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #2b6cb0;
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .company-sub {
+      font-size: 12px;
+      color: #718096;
+    }
+    
+    .proposal-title {
+      text-align: right;
+    }
+    
+    .proposal-title h1 {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #1a365d;
+      font-size: 22px;
+      margin: 0 0 5px 0;
+      font-weight: 700;
+    }
+    
+    .proposal-title p {
+      font-size: 13px;
+      color: #4a5568;
+      margin: 0;
+    }
+
+    .intro-section {
+      background-color: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      padding: 15px 20px;
+      border-radius: 0 6px 6px 0;
+      font-size: 13px;
+      margin-bottom: 30px;
+    }
+
+    .intro-section p {
+      margin: 5px 0;
+    }
+
+    h2 {
+      font-family: 'Kantumruy Pro', sans-serif;
+      color: #2c5282;
+      font-size: 15px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 35px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 25px;
+    }
+    
+    th {
+      background-color: #ebf8ff;
+      color: #2b6cb0;
+      text-align: left;
+      padding: 10px;
+      font-weight: 700;
+      border: 1px solid #cbd5e0;
+      font-size: 11px;
+    }
+    
+    td {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e0;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .bold {
+      font-weight: bold;
+    }
+    
+    .price-tag {
+      font-size: 13px;
+      color: #2b6cb0;
+      font-weight: bold;
+    }
+
+    .highlight-row {
+      background-color: #fffaf0 !important;
+      border-left: 3px solid #dd6b20;
+    }
+
+    .info-list {
+      padding-left: 20px;
+      font-size: 12px;
+    }
+
+    .info-list li {
+      margin-bottom: 8px;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+    
+    .sign-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 50px;
+      font-size: 12px;
+    }
+    
+    .signature-block {
+      text-align: center;
+      width: 200px;
+    }
+    
+    .signature-line {
+      border-bottom: 1px solid #a0aec0;
+      margin-bottom: 8px;
+      height: 50px;
+    }
+    
+    @media print {
+      body {
+        margin: 20px;
+        font-size: 11px;
+      }
+      tr {
+        page-break-inside: avoid;
+      }
+    }
+    
+    .footer {
+      margin-top: 40px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 15px;
+      font-size: 10px;
+      color: #a0aec0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header-container">
+    <div>
+      <div class="company-logo">ABC SYSTEM</div>
+      <div class="company-sub">POS, ERP, CRM & Clinic Management Solutions</div>
+      <p style="font-size:11px; margin: 5px 0 0 0; color:#718096;">
+        Email: contact@abcsystem.com | ថ្ងៃបង្កើត៖ 2026-08-04
+      </p>
+    </div>
+    <div class="proposal-title">
+      <h1>តារាងសម្រង់តម្លៃប្រព័ន្ធ (PRICING & QUOTATION)</h1>
+      <p>ស៊េរីប្រព័ន្ធ៖ <strong>ABC System v2.0 (Premium Suite)</strong></p>
+      <p>សម្រាប់៖ <strong>អតិថិជន / Beauty Clinic & Online Store Owner</strong></p>
+    </div>
+  </div>
+
+  <div class="intro-section">
+    <p><strong>សេចក្តីផ្តើម៖</strong> ឯកសារនេះបង្ហាញពីតម្លៃលម្អិតសម្រាប់ការទិញ និងដំឡើងប្រព័ន្ធ **ABC System** ដែលត្រូវបានពង្រីកបន្ថែមរួមបញ្ចូលគ្នារវាង **ប្រព័ន្ធលក់ទំនិញអនឡាញ (Online Store POS & ERP)** និង **ប្រព័ន្ធគ្រប់គ្រងគ្លីនិកកែសម្ផស្ស (Beauty Clinic Management)** ដំណើរការនៅលើ Website រួមគ្នាតែមួយ។</p>
+  </div>
+
+  <!-- Option 1: One-time Purchase -->
+  <h2>ជម្រើសទី ១៖ តម្លៃទិញផ្តាច់ (One-Time Purchase / Lifetime License)</h2>
+  <p style="font-size:11.5px; color:#4a5568; margin-top:-5px;">*សាកសមសម្រាប់អតិថិជនចង់បានភាពជាម្ចាស់កម្មសិទ្ធិលើប្រព័ន្ធកូដដាច់ និងមិនបង់សេវាប្រចាំខែ (ភ្ញៀវត្រូវចេញថ្លៃ Server/Firebase ផ្ទាល់ខ្លួន)*</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;" class="text-center">ល.រ</th>
+        <th style="width: 55%;">មុខងារ និងសេវាកម្ម (Features & Services)</th>
+        <th style="width: 20%; text-align: center;">ប្រភេទបង់ (Billing Type)</th>
+        <th style="width: 20%; text-align: right;">តម្លៃលក់ (Price)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="text-center">១</td>
+        <td>
+          <span class="bold">ABC System Core License (POS & ERP)</span><br>
+          <span style="font-size:10px; color:#718096;">- ប្រព័ន្ធ POS លក់អនឡាញ, គ្រប់គ្រងស្តុកច្រើនសាខា, CRM តាមដានម៉ូយ</span>
+        </td>
+        <td class="text-center">បង់ផ្តាច់ម្តងគត់</td>
+        <td class="text-right price-tag">$1,200.00</td>
+      </tr>
+      <tr>
+        <td class="text-center">២</td>
+        <td>
+          <span class="bold">Beauty Clinic Module Add-on</span><br>
+          <span style="font-size:10px; color:#718096;">- ប្រព័ន្ធគ្រប់គ្រងការណាត់ជួបភ្ញៀវ, ប្រវត្តិព្យាបាលស្បែក Before/After, កាត់ចំនួនដងកញ្ចប់ព្យាបាល, គណនា Commission គ្រូពេទ្យ</span>
+        </td>
+        <td class="text-center">បង់ផ្តាច់ម្តងគត់</td>
+        <td class="text-right price-tag">$500.00</td>
+      </tr>
+      <tr>
+        <td class="text-center">៣</td>
+        <td>
+          <span class="bold">សេវាដំឡើង និងបណ្តុះបណ្តាល (Implementation, Setup & Training)</span><br>
+          <span style="font-size:10px; color:#718096;">- រៀបចំតភ្ជាប់ Database Firebase, Setup Telegram Bots, ម៉ាស៊ីនព្រីន និងបង្រៀនបុគ្គលិក</span>
+        </td>
+        <td class="text-center">បង់ផ្តាច់ម្តងគត់</td>
+        <td class="text-right price-tag">$200.00</td>
+      </tr>
+      <tr class="highlight-row">
+        <td colspan="3" class="bold text-right" style="color: #2b6cb0; font-size:13px;">ទឹកប្រាក់ទិញផ្តាច់សរុប (Grand Total Option 1):</td>
+        <td class="text-right bold" style="color: #2b6cb0; font-size:14px;">$1,900.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Option 2: Annual Subscription -->
+  <h2>ជម្រើសទី ២៖ តម្លៃបង់ប្រចាំឆ្នាំ (Annual Subscription Model / SaaS)</h2>
+  <p style="font-size:11.5px; color:#4a5568; margin-top:-5px;">*សាកសមសម្រាប់អតិថិជនចង់ចាប់ផ្តើមអាជីវកម្មដោយចំណាយតិច ថ្លៃសេវារួមបញ្ចូលទាំងការហោះហើរ Server និងការគាំទ្របច្ចេកទេសរួចជាស្រេច*</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;" class="text-center">ល.រ</th>
+        <th style="width: 55%;">កញ្ចប់សេវាកម្ម (Subscription Packages)</th>
+        <th style="width: 20%; text-align: center;">រយៈពេលបង់ (Billing Cycle)</th>
+        <th style="width: 20%; text-align: right;">តម្លៃសេវា (Subscription Price)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="text-center">១</td>
+        <td>
+          <span class="bold">កញ្ចប់លក់អនឡាញ (Standard Storefront POS & ERP)</span><br>
+          <span style="font-size:10px; color:#718096;">- លក់ POS អនឡាញ, គ្រប់គ្រងស្តុក, CRM តាមដានម៉ូយ (មិនរួមបញ្ចូលមុខងារគ្លីនិក)</span>
+        </td>
+        <td class="text-center">ប្រចាំឆ្នាំ (Annual)</td>
+        <td class="text-right price-tag">$360.00 / ឆ្នាំ <br><span style="font-size:9px; color:#718096;">(ស្មើនឹង $30/ខែ)</span></td>
+      </tr>
+      <tr>
+        <td class="text-center">២</td>
+        <td>
+          <span class="bold">កញ្ចប់គ្លីនិកកែសម្ភស្ស (Clinic Suite POS, CRM & Clinic Add-on)</span><br>
+          <span style="font-size:10px; color:#718096;">- គ្រប់គ្រងការណាត់ជួប, ប្រវត្តិព្យាបាល Before/After, កាត់ចំនួនដងកញ្ចប់, POS លក់សេវាកម្ម</span>
+        </td>
+        <td class="text-center">ប្រចាំឆ្នាំ (Annual)</td>
+        <td class="text-right price-tag">$480.00 / ឆ្នាំ <br><span style="font-size:9px; color:#718096;">(ស្មើនឹង $40/ខែ)</span></td>
+      </tr>
+      <tr class="highlight-row">
+        <td class="text-center">៣</td>
+        <td>
+          <span class="bold">កញ្ចប់រួមគ្នាធំ (ABC Premium Suite - POS, ERP, CRM, Clinic & HR Bots)</span><br>
+          <span style="font-size:10px; color:#718096;">- គ្រប់គ្រងការលក់អនឡាញ + គ្លីនិកកែសម្ផស្ស + ប្រព័ន្ធវត្តមានបុគ្គលិកតាម Telegram រួមគ្នាក្នុង Web តែមួយ</span>
+        </td>
+        <td class="text-center">ប្រចាំឆ្នាំ (Annual)</td>
+        <td class="text-right price-tag" style="color: #2b6cb0;">$720.00 / ឆ្នាំ <br><span style="font-size:9px; color:#718096;">(ស្មើនឹង $60/ខែ)</span></td>
+      </tr>
+      <tr>
+        <td class="text-center">៤</td>
+        <td>
+          <span class="bold">ថ្លៃដំឡើង និងបណ្តុះបណ្តាលដំបូង (Initial Setup & Onboarding)</span>
+        </td>
+        <td class="text-center">បង់ម្តងគត់ (One-time)</td>
+        <td class="text-right price-tag">$150.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- Section 3: Maintenance & Support Services -->
+  <h2>ជម្រើសទី ៣៖ សេវាកម្មថែទាំ និងគាំទ្របច្ចេកទេសជាក់ស្តែង (Actual Maintenance & On-Demand Support)</h2>
+  <p style="font-size:11.5px; color:#4a5568; margin-top:-5px;">*កំណត់សេវាថែទាំតាមតម្រូវការជាក់ស្តែងរបស់ភ្ញៀវ ដើម្បីដោះស្រាយរាល់បញ្ហាបច្ចេកទេសក្រោយពេលដំឡើង*</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;" class="text-center">ល.រ</th>
+        <th style="width: 55%;">សេវាកម្មថែទាំ និងគាំទ្រ (Maintenance & Support Services)</th>
+        <th style="width: 20%; text-align: center;">លក្ខខណ្ឌគិត (Condition)</th>
+        <th style="width: 20%; text-align: right;">តម្លៃសេវា (Price)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="text-center">១</td>
+        <td>
+          <span class="bold">កញ្ចប់ថែទាំប្រព័ន្ធប្រចាំឆ្នាំ (Annual Maintenance Service Contract)</span><br>
+          <span style="font-size:10px; color:#718096;">- ឥតគិតថ្លៃសម្រាប់ឆ្នាំដំបូង។ ចាប់គិតពីឆ្នាំទី២ សម្រាប់អ្នកទិញផ្តាច់ (Option 1) រួមមាន៖ ត្រួតពិនិត្យ Backup ទិន្នន័យស្វ័យប្រវត្តិ, សុវត្ថិភាព Database, និងជួសជុល Bug របស់ប្រព័ន្ធ។</span>
+        </td>
+        <td class="text-center">គិតប្រចាំឆ្នាំ (Annual)</td>
+        <td class="text-right price-tag">$150.00 / ឆ្នាំ</td>
+      </tr>
+      <tr>
+        <td class="text-center">២</td>
+        <td>
+          <span class="bold">សេវាគាំទ្របន្ទាន់ដល់ទីតាំង (On-Site Emergency Support)</span><br>
+          <span style="font-size:10px; color:#718096;">- ចុះទៅដោះស្រាយបញ្ហាផ្ទាល់នៅហាង/គ្លីនិករបស់ភ្ញៀវ (ដូចជា ម៉ាស៊ីនព្រីនខូច, ភ្ជាប់បណ្តាញ Network POS មិនចូល) ដែលមិនស្ថិតក្រោម Bug របស់ប្រព័ន្ធ។</span>
+        </td>
+        <td class="text-center">គិតតាមម្តង (Per Visit)</td>
+        <td class="text-right price-tag">$30.00 / លើក <br><span style="font-size:9px; color:#718096;">(បូកថ្លៃធ្វើដំណើរ)</span></td>
+      </tr>
+      <tr>
+        <td class="text-center">៣</td>
+        <td>
+          <span class="bold">សេវាគាំទ្រពីចម្ងាយ (Remote Online Support)</span><br>
+          <span style="font-size:10px; color:#718096;">- ជួយដោះស្រាយបញ្ហាបច្ចេកទេសរហ័សតាមអនឡាញ (AnyDesk / UltraViewer / Telegram Group)។</span>
+        </td>
+        <td class="text-center">ប្រចាំខែ (Monthly)</td>
+        <td class="text-right price-tag" style="color: #2f855a;">Free Support <br><span style="font-size:9px; color:#718096;">(ឆ្លើយតបក្នុងរយៈពេល 2h)</span></td>
+      </tr>
+      <tr>
+        <td class="text-center">៤</td>
+        <td>
+          <span class="bold">កែសម្រួលមុខងារបន្ថែម (Custom Feature Requests)</span><br>
+          <span style="font-size:10px; color:#718096;">- កែច្នៃបន្ថែមរបាយការណ៍ថ្មីៗ ឬបង្កើត Workflow ការលក់ប្លែកពីប្រព័ន្ធដើមតាមសំណើអតិថិជន។</span>
+        </td>
+        <td class="text-center">គិតតាមការងារជាក់ស្តែង</td>
+        <td class="text-right price-tag">$50.00 - $200.00 <br><span style="font-size:9px; color:#718096;">(ទៅតាមទំហំការងារ)</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Policy Notes -->
+  <h3 style="margin-top:20px; font-family:'Kantumruy Pro'; color:#1a365d;">📝 លក្ខខណ្ឌផ្សេងៗ (Notes & Policies)៖</h3>
+  <ul class="info-list">
+    <li>រាល់ការជាវប្រចាំឆ្នាំ (Option 2) គឺរួមបញ្ចូលការហោះ Server Vercel និង Firebase Database រួចជាស្រេច (ទិន្នន័យទំហំមធ្យម)។</li>
+    <li>រាល់ការទិញផ្តាច់ (Option 1) ម្ចាស់ហាងត្រូវបង់ថ្លៃសេវា Server ផ្ទាល់ខ្លួនទៅកាន់ Firebase រាល់ពេលទំហំផ្ទុកលើសកម្រិត Free Tier (ជាមធ្យម $5 ទៅ $15/ខែ ទៅតាមទិន្នន័យជាក់ស្តែង)។</li>
+    <li>រាល់កិច្ចសន្យាត្រូវមានការចុះហត្ថលេខាយល់ព្រមពីភាគីទាំងពីរ មុននឹងចាប់ផ្តើមការងារដំឡើងរយៈពេល ៥ ថ្ងៃ។</li>
+  </ul>
+
+  <!-- Signature Section -->
+  <div class="sign-section">
+    <div class="signature-block">
+      <p>អ្នកសម្រង់តម្លៃ (Quoted By)</p>
+      <div class="signature-line"></div>
+      <p class="bold">Yuk Thetrinda</p>
+      <p style="font-size: 10px; color: #a0aec0;">អ្នកគ្រប់គ្រងប្រព័ន្ធ ABC System</p>
+    </div>
+    <div class="signature-block">
+      <p>អតិថិជនយល់ព្រម (Client Accepted)</p>
+      <div class="signature-line"></div>
+      <p class="bold">[ឈ្មោះអតិថិជន]</p>
+      <p style="font-size: 10px; color: #a0aec0;">ហត្ថលេខា និងកាលបរិច្ឆេទ</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    តារាងសម្រង់តម្លៃនេះមានសុពលភាពរយៈពេល ៣០ ថ្ងៃ គិតចាប់ពីថ្ងៃចេញជាផ្លូវការ។<br>
+    រក្សាសិទ្ធិគ្រប់យ៉ាងដោយ ABC System &copy; 2026
+  </div>
+
+</body>
+</html>
