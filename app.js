@@ -588,7 +588,7 @@
       let html = includePlaceholder ? `<option value="">${placeholderText}</option>` : '';
       activeAccounts.forEach(a => {
         const khName = a.nameKh || a.name;
-        html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency}) [Balance: ${a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance)}]</option>`;
+        html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency}) [Balance: ${a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance)}]</option>`;
       });
       el.innerHTML = html;
     };
@@ -626,7 +626,7 @@
     const totalUsdEl = document.getElementById('acc-total-usd');
     if (totalUsdEl) totalUsdEl.innerText = window.POS_HELPERS.formatUSD(totalUsd);
     const totalKhrEl = document.getElementById('acc-total-khr');
-    if (totalKhrEl) totalKhrEl.innerText = window.POS_HELPERS.formatKHR(totalKhr);
+    if (totalKhrEl) totalKhrEl.innerText = window.POS_HELPERS.formatRawKHR(totalKhr);
 
     // 2. Render Accounts Directory Table
     const accountsTbody = document.getElementById('accounting-accounts-list');
@@ -637,7 +637,7 @@
       } else {
         activeAccounts.forEach(a => {
           const typeDisplay = a.type.toUpperCase();
-          const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatKHR(a.balance);
+          const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance);
           const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
           const adjustBtn = `<button class="qty-btn btn-adjust-account" data-id="${a.id}" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Deposit / Adjust Balance">💵</button>`;
           const editBtn = `<button class="qty-btn btn-edit-account" data-id="${a.id}" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Edit Account">✏️</button>`;
@@ -769,11 +769,11 @@
           }
           let amountDisplay = '';
           if (t.type === 'transfer') {
-            amountDisplay = `<span style="color:var(--warning); font-weight:700;">${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+            amountDisplay = `<span style="color:var(--warning); font-weight:700;">${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatRawKHR(t.amount)}</span>`;
           } else if (t.type === 'expense' || t.type === 'withdrawal') {
-            amountDisplay = `<span style="color:var(--danger); font-weight:700;">-${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+            amountDisplay = `<span style="color:var(--danger); font-weight:700;">-${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatRawKHR(t.amount)}</span>`;
           } else {
-            amountDisplay = `<span style="color:#10b981; font-weight:700;">+${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatKHR(t.amount)}</span>`;
+            amountDisplay = `<span style="color:#10b981; font-weight:700;">+${t.currency === 'USD' ? window.POS_HELPERS.formatUSD(t.amount) : window.POS_HELPERS.formatRawKHR(t.amount)}</span>`;
           }
 
           const dateDisplay = window.POS_HELPERS.formatDate(t.date, state.lang);
@@ -13491,10 +13491,10 @@ CREATE TABLE sale_items (
           const rate = window.POS_HELPERS?.EXCHANGE_RATE || 4100;
           if (srcAcc.currency === 'USD' && destAcc.currency === 'KHR') {
             finalDestAmount = Math.round(amount * rate);
-            convertedStr = ` (Converted from ${window.POS_HELPERS.formatUSD(amount)} to ${window.POS_HELPERS.formatKHR(finalDestAmount)})`;
+            convertedStr = ` (Converted from ${window.POS_HELPERS.formatUSD(amount)} to ${window.POS_HELPERS.formatRawKHR(finalDestAmount)})`;
           } else if (srcAcc.currency === 'KHR' && destAcc.currency === 'USD') {
             finalDestAmount = parseFloat((amount / rate).toFixed(2));
-            convertedStr = ` (Converted from ${window.POS_HELPERS.formatKHR(amount)} to ${window.POS_HELPERS.formatUSD(finalDestAmount)})`;
+            convertedStr = ` (Converted from ${window.POS_HELPERS.formatRawKHR(amount)} to ${window.POS_HELPERS.formatUSD(finalDestAmount)})`;
           }
         }
 

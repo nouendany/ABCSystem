@@ -12,6 +12,11 @@ window.POS_HELPERS = {
     return riel.toLocaleString('en-US') + ' ៛';
   },
 
+  formatRawKHR: function(amount) {
+    const riel = Math.round(amount);
+    return riel.toLocaleString('en-US') + ' ៛';
+  },
+
   formatDualCurrency: function(amount, currentLang) {
     const usdStr = this.formatUSD(amount);
     const khrStr = this.formatKHR(amount);
