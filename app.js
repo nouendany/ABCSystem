@@ -1025,6 +1025,9 @@
       state.companySettings.companyName = 'ABC System';
     }
     safeSetItem('abc_company_settings', JSON.stringify(state.companySettings));
+    if (state.companySettings.exchangeRate !== undefined) {
+      window.POS_HELPERS.EXCHANGE_RATE = state.companySettings.exchangeRate;
+    }
     state.voidedTransactions = safeParse('abc_voided_transactions', []);
     state.closingLogs = safeParse('abc_closing_logs', []);
     state.auditLogs = safeParse('abc_audit_logs', []);
@@ -9565,6 +9568,9 @@
             }
             state.companySettings = settings;
             safeSetItem('abc_company_settings', JSON.stringify(settings));
+            if (settings.exchangeRate !== undefined) {
+              window.POS_HELPERS.EXCHANGE_RATE = settings.exchangeRate;
+            }
 
             // Extract synced brands, units, and categories from global config
             if (settings.brands) {
@@ -9760,9 +9766,15 @@
                 </div>
               </div>
 
-              <div class="form-group" style="margin-top:20px;">
-                <label>Starting Capital ($)</label>
-                <input type="number" class="form-control" id="c-starting-capital" required min="0" step="any" value="${state.companySettings.startingCapital !== undefined ? state.companySettings.startingCapital : 10000}">
+              <div class="checkout-method-grid" style="margin-bottom:0; margin-top:20px;">
+                <div class="form-group">
+                  <label>Starting Capital ($)</label>
+                  <input type="number" class="form-control" id="c-starting-capital" required min="0" step="any" value="${state.companySettings.startingCapital !== undefined ? state.companySettings.startingCapital : 10000}">
+                </div>
+                <div class="form-group">
+                  <label>Exchange Rate (1 USD = ? KHR)</label>
+                  <input type="number" class="form-control" id="c-exchange-rate" required min="0" step="1" value="${state.companySettings.exchangeRate !== undefined ? state.companySettings.exchangeRate : 4100}">
+                </div>
               </div>
 
               <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.15);">
@@ -9835,6 +9847,9 @@
         state.companySettings.currency = document.getElementById('c-currency').value;
         const capVal = document.getElementById('c-starting-capital').value.trim();
         state.companySettings.startingCapital = capVal !== '' ? parseFloat(capVal) : 10000;
+        const rateVal = document.getElementById('c-exchange-rate').value.trim();
+        state.companySettings.exchangeRate = rateVal !== '' ? parseInt(rateVal) : 4100;
+        window.POS_HELPERS.EXCHANGE_RATE = state.companySettings.exchangeRate;
         state.companySettings.telegramToken = document.getElementById('c-tg-token').value.trim();
         state.companySettings.telegramChatId = document.getElementById('c-tg-chatid').value.trim();
 
