@@ -1353,17 +1353,22 @@ body.light-theme .kpi-icon-wrapper {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
-.form-control::-webkit-calendar-picker-indicator {
-  filter: invert(1);
+input[type="date"] {
+  color-scheme: dark; /* Default dark mode date picker & icon color */
+}
+body.light-theme input[type="date"] {
+  color-scheme: light; /* Light mode date picker & icon color */
+}
+.form-control::-webkit-calendar-picker-indicator,
+.premium-select::-webkit-calendar-picker-indicator {
+  filter: none !important; /* Let color-scheme determine the color (white in dark, black in light) */
   cursor: pointer;
-  opacity: 0.65;
+  opacity: 0.75;
   transition: opacity 0.2s;
 }
-.form-control::-webkit-calendar-picker-indicator:hover {
+.form-control::-webkit-calendar-picker-indicator:hover,
+.premium-select::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
-}
-body.light-theme .form-control::-webkit-calendar-picker-indicator {
-  filter: invert(0);
 }
 
 /* Form Select Options Theme Compatibility */
