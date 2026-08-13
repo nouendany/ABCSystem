@@ -8239,9 +8239,10 @@
         const invNo = (t.invoiceNo || t.id || '').toLowerCase();
         const custObj = state.customers.find(c => c.id === t.customerId);
         const custName = (custObj && custObj.id !== 'CST-001') ? custObj.name.toLowerCase() : (t.customerName || '').toLowerCase();
+        const custPhone = (custObj && custObj.phone) ? custObj.phone.toString().toLowerCase() : (t.customerPhone || '').toLowerCase();
         const staffName = (t.staffName || '').toLowerCase();
         const itemsText = t.items.map(it => `${it.nameKh || ''} ${it.nameEn || ''}`).join(' ').toLowerCase();
-        return invNo.includes(searchQuery) || custName.includes(searchQuery) || staffName.includes(searchQuery) || itemsText.includes(searchQuery);
+        return invNo.includes(searchQuery) || custName.includes(searchQuery) || custPhone.includes(searchQuery) || staffName.includes(searchQuery) || itemsText.includes(searchQuery);
       });
     }
 
