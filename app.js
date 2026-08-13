@@ -115,6 +115,7 @@
     positions: [],
     kpis: [],
     testimonials: [],
+    notifications: [],
 
     // POS State
     cart: [],
@@ -176,7 +177,8 @@
     voidedTransactions: [],
     testimonials: [],
     accounts: [],
-    accountTransactions: []
+    accountTransactions: [],
+    notifications: []
   };
 
   let firebaseActive = false;
@@ -940,6 +942,7 @@
 
     state.accounts = safeParse('abc_accounts', []);
     state.accountTransactions = safeParse('abc_account_transactions', []);
+    state.notifications = safeParse('abc_notifications', []);
     state.users = safeParse('abc_users', []);
 
     // Migration: Update GEDA branding in user names
@@ -1070,7 +1073,8 @@
       followups: JSON.parse(JSON.stringify(state.followups)),
       employees: JSON.parse(JSON.stringify(state.employees)),
       attendance: JSON.parse(JSON.stringify(state.attendance)),
-      leaveRequests: JSON.parse(JSON.stringify(state.leaveRequests))
+      leaveRequests: JSON.parse(JSON.stringify(state.leaveRequests)),
+      notifications: JSON.parse(JSON.stringify(state.notifications))
     };
 
     // Check Theme
@@ -1275,6 +1279,7 @@
     safeSetItem('abc_users', JSON.stringify(state.users));
     safeSetItem('abc_accounts', JSON.stringify(state.accounts));
     safeSetItem('abc_account_transactions', JSON.stringify(state.accountTransactions));
+    safeSetItem('abc_notifications', JSON.stringify(state.notifications));
     safeSetItem('abc_branches', JSON.stringify(state.branches));
     safeSetItem('abc_customers', JSON.stringify(state.customers));
     safeSetItem('abc_brands', JSON.stringify(state.brands));
@@ -1353,6 +1358,7 @@
         syncChanges('kpis', state.kpis, lastSyncedState.kpis, 'id');
         syncChanges('testimonials', state.testimonials, lastSyncedState.testimonials, 'id');
         syncChanges('voided_transactions', state.voidedTransactions, lastSyncedState.voidedTransactions, 'id');
+        syncChanges('notifications', state.notifications, lastSyncedState.notifications, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
         db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error("Firebase commission rules save error:", e));
@@ -3920,6 +3926,19 @@
         state.accountTransactions.push(newAccTx);
       }
     }
+
+    // Log a new notification for POS order
+    const notiId = 'NOTI-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5).toUpperCase();
+    const newNoti = {
+      id: notiId,
+      type: 'order',
+      title: state.lang === 'km' ? `🛒 មានការកម្មង់លក់ថ្មី (POS)` : `🛒 New POS Order`,
+      desc: `Invoice: ${invoiceNo} | Customer: ${newTX.customerName} | Total: $${newTX.total.toFixed(2)}`,
+      date: new Date().toISOString(),
+      isRead: false,
+      linkId: newTX.id
+    };
+    state.notifications.push(newNoti);
 
     state.transactions.push(newTX);
     saveStateToLocalStorage();
@@ -9439,7 +9458,11 @@
 
         const setupListener = (colName, stateKey, idKey, renderFns) => {
           let isInitial = true;
-          dbInstance.collection(colName).onSnapshot(snapshot => {
+          let queryRef = dbInstance.collection(colName);
+          if (colName === 'notifications') {
+            queryRef = queryRef.orderBy('date', 'desc').limit(50);
+          }
+          queryRef.onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
 
             if (syncTimeout) {
@@ -9545,6 +9568,7 @@
         setupListener('kpis', 'kpis', 'id', [renderHRPerformance]);
         setupListener('testimonials', 'testimonials', 'id', [renderTestimonials, renderCurrentView]);
         setupListener('voided_transactions', 'voidedTransactions', 'id', []);
+        setupListener('notifications', 'notifications', 'id', [checkCRMNotifications]);
 
         // Company settings listener
         let isFirstSettingsSnapshot = true;
@@ -12222,6 +12246,59 @@ CREATE TABLE sale_items (
       });
     }
 
+    // Mark all notifications as read button listener
+    const markAllReadBtn = document.getElementById('btn-mark-all-read');
+    if (markAllReadBtn) {
+      markAllReadBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let modified = false;
+        state.notifications.forEach(n => {
+          if (!n.isRead) {
+            n.isRead = true;
+            modified = true;
+          }
+        });
+        
+        if (modified) {
+          saveStateToLocalStorage();
+          checkCRMNotifications();
+          playSound('click');
+        }
+      });
+    }
+
+    // Employee photo selection logic
+    const empPhotoContainer = document.getElementById('employee-photo-container');
+    const empPhotoFile = document.getElementById('employee-photo-file');
+    const empPhotoPreview = document.getElementById('employee-photo-preview');
+    const empPhotoBase64 = document.getElementById('employee-photo-base64');
+    
+    if (empPhotoContainer && empPhotoFile) {
+      empPhotoContainer.addEventListener('click', () => {
+        empPhotoFile.click();
+      });
+      empPhotoFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert(state.lang === 'km' 
+              ? 'ទំហំរូបថតត្រូវតែតូចជាង 1.5MB' 
+              : 'Photo size must be less than 1.5MB');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            const base64 = evt.target.result;
+            if (empPhotoPreview) empPhotoPreview.src = base64;
+            if (empPhotoBase64) empPhotoBase64.value = base64;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
     // POS sidebar change detections
     document.getElementById('pos-search-input').addEventListener('input', () => {
       renderPOSProductGrid();
@@ -14116,23 +14193,53 @@ CREATE TABLE sale_items (
     const todayStr = today.toISOString().split('T')[0];
     const todayMMDD = todayStr.substring(5, 10); // MM-DD
 
-    // 1. Check birthdays
+    // Helper for Facebook-style Time Ago
+    function timeAgo(dateString) {
+      if (!dateString) return '';
+      const now = new Date();
+      const past = new Date(dateString);
+      const msPerMinute = 60 * 1000;
+      const msPerHour = msPerMinute * 60;
+      const msPerDay = msPerHour * 24;
+      const elapsed = now - past;
+
+      if (elapsed < msPerMinute) {
+        return state.lang === 'km' ? 'មុននេះបន្តិច' : 'Just now';
+      } else if (elapsed < msPerHour) {
+        const mins = Math.round(elapsed / msPerMinute);
+        return state.lang === 'km' ? `${mins} នាទីមុន` : `${mins}m ago`;
+      } else if (elapsed < msPerDay) {
+        const hrs = Math.round(elapsed / msPerHour);
+        return state.lang === 'km' ? `${hrs} ម៉ោងមុន` : `${hrs}h ago`;
+      } else {
+        const days = Math.round(elapsed / msPerDay);
+        if (days === 1) {
+          return state.lang === 'km' ? 'ម្សិលមិញ' : 'Yesterday';
+        }
+        return dateString.split('T')[0];
+      }
+    }
+
+    // 1. Check birthdays (on-the-fly)
     state.customers.forEach(c => {
       if (c.birthday) {
         const cMMDD = c.birthday.substring(5, 10);
         if (cMMDD === todayMMDD) {
           notifications.push({
+            id: 'bday-' + c.id,
             type: 'birthday',
-            title: `🎂 Birthday: ${c.name}`,
+            title: state.lang === 'km' ? `🎂 ថ្ងៃកំណើត៖ ${c.name}` : `🎂 Birthday: ${c.name}`,
             desc: state.lang === 'km' ? `ថ្ងៃនេះជាថ្ងៃកំណើតរបស់គាត់! ផ្ញើសារជូនពរ។` : `Today is their birthday! Send them wishes.`,
             customerId: c.id,
-            icon: '🎉'
+            date: new Date().toISOString(), // top priority
+            icon: '🎉',
+            isRead: true
           });
         }
       }
     });
 
-    // 2. Check follow-ups (due today or overdue)
+    // 2. Check follow-ups (on-the-fly)
     state.followups.forEach(f => {
       if (f.schedules) {
         f.schedules.forEach(sch => {
@@ -14148,69 +14255,102 @@ CREATE TABLE sale_items (
 
           if (isToday) {
             notifications.push({
+              id: `follow-${f.id}-${sch.day}`,
               type: 'due_today',
               title: `📅 Follow-up Due: ${f.customerName}`,
               desc: `${dayLabel} is due today (Staff: ${f.salesStaffName || 'System'})`,
               customerId: f.customerId,
               followupId: f.id,
               day: sch.day,
-              icon: '⏳'
+              date: sch.date,
+              icon: '⏳',
+              isRead: true
             });
           } else if (isOverdue) {
             const diffDays = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
             notifications.push({
+              id: `follow-${f.id}-${sch.day}`,
               type: 'overdue',
               title: `🚨 OVERDUE: ${f.customerName}`,
               desc: `${dayLabel} was missed by ${diffDays} days! (Staff: ${f.salesStaffName || 'System'})`,
               customerId: f.customerId,
               followupId: f.id,
               day: sch.day,
-              icon: '⚠️'
+              date: sch.date,
+              icon: '⚠️',
+              isRead: true
             });
           }
         });
       }
     });
 
-    // Populate drawer UI
-    badgeCount.innerText = notifications.length;
+    // 3. Add order notifications from Firestore
+    const dbNotis = (state.notifications || []).map(n => ({
+      id: n.id,
+      type: 'order',
+      title: n.title,
+      desc: n.desc,
+      date: n.date,
+      icon: '🛒',
+      isRead: !!n.isRead,
+      linkId: n.linkId
+    }));
+    notifications.push(...dbNotis);
+
+    // Sort combined notifications by date desc
+    notifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Calculate unread count (only order notifications are persistent and track read/unread)
+    const unreadCount = dbNotis.filter(n => !n.isRead).length;
+    badgeCount.innerText = unreadCount;
+    badgeCount.style.display = unreadCount > 0 ? 'flex' : 'none';
     if (headerCount) {
-      headerCount.innerText = state.lang === 'km' ? `${notifications.length} ថ្មី` : `${notifications.length} New`;
+      headerCount.innerText = state.lang === 'km' ? `${unreadCount} ថ្មី` : `${unreadCount} New`;
     }
 
     if (notifications.length === 0) {
-      listContainer.innerHTML = `<div class="noti-empty"><span style="font-size:20px;">🔔</span><p>${state.lang === 'km' ? 'គ្មានការជូនដំណឹង CRM ទេ' : 'No CRM alerts today'}</p></div>`;
+      listContainer.innerHTML = `<div class="noti-empty"><span style="font-size:20px;">🔔</span><p>${state.lang === 'km' ? 'គ្មានការជូនដំណឹងទេ' : 'No alerts today'}</p></div>`;
     } else {
-      // Trigger HTML5 browser notification for important alerts
-      if (state.companySettings && state.companySettings.notificationEnabled) {
-        const dueOrOverdue = notifications.filter(n => n.type === 'due_today' || n.type === 'overdue' || n.type === 'birthday');
-        if (dueOrOverdue.length > 0 && !state.hasTriggeredLaunchNotis) {
-          sendBrowserNotification(
-            `CRM Alerts (${dueOrOverdue.length})`, 
-            `You have follow-ups due/overdue or customer birthdays today!`
-          );
-          playSound('alert');
-          state.hasTriggeredLaunchNotis = true; // prevent spamming on every draw
-        }
-      }
-
       notifications.forEach(n => {
         const item = document.createElement('div');
-        item.className = `noti-item type-${n.type}`;
+        item.className = `noti-item type-${n.type} ${n.isRead ? '' : 'unread'}`;
+        
+        let unreadDotHtml = n.isRead ? '' : `<div class="noti-unread-dot"></div>`;
+        
         item.innerHTML = `
           <div class="noti-item-icon" style="font-size:16px; display:flex; align-items:center; justify-content:center;">${n.icon}</div>
           <div class="noti-item-details" style="flex-grow:1;">
-            <div class="noti-item-title" style="font-weight:700; color:var(--text-primary);">${n.title}</div>
+            <div class="noti-item-title" style="font-weight:700; color:var(--text-primary); font-size:12px;">${n.title}</div>
             <div class="noti-item-desc" style="color:var(--text-secondary); font-size:11px; margin-top:2px;">${n.desc}</div>
+            <div style="font-size:9.5px; color:var(--text-muted); margin-top:4px; font-weight:600;">${timeAgo(n.date)}</div>
           </div>
+          ${unreadDotHtml}
         `;
+        
         item.addEventListener('click', () => {
           playSound('click');
-          if (n.followupId && n.day) {
+          
+          if (n.type === 'order') {
+            // Mark as read in Firestore
+            const orig = state.notifications.find(x => x.id === n.id);
+            if (orig) {
+              orig.isRead = true;
+              saveStateToLocalStorage();
+            }
+            // Navigate to invoice modal
+            const tx = state.transactions.find(t => t.id === n.linkId || t.invoiceNo === n.linkId);
+            if (tx) {
+              openReceiptModal(tx);
+            } else {
+              alert(state.lang === 'km' ? "រកមិនឃើញព័ត៌មានវិក្កយបត្រនេះទេ" : "Invoice details not found.");
+            }
+          } else if (n.followupId && n.day) {
             openFollowupDetailsModal(n.followupId, n.day);
           } else if (n.customerId) {
             openCustomerHistoryModal(n.customerId);
           }
+          
           // Hide dropdown
           const dropdown = document.getElementById('crm-notifications-dropdown');
           if (dropdown) dropdown.classList.remove('active');
@@ -14669,6 +14809,13 @@ CREATE TABLE sale_items (
     const form = document.getElementById('employee-form');
     form.reset();
     
+    // Reset uploader preview to default SVG avatar
+    const defaultSvg = "data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' width='80' height='80' xmlns='http://www.w3.org/2000/svg'><circle cx='12' cy='12' r='12' fill='%23475569'/><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23cbd5e1'/></svg>";
+    const photoPreview = document.getElementById('employee-photo-preview');
+    const photoBase64 = document.getElementById('employee-photo-base64');
+    if (photoPreview) photoPreview.src = defaultSvg;
+    if (photoBase64) photoBase64.value = '';
+    
     const titleEl = document.getElementById('employee-modal-title');
     const docIdInput = document.getElementById('employee-edit-doc-id');
     const idInput = document.getElementById('employee-id');
@@ -14680,6 +14827,11 @@ CREATE TABLE sale_items (
         docIdInput.value = emp.id;
         idInput.value = emp.id;
         idInput.disabled = true;
+        
+        if (emp.photoBase64) {
+          if (photoPreview) photoPreview.src = emp.photoBase64;
+          if (photoBase64) photoBase64.value = emp.photoBase64;
+        }
         
         document.getElementById('employee-fullname').value = emp.fullName || '';
         document.getElementById('employee-gender').value = emp.gender || 'Male';
@@ -14765,6 +14917,8 @@ CREATE TABLE sale_items (
     const emergencyRelation = document.getElementById('employee-emergency-relation').value.trim();
     const emergencyPhone = document.getElementById('employee-emergency-phone').value.trim();
 
+    const photoBase64 = document.getElementById('employee-photo-base64').value;
+
     if (!id || !fullName || !phone) {
       alert("Please fill in ID, Full Name, and Phone number.");
       return;
@@ -14775,6 +14929,7 @@ CREATE TABLE sale_items (
       department, position, salary, joinDate, status,
       workStart, workEnd,
       contractType,
+      photoBase64,
 
       allowances: {
         position: allowancePosition,
@@ -14858,10 +15013,14 @@ CREATE TABLE sale_items (
       const statusBadgeClass = emp.status === 'Active' ? 'badge-ontime' : 'badge-late';
       const telegramDisplay = emp.telegramId ? `<span style="color:#0088cc; font-weight:600;">🔵 Connected (${emp.telegramId})</span>` : '<span style="color:var(--text-muted);">Not Linked</span>';
 
+      const defaultSvg = "data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' width='32' height='32' xmlns='http://www.w3.org/2000/svg'><circle cx='12' cy='12' r='12' fill='%23475569'/><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23cbd5e1'/></svg>";
+      const avatarUrl = emp.photoBase64 || defaultSvg;
+
       tr.innerHTML = `
         <td><strong style="color:var(--secondary); font-family:monospace;">${emp.id}</strong></td>
         <td>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <img src="${avatarUrl}" class="employee-avatar-img" alt="avatar">
             <div>
               <strong>${emp.fullName}</strong><br>
               <span style="font-size:10px; color:var(--text-muted);">${emp.email || ''}</span>

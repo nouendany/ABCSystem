@@ -4297,6 +4297,38 @@ body.light-theme .noti-item:hover {
   text-align: center;
   color: var(--text-muted);
 }
+.noti-item.unread {
+  background: rgba(99, 102, 241, 0.06) !important;
+}
+body.light-theme .noti-item.unread {
+  background: rgba(99, 102, 241, 0.04) !important;
+}
+.noti-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  align-self: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px var(--primary);
+  margin-left: 8px;
+}
+.employee-avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+  background: #1e293b;
+}
+.employee-avatar-img:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+body.light-theme .employee-avatar-img {
+  border: 1.5px solid rgba(15, 23, 42, 0.15);
+}
 
 /* Beautiful color-coded borders for different notification types */
 .noti-item.type-birthday {

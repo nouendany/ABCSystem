@@ -483,6 +483,19 @@ async function handleWebAppOrder(req, res, body) {
 
     await setDoc(doc(db, "transactions", txId), newTX);
 
+    // Create a new notification document in Firestore for the Telegram order
+    const notiId = 'NOTI-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5).toUpperCase();
+    const newNoti = {
+      id: notiId,
+      type: 'order',
+      title: `🛒 មានការកម្មង់លក់ថ្មី (Telegram Store)`,
+      desc: `Invoice: ${invoiceNo} | Customer: ${customerNameStr} | Total: $${total.toFixed(2)}`,
+      date: new Date().toISOString(),
+      isRead: false,
+      linkId: txId
+    };
+    await setDoc(doc(db, "notifications", notiId), newNoti);
+
     // Restart or Create CRM Auto-Followups in Firestore
     const followUpDays = [3, 5, 7, 22, 37, 52, 82, 112, 142];
     const types = ['satisfaction', 'feedback', 'satisfaction', 'promo', 'engagement', 'engagement', 'engagement', 'promo', 'engagement'];

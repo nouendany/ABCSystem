@@ -2761,6 +2761,19 @@
         <div class="modal-body" style="max-height: 480px; overflow-y: auto; text-align: left;">
           <input type="hidden" id="employee-edit-doc-id">
           
+          <!-- Employee Photo Upload Section -->
+          <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 15px;">
+            <div style="position: relative; width: 80px; height: 80px; cursor: pointer; border-radius: 50%;" id="employee-photo-container" title="Click to upload/change photo">
+              <img id="employee-photo-preview" src="data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' width='80' height='80' xmlns='http://www.w3.org/2000/svg'><circle cx='12' cy='12' r='12' fill='%23475569'/><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23cbd5e1'/></svg>" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2.5px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3); background: #1e293b;">
+              <div style="position: absolute; bottom: 0; right: 0; background: var(--primary); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 2px solid #1f2937; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                <span style="font-size: 10px; color:#fff;">📷</span>
+              </div>
+            </div>
+            <input type="file" id="employee-photo-file" accept="image/*" style="display: none;">
+            <span style="font-size: 10px; color: var(--text-secondary); margin-top: 6px;">ចុចលើរូបដើម្បីជ្រើសរើសរូបថត (Click to upload photo)</span>
+            <input type="hidden" id="employee-photo-base64">
+          </div>
+          
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
             <div class="form-group">
               <label data-translate="employeeId">Employee ID *</label>
@@ -3584,11 +3597,14 @@
 
   <!-- CRM Notifications Dropdown Drawer -->
   <div class="crm-notifications-dropdown" id="crm-notifications-dropdown">
-    <div class="noti-header" style="color: var(--text-primary);">
-      <span>🔔 CRM Notifications</span>
-      <span id="crm-notification-header-count" class="badge badge-success" style="background:#10b981; color:#fff;">0 New</span>
+    <div class="noti-header" style="color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border-color);">
+      <span style="font-weight: 700;">🔔 Notifications (ការជូនដំណឹង)</span>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span id="crm-notification-header-count" class="badge" style="background:#10b981; color:#fff; font-size: 10px; padding: 2px 6px; border-radius: 10px;">0 New</span>
+        <a href="#" id="btn-mark-all-read" style="font-size: 10px; color: var(--primary); text-decoration: none; font-weight: 600;">Mark all as read</a>
+      </div>
     </div>
-    <div class="noti-body" id="crm-notifications-list">
+    <div class="noti-body" id="crm-notifications-list" style="max-height: 360px; overflow-y: auto;">
       <!-- Dynamically populated -->
     </div>
   </div>
