@@ -13332,6 +13332,10 @@ CREATE TABLE sale_items (
       transferFundsBtn.addEventListener('click', () => {
         if (!guardAction('add')) return;
         document.getElementById('transfer-funds-form').reset();
+        const dateInput = document.getElementById('transfer-date-input');
+        if (dateInput) {
+          dateInput.value = new Date().toLocaleDateString('en-CA');
+        }
         populateAccountDropdowns();
         document.getElementById('modal-transfer-funds').classList.add('active-modal');
       });
@@ -13449,6 +13453,8 @@ CREATE TABLE sale_items (
         const destId = document.getElementById('transfer-dest-account').value;
         const amount = parseFloat(document.getElementById('transfer-amount').value) || 0;
         const desc = document.getElementById('transfer-desc').value.trim();
+        const customDateInput = document.getElementById('transfer-date-input')?.value;
+        const transferDate = customDateInput ? new Date(customDateInput).toISOString() : new Date().toISOString();
 
         if (!srcId) {
           // External Source Deposit / Payback / Adjustment
@@ -13462,7 +13468,7 @@ CREATE TABLE sale_items (
 
           const newTx = {
             id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
-            date: new Date().toISOString(),
+            date: transferDate,
             type: 'deposit',
             fromAccountId: null,
             toAccountId: destId,
@@ -13518,7 +13524,7 @@ CREATE TABLE sale_items (
 
         const newTx = {
           id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
-          date: new Date().toISOString(),
+          date: transferDate,
           type: 'transfer',
           fromAccountId: srcId,
           toAccountId: destId,
