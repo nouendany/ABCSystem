@@ -577,6 +577,7 @@
     const checkoutSelect = document.getElementById('checkout-deposit-account');
     const payDebtSelect = document.getElementById('pay-debt-deposit-account');
     const expSelect = document.getElementById('exp-account-id');
+    const adjExpSelect = document.getElementById('adj-expense-account-id');
     const transferSrc = document.getElementById('transfer-src-account');
     const transferDest = document.getElementById('transfer-dest-account');
     const ledgerSelect = document.getElementById('acc-ledger-filter-account');
@@ -596,6 +597,7 @@
     renderOptions(checkoutSelect);
     renderOptions(payDebtSelect);
     renderOptions(expSelect);
+    renderOptions(adjExpSelect, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យ --" : "-- Select Account --");
     renderOptions(transferSrc, true, state.lang === 'km' ? "ប្រភពក្រៅប្រព័ន្ធ / ដាក់ប្រាក់ / សងត្រឡប់ (External Source)" : "External Source / Deposit / Refund");
     renderOptions(transferDest, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យទទួល --" : "-- Select Destination Account --");
 
@@ -12131,6 +12133,7 @@ CREATE TABLE sale_items (
       }
       const unitCostEl = document.getElementById('adj-unit-cost');
       if (unitCostEl) delete unitCostEl.dataset.initializedSku;
+      populateAccountDropdowns();
       updateStockAdjExpenseFields();
       document.getElementById('modal-stock-adj').classList.add('active-modal');
     });
@@ -12920,6 +12923,13 @@ CREATE TABLE sale_items (
       let shift = qty;
       
       if (type === 'increase') {
+        // Validate account selection if logging expense
+        const expAccId = document.getElementById('adj-expense-account-id')?.value;
+        if (logExpense && totalCost > 0 && !expAccId) {
+          alert('Please select an account to deduct this expense from! / សូមជ្រើសរើសគណនេយ្យសម្រាប់កាត់ចំណាយ!');
+          return;
+        }
+
         product.warehouseStock[brId] = currentQty + qty;
 
         // Auto-log financial expense if checked
@@ -12936,6 +12946,34 @@ CREATE TABLE sale_items (
             timestamp: new Date().toISOString()
           };
           state.expenses.push(newExp);
+
+          // Deduct from selected account
+          if (expAccId) {
+            const expAcc = state.accounts.find(a => a.id === expAccId);
+            if (expAcc) {
+              let expAmount = totalCost;
+              if (expAcc.currency === 'KHR') {
+                expAmount = Math.round(totalCost * (window.POS_HELPERS?.EXCHANGE_RATE || 4100));
+              }
+              expAcc.balance = parseFloat((expAcc.balance - expAmount).toFixed(2));
+
+              // Log to account transactions
+              const newAccTx = {
+                id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+                date: adjustmentDate,
+                type: 'expense',
+                fromAccountId: expAccId,
+                toAccountId: null,
+                amount: expAmount,
+                currency: expAcc.currency,
+                description: `Stock Purchase: ${product.sku} x ${qty} @ $${unitCost.toFixed(2)}`,
+                createdBy: state.currentUser ? state.currentUser.username : 'system',
+                timestamp: new Date().toISOString()
+              };
+              state.accountTransactions.push(newAccTx);
+            }
+          }
+
           logAuditEvent('expenseAdd', `Automatically logged expense ${newExp.id} of $${totalCost} for restocking ${sku}`);
         }
 
