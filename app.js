@@ -14286,16 +14286,32 @@ CREATE TABLE sale_items (
     });
 
     // 3. Add order notifications from Firestore
-    const dbNotis = (state.notifications || []).map(n => ({
-      id: n.id,
-      type: 'order',
-      title: n.title,
-      desc: n.desc,
-      date: n.date,
-      icon: '🛒',
-      isRead: !!n.isRead,
-      linkId: n.linkId
-    }));
+    const dbNotis = (state.notifications || []).map(n => {
+      let avatarUrl = '';
+      
+      // Try to find cashier photo from linked transaction staff
+      const tx = state.transactions.find(t => t.id === n.linkId || t.invoiceNo === n.linkId);
+      if (tx && tx.staffId) {
+        const staffObj = state.staff.find(s => s.id === tx.staffId || s.employeeId === tx.staffId);
+        const empId = staffObj ? (staffObj.employeeId || staffObj.id) : tx.staffId;
+        const emp = state.employees.find(e => e.id === empId);
+        if (emp && emp.photoBase64) {
+          avatarUrl = emp.photoBase64;
+        }
+      }
+
+      return {
+        id: n.id,
+        type: 'order',
+        title: n.title,
+        desc: n.desc,
+        date: n.date,
+        icon: '🛒',
+        avatarUrl: avatarUrl,
+        isRead: !!n.isRead,
+        linkId: n.linkId
+      };
+    });
     notifications.push(...dbNotis);
 
     // Sort combined notifications by date desc
@@ -14318,9 +14334,19 @@ CREATE TABLE sale_items (
         
         let unreadDotHtml = n.isRead ? '' : `<div class="noti-unread-dot"></div>`;
         
+        let iconHtml = '';
+        if (n.avatarUrl) {
+          iconHtml = `<img src="${n.avatarUrl}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border: 1.5px solid rgba(255,255,255,0.15);">`;
+        } else {
+          const isTelegram = n.desc && n.desc.includes('Telegram Store');
+          const bg = isTelegram ? 'rgba(0,136,204,0.15)' : 'rgba(99,102,241,0.15)';
+          const textEmoji = isTelegram ? '🤖' : n.icon;
+          iconHtml = `<div class="noti-item-icon" style="font-size:18px; width:36px; height:36px; border-radius:50%; background:${bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${textEmoji}</div>`;
+        }
+
         item.innerHTML = `
-          <div class="noti-item-icon" style="font-size:16px; display:flex; align-items:center; justify-content:center;">${n.icon}</div>
-          <div class="noti-item-details" style="flex-grow:1;">
+          ${iconHtml}
+          <div class="noti-item-details" style="flex-grow:1; margin-left:8px;">
             <div class="noti-item-title" style="font-weight:700; color:var(--text-primary); font-size:12px;">${n.title}</div>
             <div class="noti-item-desc" style="color:var(--text-secondary); font-size:11px; margin-top:2px;">${n.desc}</div>
             <div style="font-size:9.5px; color:var(--text-muted); margin-top:4px; font-weight:600;">${timeAgo(n.date)}</div>
