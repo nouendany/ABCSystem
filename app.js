@@ -14321,11 +14321,34 @@ CREATE TABLE sale_items (
           iconHtml = `<div class="noti-item-icon" style="font-size:18px; width:36px; height:36px; border-radius:50%; background:${bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${textEmoji}</div>`;
         }
 
+        let descHtml = n.desc || '';
+        if (descHtml.includes('|')) {
+          const parts = descHtml.split('|');
+          let invoicePart = parts[0] || '';
+          let customerPart = parts[1] || '';
+          let totalPart = parts[2] || '';
+          
+          if (customerPart.includes('Customer:')) {
+            const labelIdx = customerPart.indexOf('Customer:');
+            const label = customerPart.substring(0, labelIdx + 9);
+            const name = customerPart.substring(labelIdx + 9);
+            customerPart = `${label}<span style="color: #3b82f6; font-weight:700;">${name}</span>`;
+          }
+          
+          if (totalPart.includes('Total:')) {
+            const labelIdx = totalPart.indexOf('Total:');
+            const label = totalPart.substring(0, labelIdx + 6);
+            const price = totalPart.substring(labelIdx + 6);
+            totalPart = `${label}<span style="color: #10b981; font-weight:700;">${price}</span>`;
+          }
+          descHtml = `${invoicePart} | ${customerPart} | ${totalPart}`;
+        }
+
         item.innerHTML = `
           ${iconHtml}
           <div class="noti-item-details" style="flex-grow:1; margin-left:8px;">
             <div class="noti-item-title" style="font-weight:700; color:var(--text-primary); font-size:12px;">${n.title}</div>
-            <div class="noti-item-desc" style="color:var(--text-secondary); font-size:11px; margin-top:2px;">${n.desc}</div>
+            <div class="noti-item-desc" style="color:var(--text-secondary); font-size:11px; margin-top:2px;">${descHtml}</div>
             <div style="font-size:9.5px; color:var(--text-muted); margin-top:4px; font-weight:600;">${timeAgo(n.date)}</div>
           </div>
           ${unreadDotHtml}
