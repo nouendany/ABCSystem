@@ -14232,9 +14232,6 @@ CREATE TABLE sale_items (
 
     listContainer.innerHTML = '';
     const notifications = [];
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const todayMMDD = todayStr.substring(5, 10); // MM-DD
 
     // Helper for Facebook-style Time Ago
     function timeAgo(dateString) {
@@ -14263,70 +14260,7 @@ CREATE TABLE sale_items (
       }
     }
 
-    // 1. Check birthdays (on-the-fly)
-    state.customers.forEach(c => {
-      if (c.birthday) {
-        const cMMDD = c.birthday.substring(5, 10);
-        if (cMMDD === todayMMDD) {
-          notifications.push({
-            id: 'bday-' + c.id,
-            type: 'birthday',
-            title: state.lang === 'km' ? `🎂 ថ្ងៃកំណើត៖ ${c.name}` : `🎂 Birthday: ${c.name}`,
-            desc: state.lang === 'km' ? `ថ្ងៃនេះជាថ្ងៃកំណើតរបស់គាត់! ផ្ញើសារជូនពរ។` : `Today is their birthday! Send them wishes.`,
-            customerId: c.id,
-            date: new Date().toISOString(), // top priority
-            icon: '🎉',
-            isRead: true
-          });
-        }
-      }
-    });
 
-    // 2. Check follow-ups (on-the-fly)
-    state.followups.forEach(f => {
-      if (f.schedules) {
-        f.schedules.forEach(sch => {
-          if (sch.status !== 'pending') return;
-
-          const d = new Date(sch.date);
-          const dStr = sch.date.split('T')[0];
-
-          const isToday = dStr === todayStr;
-          const isOverdue = d < today && !isToday;
-
-          const dayLabel = window.POS_TRANSLATIONS[state.lang]['day' + sch.day] || `Day ${sch.day} Contact`;
-
-          if (isToday) {
-            notifications.push({
-              id: `follow-${f.id}-${sch.day}`,
-              type: 'due_today',
-              title: `📅 Follow-up Due: ${f.customerName}`,
-              desc: `${dayLabel} is due today (Staff: ${f.salesStaffName || 'System'})`,
-              customerId: f.customerId,
-              followupId: f.id,
-              day: sch.day,
-              date: sch.date,
-              icon: '⏳',
-              isRead: true
-            });
-          } else if (isOverdue) {
-            const diffDays = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
-            notifications.push({
-              id: `follow-${f.id}-${sch.day}`,
-              type: 'overdue',
-              title: `🚨 OVERDUE: ${f.customerName}`,
-              desc: `${dayLabel} was missed by ${diffDays} days! (Staff: ${f.salesStaffName || 'System'})`,
-              customerId: f.customerId,
-              followupId: f.id,
-              day: sch.day,
-              date: sch.date,
-              icon: '⚠️',
-              isRead: true
-            });
-          }
-        });
-      }
-    });
 
     // 3. Add order notifications from Firestore
     const dbNotis = (state.notifications || []).map(n => {
