@@ -23,8 +23,8 @@
     };
   </script>
   
-  <!-- Google Fonts: Outfit & Koh Santepheap for Khmer -->
-  <link href="https://fonts.googleapis.com/css2?family=Koh+Santepheap:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Google Fonts: Outfit & Kantumruy Pro for Khmer -->
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -48,6 +48,25 @@
 
   <style>
     :root {
+      /* Default dark theme tokens (matching the screenshot) */
+      --bg-color: #0b0f19;
+      --card-bg: #151f32;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --primary-light: rgba(14, 165, 233, 0.08);
+      --success: #10b981;
+      --success-light: rgba(16, 185, 129, 0.15);
+      --danger: #f43f5e;
+      --border: rgba(255, 255, 255, 0.06);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body.light-theme {
       --bg-color: #f1f5f9;
       --card-bg: #ffffff;
       --text-main: #0f172a;
@@ -59,14 +78,11 @@
       --success-light: rgba(16, 185, 129, 0.1);
       --danger: #ef4444;
       --border: #e2e8f0;
-      --radius-lg: 16px;
-      --radius-md: 12px;
-      --radius-sm: 8px;
-      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     html {
-      background-color: #f1f5f9; /* Prevent white OS scrollbar track background */
+      background-color: var(--bg-color);
+      transition: background-color 0.25s ease;
     }
 
     * {
@@ -77,13 +93,14 @@
     }
 
     body {
-      font-family: 'Outfit', 'Koh Santepheap', sans-serif;
+      font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
 
     /* Header Styling */
@@ -1045,16 +1062,42 @@
 <body>
 
   <!-- App Header -->
-  <header>
-    <div class="header-top">
-      <div class="brand-title">FutureTech POS</div>
-      <div class="employee-tag" id="employee-display">
-        👤 Loading...
+  <header style="background: var(--card-bg); border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; padding: 12px 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
+      
+      <!-- Left: User Profile info block -->
+      <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden;">
+        <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.1); position: relative;">
+          <img id="header-user-avatar-img" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+          <span id="header-user-avatar-initial" style="color: white; font-weight: bold; font-size: 15px;">👤</span>
+        </div>
+        <div style="display: flex; flex-direction: column; overflow: hidden;">
+          <strong id="header-user-fullname" style="font-size: 13.5px; color: var(--text-main); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">Loading...</strong>
+          <span id="header-user-username" style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1;">@guest_seller</span>
+        </div>
       </div>
+
+      <!-- Right: Controls & Balance / Sales indicator -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <!-- Theme Toggle button -->
+        <button id="btn-toggle-theme" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: rgba(0,0,0,0.05); color: var(--text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; outline: none;">☀️</button>
+        
+        <!-- Balance Card -->
+        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px;">
+          <div style="display: flex; flex-direction: column; text-align: right;">
+            <span style="font-size: 8px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px;">លទ្ធផល (Sales)</span>
+            <strong id="header-user-balance" style="font-size: 13.5px; color: var(--success); font-weight: 750; line-height: 1.1;">$0.00</strong>
+          </div>
+          <!-- Plus Icon or Info -->
+          <div style="width: 18px; height: 18px; border-radius: 4px; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">+</div>
+        </div>
+      </div>
+
     </div>
     
+    <!-- Branch select dropdown inline -->
     <div class="branch-select-wrapper">
-      <select id="branch-select">
+      <select id="branch-select" style="background: rgba(0,0,0,0.05); color: var(--text-main); border: 1px solid var(--border);">
         <!-- Load dynamically -->
       </select>
     </div>
@@ -1389,6 +1432,85 @@
       tg.expand();
     }
 
+    // Modern theme detection & switcher logic (Defaults to Dark Theme for premium look)
+    let currentTheme = 'dark';
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      currentTheme = 'light';
+    }
+    if (tg && tg.colorScheme) {
+      currentTheme = tg.colorScheme;
+    }
+    document.body.className = currentTheme === 'light' ? 'light-theme' : 'dark-theme';
+
+    // Wait for DOM to wire up theme toggle listener
+    window.addEventListener('DOMContentLoaded', () => {
+      const btnToggleTheme = document.getElementById('btn-toggle-theme');
+      if (btnToggleTheme) {
+        btnToggleTheme.innerHTML = document.body.classList.contains('light-theme') ? '🌙' : '☀️';
+        btnToggleTheme.addEventListener('click', () => {
+          const isDark = document.body.classList.contains('dark-theme');
+          const nextTheme = isDark ? 'light' : 'dark';
+          document.body.className = nextTheme === 'light' ? 'light-theme' : 'dark-theme';
+          btnToggleTheme.innerHTML = nextTheme === 'light' ? '🌙' : '☀️';
+        });
+      }
+    });
+
+    // Helper to dynamically update the premium header card fields
+    function updateHeaderProfile() {
+      const nameEl = document.getElementById('header-user-fullname');
+      const usernameEl = document.getElementById('header-user-username');
+      const avatarImg = document.getElementById('header-user-avatar-img');
+      const avatarInitial = document.getElementById('header-user-avatar-initial');
+
+      let fullName = "Guest Seller";
+      let username = "@guest_seller";
+      let photoUrl = "";
+
+      // 1. Get info from Firebase employee if available
+      if (employeeData) {
+        fullName = employeeData.fullName || employeeData.name || fullName;
+        if (employeeData.username) {
+          username = `@${employeeData.username}`;
+        }
+        if (employeeData.photoBase64) {
+          photoUrl = employeeData.photoBase64;
+        }
+      }
+
+      // 2. Override with Telegram WebApp profile info if available
+      const tgUser = tg?.initDataUnsafe?.user;
+      if (tgUser) {
+        if (tgUser.first_name) {
+          fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
+        }
+        if (tgUser.username) {
+          username = `@${tgUser.username}`;
+        }
+        if (tgUser.photo_url) {
+          photoUrl = tgUser.photo_url;
+        }
+      }
+
+      // Render DOM
+      if (nameEl) nameEl.innerText = fullName;
+      if (usernameEl) usernameEl.innerText = username;
+
+      if (photoUrl) {
+        if (avatarImg) {
+          avatarImg.src = photoUrl;
+          avatarImg.style.display = 'block';
+        }
+        if (avatarInitial) avatarInitial.style.display = 'none';
+      } else {
+        if (avatarImg) avatarImg.style.display = 'none';
+        if (avatarInitial) {
+          avatarInitial.style.display = 'flex';
+          avatarInitial.innerText = fullName.charAt(0).toUpperCase();
+        }
+      }
+    }
+
     // Firebase Configurations
     const firebaseConfig = {
       apiKey: "AIzaSyCGVfZo-Hpc-wdQv21he4Js0K3RuyZ3VQ",
@@ -1443,7 +1565,7 @@
     let cart = [];
 
     // UI Elements
-    const employeeDisplay = document.getElementById('employee-display');
+    const employeeDisplay = document.getElementById('header-user-fullname') || { set innerText(val) {} };
     const branchSelect = document.getElementById('branch-select');
     const categoriesTabs = document.getElementById('categories-tabs');
     const productsGrid = document.getElementById('products-grid');
@@ -1866,6 +1988,9 @@
             }
           }
 
+          // Trigger header update once loaded
+          updateHeaderProfile();
+
           // Check if employee is inactive
           if (employeeData && (employeeData.status === 'Inactive' || employeeData.status === 'inactive')) {
             document.body.innerHTML = `
@@ -1884,6 +2009,7 @@
           }
         } else {
           employeeDisplay.innerText = `👤 Guest Seller`;
+          updateHeaderProfile();
         }
 
         // Determine company branding (Requirement 10)
@@ -1924,6 +2050,9 @@
           const txSnap = await db.collection('transactions').get();
           transactionsList = [];
           txSnap.forEach(doc => transactionsList.push({ id: doc.id, ...doc.data() }));
+
+          // Render scorecard to populate the header balance display with current points
+          renderKpiScorecardTMA();
         } catch (err) {
           console.error("Optional collections fetch error (skipping non-blocking):", err);
         }
@@ -2899,6 +3028,11 @@
 
       document.getElementById('kpi-total-points-tma').innerText = `${total} Points`;
       document.getElementById('kpi-grade-badge-tma').innerText = `Grade: ${grade}`;
+
+      const headerBalanceEl = document.getElementById('header-user-balance');
+      if (headerBalanceEl) {
+        headerBalanceEl.innerText = `${total} Pts`;
+      }
 
       const container = document.getElementById('kpi-details-container-tma');
       container.innerHTML = `
