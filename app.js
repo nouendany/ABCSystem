@@ -1702,73 +1702,6 @@
       });
     }
 
-    // Direct Profile Photo Upload handler
-    const btnUploadPhoto = document.getElementById('btn-dropdown-upload-photo');
-    const photoFileInput = document.getElementById('dropdown-user-photo-file');
-
-    if (btnUploadPhoto && photoFileInput) {
-      btnUploadPhoto.addEventListener('click', (e) => {
-        e.stopPropagation();
-        photoFileInput.click();
-      });
-
-      photoFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Verify file size limit (1.5MB to stay within safe LocalStorage limits)
-        if (file.size > 1.5 * 1024 * 1024) {
-          alert(state.lang === 'km' ? 'សូមជ្រើសរើសរូបភាពដែលមានទំហំតូចជាង 1.5MB' : 'Please select an image smaller than 1.5MB.');
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          const base64 = evt.target.result;
-          
-          // 1. Update state
-          state.currentUser.photoBase64 = base64;
-          
-          // 2. Update state.users list
-          const userIdx = state.users.findIndex(u => u.username === state.currentUser.username);
-          if (userIdx !== -1) {
-            state.users[userIdx].photoBase64 = base64;
-            safeSetItem('abc_users', JSON.stringify(state.users));
-          }
-
-          // 3. Save currentUser session
-          safeSetItem('abc_current_user', JSON.stringify(state.currentUser));
-
-          // 4. Update also matched employee if applicable
-          if (state.employees) {
-            const name = state.currentUser.name || state.currentUser.username;
-            const matchedEmpIdx = state.employees.findIndex(emp => {
-              const empName = (emp.fullName || emp.name || '').trim().toLowerCase();
-              const curName = name.trim().toLowerCase();
-              return empName === curName || emp.id === state.currentUser.employeeId || emp.id === state.currentUser.id;
-            });
-            if (matchedEmpIdx !== -1) {
-              state.employees[matchedEmpIdx].photoBase64 = base64;
-              safeSetItem('abc_employees', JSON.stringify(state.employees));
-            }
-          }
-
-          // 5. Force update of header/avatars immediately
-          updateUserCardHeader();
-
-          // 6. Sync changes to Firebase if active
-          if (window.syncDataToFirebase) {
-            window.syncDataToFirebase('users');
-            if (state.employees) {
-              window.syncDataToFirebase('employees');
-            }
-          }
-
-          alert(state.lang === 'km' ? 'បានប្តូររូបថតគណនីដោយជោគជ័យ!' : 'Profile picture updated successfully!');
-        };
-        reader.readAsDataURL(file);
-      });
-    }
   }
 
   function updateCompanyLogoUI() {
@@ -10286,6 +10219,21 @@
             </div>
             <form id="user-form" style="padding: 16px;">
               <input type="hidden" id="user-edit-idx">
+              
+              <!-- User Profile Photo Picker Grid -->
+              <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; border: 1px dashed var(--border-color); padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.15);">
+                <div style="position: relative; width: 60px; height: 60px; cursor: pointer; border-radius: 50%; overflow: hidden; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15);" id="u-photo-container" title="Click to upload/change photo">
+                  <img id="u-photo-preview" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                  <span id="u-photo-initial" style="color: white; font-weight: bold; font-size: 20px;">👤</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">User Profile Picture (រូបថតគណនី)</span>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-u-photo-upload" style="padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none;">Choose Photo</button>
+                  <input type="file" id="u-photo-file" accept="image/*" style="display: none;">
+                  <input type="hidden" id="u-photo-base64">
+                </div>
+              </div>
+
               <div class="form-group">
                 <label>Full Name</label>
                 <input type="text" class="form-control" id="u-name" required placeholder="User Fullname">
@@ -10350,6 +10298,23 @@
           document.getElementById('u-role').value = u.role;
           document.getElementById('u-position').value = u.position || '';
           document.getElementById('u-status').value = u.status || 'active';
+
+          // Load profile photo to form preview
+          const photoBase64 = u.photoBase64 || '';
+          const previewImg = document.getElementById('u-photo-preview');
+          const previewInitial = document.getElementById('u-photo-initial');
+          const photoBase64Input = document.getElementById('u-photo-base64');
+          if (photoBase64Input) photoBase64Input.value = photoBase64;
+          if (previewImg && previewInitial) {
+            if (photoBase64) {
+              previewImg.src = photoBase64;
+              previewImg.style.display = 'block';
+              previewInitial.style.display = 'none';
+            } else {
+              previewImg.style.display = 'none';
+              previewInitial.style.display = 'block';
+            }
+          }
         });
       });
 
@@ -10388,6 +10353,44 @@
         });
       });
 
+      // Bind photo picker elements inside Settings -> Users List Form
+      const btnUPhoto = container.querySelector('#btn-u-photo-upload');
+      const containerUPhoto = container.querySelector('#u-photo-container');
+      const fileUInput = container.querySelector('#u-photo-file');
+      if (btnUPhoto && containerUPhoto && fileUInput) {
+        const triggerSelect = (e) => {
+          e.stopPropagation();
+          fileUInput.click();
+        };
+        btnUPhoto.addEventListener('click', triggerSelect);
+        containerUPhoto.addEventListener('click', triggerSelect);
+
+        fileUInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          if (file.size > 1.5 * 1024 * 1024) {
+            alert(state.lang === 'km' ? 'សូមជ្រើសរើសរូបភាពដែលមានទំហំតូចជាង 1.5MB' : 'Please select an image smaller than 1.5MB.');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const base64 = evt.target.result;
+            const previewImg = document.getElementById('u-photo-preview');
+            const previewInitial = document.getElementById('u-photo-initial');
+            const photoBase64Input = document.getElementById('u-photo-base64');
+            if (photoBase64Input) photoBase64Input.value = base64;
+            if (previewImg && previewInitial) {
+              previewImg.src = base64;
+              previewImg.style.display = 'block';
+              previewInitial.style.display = 'none';
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
       container.querySelector('#user-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const idx = document.getElementById('user-edit-idx').value;
@@ -10398,6 +10401,7 @@
         const role = document.getElementById('u-role').value;
         const position = document.getElementById('u-position').value.trim();
         const status = document.getElementById('u-status').value;
+        const photoBase64 = document.getElementById('u-photo-base64').value || '';
 
         // Custom permissions mapping based on roles
         const perms = { view: true, add: true, edit: false, delete: false, export: false, approve: false };
@@ -10419,10 +10423,18 @@
           state.users[idx].permissions = perms;
           state.users[idx].position = position;
           state.users[idx].status = status;
+          state.users[idx].photoBase64 = photoBase64;
+
+          // If updating active logged in user profile, refresh immediately
+          if (state.currentUser && state.users[idx].id === state.currentUser.id) {
+            state.currentUser.photoBase64 = photoBase64;
+            safeSetItem('abc_current_user', JSON.stringify(state.currentUser));
+            updateUserCardHeader();
+          }
         } else {
           if (!guardAction('add')) return;
           const newId = 'USR-' + String(state.users.length + 1).padStart(3, '0');
-          state.users.push({ id: newId, name, branchId, username, password, role, permissions: perms, position, status });
+          state.users.push({ id: newId, name, branchId, username, password, role, permissions: perms, position, status, photoBase64 });
         }
 
         saveStateToLocalStorage();
