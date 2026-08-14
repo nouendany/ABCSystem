@@ -1701,6 +1701,74 @@
         }
       });
     }
+
+    // Direct Profile Photo Upload handler
+    const btnUploadPhoto = document.getElementById('btn-dropdown-upload-photo');
+    const photoFileInput = document.getElementById('dropdown-user-photo-file');
+
+    if (btnUploadPhoto && photoFileInput) {
+      btnUploadPhoto.addEventListener('click', (e) => {
+        e.stopPropagation();
+        photoFileInput.click();
+      });
+
+      photoFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Verify file size limit (1.5MB to stay within safe LocalStorage limits)
+        if (file.size > 1.5 * 1024 * 1024) {
+          alert(state.lang === 'km' ? 'សូមជ្រើសរើសរូបភាពដែលមានទំហំតូចជាង 1.5MB' : 'Please select an image smaller than 1.5MB.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const base64 = evt.target.result;
+          
+          // 1. Update state
+          state.currentUser.photoBase64 = base64;
+          
+          // 2. Update state.users list
+          const userIdx = state.users.findIndex(u => u.username === state.currentUser.username);
+          if (userIdx !== -1) {
+            state.users[userIdx].photoBase64 = base64;
+            safeSetItem('abc_users', JSON.stringify(state.users));
+          }
+
+          // 3. Save currentUser session
+          safeSetItem('abc_current_user', JSON.stringify(state.currentUser));
+
+          // 4. Update also matched employee if applicable
+          if (state.employees) {
+            const name = state.currentUser.name || state.currentUser.username;
+            const matchedEmpIdx = state.employees.findIndex(emp => {
+              const empName = (emp.fullName || emp.name || '').trim().toLowerCase();
+              const curName = name.trim().toLowerCase();
+              return empName === curName || emp.id === state.currentUser.employeeId || emp.id === state.currentUser.id;
+            });
+            if (matchedEmpIdx !== -1) {
+              state.employees[matchedEmpIdx].photoBase64 = base64;
+              safeSetItem('abc_employees', JSON.stringify(state.employees));
+            }
+          }
+
+          // 5. Force update of header/avatars immediately
+          updateUserCardHeader();
+
+          // 6. Sync changes to Firebase if active
+          if (window.syncDataToFirebase) {
+            window.syncDataToFirebase('users');
+            if (state.employees) {
+              window.syncDataToFirebase('employees');
+            }
+          }
+
+          alert(state.lang === 'km' ? 'បានប្តូររូបថតគណនីដោយជោគជ័យ!' : 'Profile picture updated successfully!');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   }
 
   function updateCompanyLogoUI() {
