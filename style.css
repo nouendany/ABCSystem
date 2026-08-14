@@ -345,22 +345,72 @@ body.light-theme .logo-text {
   position: relative;
 }
 
-.nav-item svg {
-  width: 19px;
-  height: 19px;
-  stroke: #94a3b8;
-  fill: none;
-  transition: stroke 0.2s ease;
-}
-
 .nav-item:hover {
-  background: #1e293b;
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
-  transform: translateX(3px);
 }
 
+.nav-item svg {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border-radius: 50%;
+  margin-right: 4px;
+  stroke: var(--text-secondary);
+  fill: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Unique Facebook-style Sidebar Icon and Background Colors */
+.nav-item[data-view="view-pos"] svg {
+  stroke: #1877f2;
+  background: rgba(24, 119, 242, 0.12);
+}
+.nav-item[data-view="view-dashboard"] svg {
+  stroke: #1877f2;
+  background: rgba(24, 119, 242, 0.12);
+}
+.nav-item[data-view="view-inventory"] svg {
+  stroke: #36a420;
+  background: rgba(54, 164, 32, 0.12);
+}
+.nav-item[data-view="view-branches"] svg {
+  stroke: #f02849;
+  background: rgba(240, 40, 73, 0.12);
+}
+.nav-item[data-view="view-customers"] svg {
+  stroke: #18ab29;
+  background: rgba(24, 171, 41, 0.12);
+}
+.nav-item[data-view="view-followups"] svg {
+  stroke: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+.nav-item[data-view="view-performance"] svg {
+  stroke: #ec4899;
+  background: rgba(236, 72, 153, 0.12);
+}
+.nav-item[data-view="view-finance"] svg {
+  stroke: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+}
+.nav-item[data-view="view-staff"] svg {
+  stroke: #06b6d4;
+  background: rgba(6, 182, 212, 0.12);
+}
+.nav-item[data-view="view-reports"] svg {
+  stroke: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+.nav-item[data-view="view-settings"] svg {
+  stroke: #94a3b8;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+/* Hover overrides */
 .nav-item:hover svg {
-  stroke: #ffffff;
+  transform: scale(1.05);
 }
 
 .nav-item.active {
@@ -373,6 +423,7 @@ body.light-theme .logo-text {
 
 .nav-item.active svg {
   stroke: #ffffff !important;
+  background: rgba(255, 255, 255, 0.25) !important;
 }
 
 .nav-item.active::before {
