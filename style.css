@@ -29,8 +29,8 @@
   
   /* Clean Modern Slate Dark Theme Variables */
   --bg-main: #0b0f19;
-  --bg-card: #111827;
-  --bg-sidebar: #090d16;
+  --bg-card: rgba(17, 24, 39, 0.85);
+  --bg-sidebar: rgba(9, 13, 22, 0.8);
   --border-color: rgba(255, 255, 255, 0.08);
   --border-glow: rgba(99, 102, 241, 0.15);
   
@@ -45,8 +45,8 @@
 /* Light Theme Variables Switch */
 body.light-theme {
   --bg-main: #f1f5f9;       /* Cool Slate Gray 100 for premium contrast */
-  --bg-card: #ffffff;      /* Pure solid white cards */
-  --bg-sidebar: #ffffff;   /* Solid white sidebar */
+  --bg-card: rgba(255, 255, 255, 0.85);      /* Pure solid white cards */
+  --bg-sidebar: rgba(255, 255, 255, 0.8);   /* Solid white sidebar */
   --border-color: rgba(99, 102, 241, 0.08); /* Faint indigo-tinted border for elegance */
   --border-glow: rgba(99, 102, 241, 0.08);
   
@@ -72,6 +72,9 @@ body {
   display: flex;
   overflow: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .lang-km, [lang="km"] {
@@ -105,6 +108,8 @@ body.sidebar-active .sidebar-overlay {
 .sidebar {
   width: 250px;
   background-color: var(--bg-sidebar);
+  backdrop-filter: blur(20px) saturate(185%);
+  -webkit-backdrop-filter: blur(20px) saturate(185%);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -1504,11 +1509,24 @@ textarea.form-control {
 }
 
 .modal-header {
-  padding: 16px;
+  padding: 16px 16px 16px 52px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+}
+.modal-header::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 14px 0 0 #ffbd2e, 28px 0 0 #27c93f;
 }
 
 .modal-body {
