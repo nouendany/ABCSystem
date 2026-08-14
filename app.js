@@ -4003,11 +4003,16 @@
 
     let itemsHtml = '';
     tx.items.forEach(item => {
-      const name = state.lang === 'km' ? item.nameKh : item.nameEn;
+      const name = state.lang === 'km' ? (item.nameKh || item.nameEn) : (item.nameEn || item.nameKh);
+      const price = parseFloat(item.price) || 0;
+      const qty = parseInt(item.qty) || 0;
+      const total = parseFloat(item.total) || (price * qty);
       itemsHtml += `
-        <tr>
-          <td>${name}<br><span style="font-size:9px;color:#555;">${item.sku} x ${item.qty}</span></td>
-          <td style="text-align:right; vertical-align:bottom;">${window.POS_HELPERS.formatUSD(item.total)}</td>
+        <tr style="border-bottom: 1px dashed #ddd; font-size: 10.5px;">
+          <td style="padding: 6px 0; max-width: 140px; word-wrap: break-word;">${name}</td>
+          <td style="padding: 6px 0; text-align: center;">${qty}</td>
+          <td style="padding: 6px 0; text-align: right;">${window.POS_HELPERS.formatUSD(price)}</td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 700;">${window.POS_HELPERS.formatUSD(total)}</td>
         </tr>
       `;
     });
@@ -4016,7 +4021,7 @@
     const methodTranslate = window.POS_TRANSLATIONS[state.lang][tx.paymentMethod] || tx.paymentMethod;
 
     const logoHtml = logoBase64
-      ? `<div style="margin-bottom:6px;"><img src="${logoBase64}" style="max-height:50px; max-width:145px; object-fit:contain;"></div>`
+      ? `<div style="margin-bottom:6px;"><img src="${logoBase64}" style="max-height:60px; max-width:180px; object-fit:contain;"></div>`
       : '';
 
     area.innerHTML = `
@@ -4027,18 +4032,34 @@
         <p style="margin:2px 0; font-size:9px;">Tel: ${companyPhone}</p>
       </div>
 
-      <div style="font-size:10px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:10px; display:flex; flex-direction:column; gap:2px;">
-        <div><strong>Invoice No:</strong> ${tx.invoiceNo}</div>
-        <div><strong>Date:</strong> ${window.POS_HELPERS.formatDate(tx.date, state.lang)}</div>
-        <div><strong>Cashier:</strong> ${tx.staffName}</div>
-        <div><strong>Customer:</strong> ${tx.customerName}</div>
+      <div style="font-size:12px; font-weight:700; margin:4px 0; text-align:center; text-transform:uppercase; letter-spacing:0.5px;">វិក្កយបត្រ / Invoice</div>
+      
+      <div style="font-size:10px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:10px; display:flex; flex-direction:column; gap:3px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>${isKm ? 'លេខវិក្កយបត្រ (Inv No):' : 'Invoice No:'}</span>
+          <strong>${tx.invoiceNo}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>${isKm ? 'កាលបរិច្ឆេទ (Date):' : 'Date:'}</span>
+          <span>${window.POS_HELPERS.formatDate(tx.date, state.lang)} ${tx.date ? new Date(tx.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>${isKm ? 'អ្នកលក់ (Staff):' : 'Cashier:'}</span>
+          <span>${tx.staffName}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>${isKm ? 'អតិថិជន (Customer):' : 'Customer:'}</span>
+          <strong>${tx.customerName}</strong>
+        </div>
       </div>
 
-      <table style="width:100%; font-size:10px; border-collapse:collapse; margin-bottom:10px;">
+      <table style="width: 100%; border-collapse: collapse; margin: 6px 0;">
         <thead>
-          <tr style="border-bottom:1px solid #000;">
-            <th style="text-align:left; padding-bottom:4px;">Item</th>
-            <th style="text-align:right; padding-bottom:4px;">Total</th>
+          <tr style="border-bottom: 1.5px solid #000; font-size: 10px; font-weight: 700; color: #555;">
+            <th style="text-align: left; padding-bottom: 4px;">${isKm ? 'ទំនិញ (Item)' : 'Item'}</th>
+            <th style="text-align: center; padding-bottom: 4px; width: 45px;">${isKm ? 'ចំនួន' : 'Qty'}</th>
+            <th style="text-align: right; padding-bottom: 4px; width: 60px;">${isKm ? 'តម្លៃ' : 'Price'}</th>
+            <th style="text-align: right; padding-bottom: 4px; width: 60px;">${isKm ? 'សរុប' : 'Total'}</th>
           </tr>
         </thead>
         <tbody>
@@ -14189,9 +14210,6 @@ CREATE TABLE sale_items (
 
     listContainer.innerHTML = '';
     const notifications = [];
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const todayMMDD = todayStr.substring(5, 10); // MM-DD
 
     // Helper for Facebook-style Time Ago
     function timeAgo(dateString) {
@@ -14220,72 +14238,7 @@ CREATE TABLE sale_items (
       }
     }
 
-    // 1. Check birthdays (on-the-fly)
-    state.customers.forEach(c => {
-      if (c.birthday) {
-        const cMMDD = c.birthday.substring(5, 10);
-        if (cMMDD === todayMMDD) {
-          notifications.push({
-            id: 'bday-' + c.id,
-            type: 'birthday',
-            title: state.lang === 'km' ? `🎂 ថ្ងៃកំណើត៖ ${c.name}` : `🎂 Birthday: ${c.name}`,
-            desc: state.lang === 'km' ? `ថ្ងៃនេះជាថ្ងៃកំណើតរបស់គាត់! ផ្ញើសារជូនពរ។` : `Today is their birthday! Send them wishes.`,
-            customerId: c.id,
-            date: new Date().toISOString(), // top priority
-            icon: '🎉',
-            isRead: true
-          });
-        }
-      }
-    });
-
-    // 2. Check follow-ups (on-the-fly)
-    state.followups.forEach(f => {
-      if (f.schedules) {
-        f.schedules.forEach(sch => {
-          if (sch.status !== 'pending') return;
-
-          const d = new Date(sch.date);
-          const dStr = sch.date.split('T')[0];
-
-          const isToday = dStr === todayStr;
-          const isOverdue = d < today && !isToday;
-
-          const dayLabel = window.POS_TRANSLATIONS[state.lang]['day' + sch.day] || `Day ${sch.day} Contact`;
-
-          if (isToday) {
-            notifications.push({
-              id: `follow-${f.id}-${sch.day}`,
-              type: 'due_today',
-              title: `📅 Follow-up Due: ${f.customerName}`,
-              desc: `${dayLabel} is due today (Staff: ${f.salesStaffName || 'System'})`,
-              customerId: f.customerId,
-              followupId: f.id,
-              day: sch.day,
-              date: sch.date,
-              icon: '⏳',
-              isRead: true
-            });
-          } else if (isOverdue) {
-            const diffDays = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
-            notifications.push({
-              id: `follow-${f.id}-${sch.day}`,
-              type: 'overdue',
-              title: `🚨 OVERDUE: ${f.customerName}`,
-              desc: `${dayLabel} was missed by ${diffDays} days! (Staff: ${f.salesStaffName || 'System'})`,
-              customerId: f.customerId,
-              followupId: f.id,
-              day: sch.day,
-              date: sch.date,
-              icon: '⚠️',
-              isRead: true
-            });
-          }
-        });
-      }
-    });
-
-    // 3. Add order notifications from Firestore
+    // 1. Add order notifications from Firestore
     const dbNotis = (state.notifications || []).map(n => {
       let avatarUrl = '';
       
