@@ -9,10 +9,10 @@
 
 :root {
   /* Common Design Tokens */
-  --primary: #6366f1;       /* Vibrant Indigo */
-  --primary-hover: #4f46e5;
-  --secondary: #64748b;     /* Cool Slate Gray */
-  --secondary-hover: #475569;
+  --primary: #1877f2;       /* Facebook Blue */
+  --primary-hover: #166fe5;
+  --secondary: #65676b;     /* Facebook cool gray */
+  --secondary-hover: #5a5b5e;
   --danger: #ef4444;        /* Crimson Red */
   --danger-hover: #dc2626;
   --warning: #f59e0b;       /* Amber Gold */
@@ -28,34 +28,36 @@
   --font-english: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   
   /* Clean Modern Slate Dark Theme Variables */
-  --bg-main: #0b0f19;
-  --bg-card: #111827;
-  --bg-sidebar: #090d16;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(99, 102, 241, 0.15);
+  --bg-main: #18191a;        /* Facebook dark background */
+  --bg-card: #242526;        /* Facebook dark card */
+  --bg-sidebar: #242526;     /* Facebook dark sidebar */
+  --border-color: #3e4042;   /* Facebook dark border */
+  --border-glow: transparent;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --card-gradient: #111827;
-  --input-bg: #0d1322;
-  --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --text-primary: #e4e6eb;   /* Facebook primary text */
+  --text-secondary: #b0b3b8; /* Facebook secondary text */
+  --text-muted: #8a8d91;
+  --card-gradient: #242526;
+  --input-bg: #3a3b3c;
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Light Theme Variables Switch */
 body.light-theme {
-  --bg-main: #f1f5f9;       /* Cool Slate Gray 100 for premium contrast */
-  --bg-card: #ffffff;      /* Pure solid white cards */
-  --bg-sidebar: #ffffff;   /* Solid white sidebar */
-  --border-color: rgba(99, 102, 241, 0.08); /* Faint indigo-tinted border for elegance */
-  --border-glow: rgba(99, 102, 241, 0.08);
+  --primary: #1877f2;
+  --primary-hover: #166fe5;
+  --bg-main: #f0f2f5;        /* Facebook light background */
+  --bg-card: #ffffff;        /* Facebook light card */
+  --bg-sidebar: #ffffff;     /* Facebook light sidebar */
+  --border-color: #e4e6eb;   /* Facebook light border */
+  --border-glow: transparent;
   
-  --text-primary: #0f172a;  /* Deep Slate Blue 900 for modern high contrast */
-  --text-secondary: #475569; /* Slate 600 for subtext */
-  --text-muted: #64748b;     /* Slate 500 for captions */
-  --card-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  --input-bg: #ffffff;
-  --glass-shadow: 0 4px 20px rgba(15, 23, 42, 0.05); /* Soft premium shadow */
+  --text-primary: #050505;   /* Facebook primary text */
+  --text-secondary: #65676b; /* Facebook secondary text */
+  --text-muted: #8a8d91;
+  --card-gradient: #ffffff;
+  --input-bg: #f0f2f5;
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -362,11 +364,11 @@ body.light-theme .logo-text {
 }
 
 .nav-item.active {
-  background: #4f46e5 !important;
+  background: var(--primary) !important;
   color: #ffffff !important;
-  border-color: #4f46e5 !important;
+  border-color: var(--primary) !important;
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .nav-item.active svg {
@@ -3133,11 +3135,11 @@ body.light-theme .nav-item svg {
 }
 
 body.light-theme .nav-item.active {
-  background: #4f46e5 !important;
+  background: var(--primary) !important;
   color: #ffffff !important;
-  border-color: #4f46e5 !important;
+  border-color: var(--primary) !important;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 body.light-theme .nav-item.active svg {
@@ -3409,42 +3411,21 @@ body.light-theme .audit-log-badge {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(-45deg, #6366f1, #8b5cf6, #ec4899, #db2777);
-  background-size: 300% 300%;
+  background: var(--primary);
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
   border-radius: var(--radius-md);
   padding: 14px 18px;
-  font-weight: 850;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25), 0 4px 20px rgba(236, 72, 153, 0.15);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  animation: liquid-gradient 8s ease infinite;
-}
-
-@keyframes liquid-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 .pos-cta-btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 200%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  pointer-events: none;
+  display: none !important;
 }
 
 .pos-cta-btn.active::after {
