@@ -15426,8 +15426,18 @@ CREATE TABLE sale_items (
     alert("HR and Bot configurations saved successfully!");
   }
 
+  let hasCleanedUpSelfies = false;
   function cleanupOldSelfies() {
+    if (hasCleanedUpSelfies) return;
     if (!state.attendance || state.attendance.length === 0) return;
+
+    // Only allow super admins to perform the selfie cleanup once to avoid concurrent write loops across cashiers
+    if (!state.currentUser || state.currentUser.role !== 'super_admin') {
+      hasCleanedUpSelfies = true;
+      return;
+    }
+
+    hasCleanedUpSelfies = true;
 
     // Calculate cutoff date: current local date minus 45 days (1 month 15 days)
     const cutoffDate = new Date();
