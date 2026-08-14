@@ -128,68 +128,99 @@
   <!-- Chart.js CDN for rich visual analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=2.7.0_secure_photo_management">
+  <link rel="stylesheet" href="style.css?v=2.8.0_facebook_login">
 </head>
 <body class="dark-theme">
 
 
   <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
+  <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
   <div class="login-overlay active-login" id="login-screen">
-    <div class="login-card glass-card" style="text-align: center;">
-      <div class="login-logo" style="text-align: center; margin-bottom: 10px;">
-        <div>
-          <span id="login-default-logo" style="font-size:48px;">🚀</span>
-          <img id="login-custom-logo" src="" style="display:none; max-height:80px; max-width:180px; object-fit:contain; border-radius: 8px; margin: 0 auto 10px auto;">
+    <div class="login-container">
+      
+      <!-- Left Column: Business Growth Info -->
+      <div class="login-info-panel">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <!-- App Logo -->
+          <div style="width: 48px; height: 48px; border-radius: 12px; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <img id="login-custom-logo" src="" style="display:none; width: 100%; height: 100%; object-fit: contain;">
+            <span id="login-default-logo" style="font-size: 28px;">🚀</span>
+          </div>
+          <div>
+            <h1 id="login-system-title" style="font-size: 24px; font-weight: 850; letter-spacing: -0.5px; color: var(--text-primary); margin: 0; line-height: 1.1;">ABC</h1>
+            <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0; font-weight: 600;" data-translate="login">Enterprise Login</p>
+          </div>
+        </div>
+        
+        <h2 style="font-size: 20px; font-weight: 750; color: var(--text-primary); margin-top: 10px; margin-bottom: 12px; line-height: 1.35; letter-spacing: -0.2px;">
+          គ្រប់គ្រងអាជីវកម្មរបស់អ្នកឱ្យរីកចម្រើនយ៉ាងឆាប់រហ័ស និងមានប្រសិទ្ធភាពខ្ពស់
+        </h2>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px;">
+          ABC System ជួយសម្រួលដល់ការគ្រប់គ្រងការលក់ POS, គ្រប់គ្រងស្តុកទំនិញ, តាមដានចំណូលចំណាយ, និងគ្រប់គ្រងធនធានមនុស្សយ៉ាងងាយស្រួល ជាមួយល្បឿនលឿនបំផុត។
+        </p>
+
+        <!-- Dynamic Growth Vector Image -->
+        <div style="width: 100%; max-width: 380px; border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 12px 30px rgba(0,0,0,0.3); background: #0f172a;">
+          <img src="business_growth_login.jpg" alt="Business Growth" style="width: 100%; height: auto; display: block; object-fit: cover;">
         </div>
       </div>
-        
-        <h2 id="login-system-title" style="font-weight: 850; margin-top: 10px; letter-spacing: 0.5px; text-align: center;">ABC</h2>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 8px; text-align: center;" data-translate="login">Enterprise Login</p>
-        <div id="login-sync-status" style="font-size: 11px; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); font-weight: 600;">
-          <span id="login-sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow: 0 0 6px #f59e0b; transition: all 0.3s ease;"></span>
-          <span id="login-sync-status-txt" data-translate="connectingCloud">Connecting to Cloud...</span>
-        </div>
-      <form id="login-form">
-        <div class="ios-input-group">
-          <!-- Username Row -->
-          <div class="ios-input-row">
-            <div class="ios-input-icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            </div>
-            <div class="ios-input-field-container">
-              <label class="ios-label" data-translate="username">Username</label>
-              <input type="text" id="login-username" required placeholder="admin or sales-pp" autocomplete="username">
+
+      <!-- Right Column: Login Card -->
+      <div class="login-card-wrapper">
+        <div class="login-card">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div id="login-sync-status" style="font-size: 11px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); font-weight: 600;">
+              <span id="login-sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow: 0 0 6px #f59e0b; transition: all 0.3s ease;"></span>
+              <span id="login-sync-status-txt" data-translate="connectingCloud">Connecting to Cloud...</span>
             </div>
           </div>
           
-          <!-- Password Row -->
-          <div class="ios-input-row">
-            <div class="ios-input-icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <form id="login-form">
+            <div class="ios-input-group" style="margin-bottom: 16px;">
+              <!-- Username Row -->
+              <div class="ios-input-row">
+                <div class="ios-input-icon-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="ios-input-field-container">
+                  <label class="ios-label" data-translate="username">Username</label>
+                  <input type="text" id="login-username" required placeholder="admin or sales-pp" autocomplete="username" style="font-size: 13.5px;">
+                </div>
+              </div>
+              
+              <!-- Password Row -->
+              <div class="ios-input-row">
+                <div class="ios-input-icon-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+                <div class="ios-input-field-container">
+                  <label class="ios-label" data-translate="password">Password</label>
+                  <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password" style="font-size: 13.5px;">
+                </div>
+                <button type="button" class="ios-toggle-password" id="btn-toggle-login-password" title="Toggle password visibility">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
             </div>
-            <div class="ios-input-field-container">
-              <label class="ios-label" data-translate="password">Password</label>
-              <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+
+            <div id="login-error-msg" class="login-error-container" style="display:none; margin-bottom: 16px;" data-translate="loginError">
+              Invalid credentials or account suspended!
             </div>
-            <button type="button" class="ios-toggle-password" id="btn-toggle-login-password" title="Toggle password visibility">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </button>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px; font-weight:750; border-radius: 8px; font-size: 14px; letter-spacing: 0.3px; background: #1877f2; border: none; cursor: pointer; transition: background 0.2s;" data-translate="loginBtn">Secure Login</button>
+          </form>
+
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); text-align: center; font-size: 11px; color: var(--text-secondary); line-height: 1.6; letter-spacing: 0.1px;">
+            <span style="opacity: 0.6; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.5px;" data-translate="developedBy">Developed By</span>
+            <strong style="color: var(--text-primary); margin-left: 4px; font-weight: 700; font-size: 11.5px;">NOUEN Dany</strong>
+            <span style="margin: 0 6px; opacity: 0.3;">•</span>
+            <a href="tel:010955536" style="color: #1877f2; font-weight: 600; text-decoration: none;">
+              Tel: 010 955 536
+            </a>
           </div>
         </div>
-
-        <div id="login-error-msg" class="login-error-container" style="display:none; margin-bottom: 15px;" data-translate="loginError">
-          Invalid credentials or account suspended!
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:5px; padding:13px; font-weight:700; border-radius: 12px; font-size: 14px; letter-spacing: 0.3px;" data-translate="loginBtn">Secure Login</button>
-      </form>
-      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center; font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; letter-spacing: 0.2px;">
-        <span style="opacity: 0.65; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.5px;" data-translate="developedBy">Developed By</span>
-        <strong style="color: var(--text-primary); margin-left: 4px; font-weight: 700;">NOUEN Dany</strong>
-        <span style="margin: 0 6px; opacity: 0.3;">•</span>
-        <a href="tel:010955536" style="color: var(--primary); font-weight: 600; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--secondary)'" onmouseout="this.style.color='var(--primary)'">
-          Tel: 010 955 536
-        </a>
       </div>
+
     </div>
   </div>
 
@@ -3871,7 +3902,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Core logic engine application file -->
-  <script src="app.js?v=2.7.0_secure_photo_management"></script>
+  <script src="app.js?v=2.8.0_facebook_login"></script>
 
   <!-- Floating Diagnostics Trigger Button -->
   <button id="btn-diagnostics-toggle" style="position:fixed; bottom:16px; right:16px; z-index:999990; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition:all 0.2s ease-in-out; outline:none;" title="Diagnostics (វិភាគប្រព័ន្ធ)">
