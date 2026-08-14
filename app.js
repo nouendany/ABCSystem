@@ -1652,51 +1652,51 @@
       }
     }
 
-    // Set up click handler for the header profile avatar button to toggle popover dropdown
+    applyFeatureToggles();
+  }
+
+  // Bind Facebook profile dropdown toggle events on initialization
+  function setupProfileDropdown() {
     const btnHeaderProfile = document.getElementById('btn-header-profile');
     const fbProfileDropdown = document.getElementById('fb-profile-dropdown');
-    if (btnHeaderProfile && fbProfileDropdown && !btnHeaderProfile.dataset.listenerBound) {
-      btnHeaderProfile.addEventListener('click', (e) => {
-        const isVisible = fbProfileDropdown.style.display === 'block';
-        fbProfileDropdown.style.display = isVisible ? 'none' : 'block';
-        e.stopPropagation();
-      });
+    if (!btnHeaderProfile || !fbProfileDropdown) return;
 
-      // Close popover if clicked outside
-      document.addEventListener('click', (e) => {
-        if (!btnHeaderProfile.contains(e.target)) {
-          fbProfileDropdown.style.display = 'none';
-        }
-      });
+    btnHeaderProfile.addEventListener('click', (e) => {
+      const isVisible = fbProfileDropdown.style.display === 'block';
+      fbProfileDropdown.style.display = isVisible ? 'none' : 'block';
+      e.stopPropagation();
+    });
 
-      fbProfileDropdown.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-
-      const btnDropdownSettings = document.getElementById('btn-dropdown-settings');
-      if (btnDropdownSettings) {
-        btnDropdownSettings.addEventListener('click', () => {
-          fbProfileDropdown.style.display = 'none';
-          const settingsNavItem = document.getElementById('nav-item-settings');
-          if (settingsNavItem) settingsNavItem.click();
-        });
+    // Close popover if clicked outside
+    document.addEventListener('click', (e) => {
+      if (!btnHeaderProfile.contains(e.target)) {
+        fbProfileDropdown.style.display = 'none';
       }
+    });
 
-      const btnDropdownLogout = document.getElementById('btn-dropdown-logout');
-      if (btnDropdownLogout) {
-        btnDropdownLogout.addEventListener('click', () => {
-          fbProfileDropdown.style.display = 'none';
-          const logoutBtnReal = document.getElementById('btn-logout');
-          if (logoutBtnReal) {
-            logoutBtnReal.click();
-          }
-        });
-      }
+    fbProfileDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
 
-      btnHeaderProfile.dataset.listenerBound = 'true';
+    const btnDropdownSettings = document.getElementById('btn-dropdown-settings');
+    if (btnDropdownSettings) {
+      btnDropdownSettings.addEventListener('click', () => {
+        fbProfileDropdown.style.display = 'none';
+        const settingsNavItem = document.getElementById('nav-item-settings');
+        if (settingsNavItem) settingsNavItem.click();
+      });
     }
 
-    applyFeatureToggles();
+    const btnDropdownLogout = document.getElementById('btn-dropdown-logout');
+    if (btnDropdownLogout) {
+      btnDropdownLogout.addEventListener('click', () => {
+        fbProfileDropdown.style.display = 'none';
+        const logoutBtnReal = document.getElementById('btn-logout');
+        if (logoutBtnReal) {
+          logoutBtnReal.click();
+        }
+      });
+    }
   }
 
   function updateCompanyLogoUI() {
@@ -17119,6 +17119,7 @@ CREATE TABLE sale_items (
     setupKpiVisibilityToggle();
     setupSecurityEventListeners();
     setupStickyNotes();
+    setupProfileDropdown();
     setupMarquee();
     
     const viewStaffDetailsBtn = document.getElementById('btn-view-staff-sales-details');
