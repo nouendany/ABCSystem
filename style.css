@@ -680,14 +680,15 @@ body.light-theme .logo-text {
 }
 
 .app-header {
+  position: relative;
+  z-index: 1000;
   height: 60px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: rgba(9, 13, 22, 0.2);
-  backdrop-filter: blur(8px);
+  background: var(--bg-card);
 }
 
 .header-left,
@@ -3172,9 +3173,8 @@ body.lang-km .closing-metric div { font-size: 16px; }
 
 /* Premium Light Theme Overrides & Aesthetics */
 body.light-theme .app-header {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border-bottom-color: rgba(99, 102, 241, 0.08);
+  background: var(--bg-card);
+  border-bottom-color: var(--border-color);
 }
 
 body.light-theme .nav-item {
