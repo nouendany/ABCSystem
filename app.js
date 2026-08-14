@@ -3523,12 +3523,8 @@
     // Auto-select corresponding account in checkout dropdown
     const checkoutSelect = document.getElementById('checkout-deposit-account');
     if (checkoutSelect) {
-      // Route all POS payments to ABC Team-018509821 (ACC-003) by default, per owner's request
-      if (method === 'cash') {
-        checkoutSelect.value = 'ACC-003'; // Default to ABC Team-018509821
-      } else if (method === 'khqr' || method === 'bank' || method === 'card') {
-        checkoutSelect.value = 'ACC-003'; // Default to ABC Team-018509821
-      }
+      // Route all POS payments to ABC Team-018509821 (ACC-003) by default
+      checkoutSelect.value = 'ACC-003';
     }
 
     document.querySelectorAll('.checkout-method-card').forEach(card => card.classList.remove('active'));
@@ -3539,12 +3535,24 @@
     const cashDrawer = document.getElementById('checkout-cash-drawer');
     const khqrDrawer = document.getElementById('checkout-khqr-drawer');
 
-    if (method === 'cash') {
+    // Amount Received input is now always visible and editable!
+    if (cashDrawer) {
       cashDrawer.style.display = 'block';
-      khqrDrawer.style.display = 'none';
-    } else if (method === 'khqr') {
-      cashDrawer.style.display = 'none';
-      khqrDrawer.style.display = 'flex';
+      const labelEl = cashDrawer.querySelector('label');
+      if (labelEl) {
+        if (method === 'debt' || method === 'cod') {
+          labelEl.innerText = state.lang === 'km' ? 'ទឹកប្រាក់កក់មុន ($) / Down Payment ($)' : 'Down Payment ($)';
+        } else if (method === 'cash') {
+          labelEl.innerText = state.lang === 'km' ? 'សាច់ប្រាក់ទទួលបាន ($) / Cash Received ($)' : 'Cash Received ($)';
+        } else {
+          labelEl.innerText = state.lang === 'km' ? 'ទឹកប្រាក់បានបង់ ($) / Amount Paid ($)' : 'Amount Paid ($)';
+        }
+      }
+    }
+
+    // Toggle KHQR scan drawer
+    if (method === 'khqr') {
+      if (khqrDrawer) khqrDrawer.style.display = 'flex';
 
       const canvas = document.getElementById('khqr-canvas');
       const img = document.getElementById('checkout-custom-khqr');
@@ -3570,9 +3578,18 @@
         }
       }
     } else {
-      // bank or card
-      cashDrawer.style.display = 'none';
-      khqrDrawer.style.display = 'none';
+      if (khqrDrawer) khqrDrawer.style.display = 'none';
+    }
+
+    // Automatically set default value for paid amount
+    const cashInput = document.getElementById('checkout-cash-input');
+    if (cashInput) {
+      if (method === 'debt' || method === 'cod') {
+        cashInput.value = '0';
+      } else {
+        cashInput.value = totalDue.toFixed(2);
+      }
+      updateCheckoutChange(totalDue);
     }
   }
 
@@ -3809,24 +3826,30 @@
     const invoiceNo = prefix + String(1000 + state.transactions.length + 1) + '-' + randSuffix;
     const txId = 'TX-' + String(1000 + state.transactions.length + 1) + '-' + randSuffix;
 
-    let cashReceived = total;
+    let cashReceived = parseFloat(document.getElementById('checkout-cash-input').value);
+    if (isNaN(cashReceived)) cashReceived = 0;
+    
     let changeDue = 0;
     let outstandingDebt = 0;
 
-    if (state.checkoutMethod === 'cash') {
-      cashReceived = parseFloat(document.getElementById('checkout-cash-input').value) || 0;
-      if (cashReceived < total) {
-        if (customerId === 'CST-001') {
-          alert(state.lang === 'km' 
-            ? 'គណនីអតិថិជនទូទៅមិនអាចកត់ត្រាជំពាក់បានទេ! សូមជ្រើសរើស ឬចុះឈ្មោះអតិថិជនជាក់លាក់។' 
-            : 'General Customer cannot buy on credit/debt. Please select or register specific customer.');
-          return;
-        }
-        outstandingDebt = total - cashReceived;
-        changeDue = 0;
-      } else {
-        changeDue = cashReceived - total;
+    if (cashReceived < total) {
+      if (customerId === 'CST-001') {
+        alert(state.lang === 'km' 
+          ? 'គណនីអតិថិជនទូទៅមិនអាចកត់ត្រាជំពាក់បានទេ! សូមជ្រើសរើស ឬចុះឈ្មោះអតិថិជនជាក់លាក់។' 
+          : 'General Customer cannot buy on credit/debt. Please select or register specific customer.');
+        return;
       }
+      outstandingDebt = total - cashReceived;
+      changeDue = 0;
+    } else {
+      changeDue = cashReceived - total;
+    }
+
+    let finalMethod = state.checkoutMethod;
+    if (finalMethod === 'debt') {
+      finalMethod = 'On Account (Debt)';
+    } else if (finalMethod === 'cod') {
+      finalMethod = 'COD (Cash on Delivery)';
     }
 
     // Role-based verification checks
@@ -4001,7 +4024,7 @@
       taxRate: vatRate,
       taxAmount: tax,
       total: total,
-      paymentMethod: state.checkoutMethod,
+      paymentMethod: finalMethod,
       cashReceived: cashReceived,
       changeDue: changeDue,
       outstandingDebt: outstandingDebt,
@@ -4015,7 +4038,7 @@
 
     // Credit selected checkout deposit account (only for the actually paid amount at checkout)
     const paidAmount = total - outstandingDebt;
-    if (paidAmount > 0 && state.checkoutMethod !== 'cod') {
+    if (paidAmount > 0 && finalMethod !== 'COD (Cash on Delivery)') {
       // Route POS paid amount directly to ABC Team account (ACC-003) as requested, falling back to selected account if not found
       const targetAccId = 'ACC-003';
       const depositAccId = document.getElementById('checkout-deposit-account')?.value;
@@ -12457,6 +12480,12 @@ CREATE TABLE sale_items (
     });
     document.getElementById('pay-card-card').addEventListener('click', () => {
       switchCheckoutMethod('card', getCartTotal());
+    });
+    document.getElementById('pay-card-debt').addEventListener('click', () => {
+      switchCheckoutMethod('debt', getCartTotal());
+    });
+    document.getElementById('pay-card-cod').addEventListener('click', () => {
+      switchCheckoutMethod('cod', getCartTotal());
     });
 
     document.getElementById('checkout-cash-input').addEventListener('input', () => {
