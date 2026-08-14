@@ -1662,15 +1662,15 @@
     if (!btnHeaderProfile || !fbProfileDropdown) return;
 
     btnHeaderProfile.addEventListener('click', (e) => {
-      const isVisible = fbProfileDropdown.style.display === 'block';
-      fbProfileDropdown.style.display = isVisible ? 'none' : 'block';
+      e.preventDefault();
       e.stopPropagation();
+      fbProfileDropdown.classList.toggle('active');
     });
 
     // Close popover if clicked outside
     document.addEventListener('click', (e) => {
-      if (!btnHeaderProfile.contains(e.target)) {
-        fbProfileDropdown.style.display = 'none';
+      if (!btnHeaderProfile.contains(e.target) && !fbProfileDropdown.contains(e.target)) {
+        fbProfileDropdown.classList.remove('active');
       }
     });
 
@@ -1680,8 +1680,10 @@
 
     const btnDropdownSettings = document.getElementById('btn-dropdown-settings');
     if (btnDropdownSettings) {
-      btnDropdownSettings.addEventListener('click', () => {
-        fbProfileDropdown.style.display = 'none';
+      btnDropdownSettings.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fbProfileDropdown.classList.remove('active');
         const settingsNavItem = document.getElementById('nav-item-settings');
         if (settingsNavItem) settingsNavItem.click();
       });
@@ -1689,8 +1691,10 @@
 
     const btnDropdownLogout = document.getElementById('btn-dropdown-logout');
     if (btnDropdownLogout) {
-      btnDropdownLogout.addEventListener('click', () => {
-        fbProfileDropdown.style.display = 'none';
+      btnDropdownLogout.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fbProfileDropdown.classList.remove('active');
         const logoutBtnReal = document.getElementById('btn-logout');
         if (logoutBtnReal) {
           logoutBtnReal.click();

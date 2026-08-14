@@ -5398,4 +5398,12 @@ body.light-theme .glass-card:hover {
   border-color: rgba(15, 23, 42, 0.2);
 }
 
+/* Facebook-style profile dropdown classes */
+.fb-profile-dropdown {
+  display: none;
+}
+.fb-profile-dropdown.active {
+  display: block !important;
+}
+
 
