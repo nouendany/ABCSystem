@@ -2528,6 +2528,10 @@ body.light-theme .kanban-card .prod-pill {
   line-height: 1.4;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
+.receipt-divider {
+  border-bottom: 1.5px dashed #000;
+  margin: 6px 0;
+}
 
 .receipt-paper h3 {
   font-family: inherit;

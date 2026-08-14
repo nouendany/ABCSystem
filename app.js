@@ -4003,13 +4003,13 @@
 
     let itemsHtml = '';
     tx.items.forEach(item => {
-      const name = state.lang === 'km' ? (item.nameKh || item.nameEn) : (item.nameEn || item.nameKh);
+      const name = state.lang === 'km' ? item.nameKh : item.nameEn;
       const price = parseFloat(item.price) || 0;
       const qty = parseInt(item.qty) || 0;
       const total = parseFloat(item.total) || (price * qty);
       itemsHtml += `
-        <tr style="border-bottom: 1px dashed #ddd; font-size: 10.5px;">
-          <td style="padding: 6px 0; max-width: 140px; word-wrap: break-word;">${name}</td>
+        <tr style="border-bottom: 1px dashed rgba(0,0,0,0.08); font-size: 10px;">
+          <td style="padding: 6px 0; max-width: 140px; word-wrap: break-word;">${name}<br><span style="font-size: 8px; color: #555;">${item.sku}</span></td>
           <td style="padding: 6px 0; text-align: center;">${qty}</td>
           <td style="padding: 6px 0; text-align: right;">${window.POS_HELPERS.formatUSD(price)}</td>
           <td style="padding: 6px 0; text-align: right; font-weight: 700;">${window.POS_HELPERS.formatUSD(total)}</td>
@@ -4024,112 +4024,134 @@
       ? `<div style="margin-bottom:6px;"><img src="${logoBase64}" style="max-height:60px; max-width:180px; object-fit:contain;"></div>`
       : '';
 
-    area.innerHTML = `
-      <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:10px; margin-bottom:10px;">
-        ${logoHtml}
-        <h3 style="margin:0; font-size:16px;">${companyName}</h3>
-        <p style="margin:2px 0; font-size:10px;">${isKm ? br.nameKh : br.name}</p>
-        <p style="margin:2px 0; font-size:9px;">Tel: ${companyPhone}</p>
-      </div>
+    // Calculate discount amount
+    const discountVal = (tx.subtotal * (tx.discountPercent / 100)) + tx.discountFixed;
+    const isDebt = tx.paymentMethod === 'On Account (Debt)' || tx.paymentMethod === 'COD (Cash on Delivery)';
 
+    area.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:12px; width:100%; text-align:center;">
+        ${logoHtml}
+        <h3 style="margin:0; font-size:15px; font-weight:800; font-family:inherit;">${companyName}</h3>
+        <p style="margin:2px 0; font-size:9.5px; color:#555;">${isKm ? br.nameKh : br.name}</p>
+        ${companyPhone ? `<p style="margin:2px 0; font-size:9.5px; color:#555;">Tel: ${companyPhone}</p>` : ''}
+        ${state.companySettings.email ? `<p style="margin:2px 0; font-size:9.5px; color:#555;">Email: ${state.companySettings.email}</p>` : ''}
+        ${state.companySettings.address ? `<p style="margin:2px 0; font-size:9.5px; color:#555; max-width:260px;">${state.companySettings.address}</p>` : ''}
+      </div>
+      
+      <div class="receipt-divider"></div>
       <div style="font-size:12px; font-weight:700; margin:4px 0; text-align:center; text-transform:uppercase; letter-spacing:0.5px;">វិក្កយបត្រ / Invoice</div>
       
-      <div style="font-size:10px; margin-bottom:10px; border-bottom:1px dashed #000; padding-bottom:10px; display:flex; flex-direction:column; gap:3px;">
-        <div style="display:flex; justify-content:space-between;">
-          <span>${isKm ? 'លេខវិក្កយបត្រ (Inv No):' : 'Invoice No:'}</span>
-          <strong>${tx.invoiceNo}</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-          <span>${isKm ? 'កាលបរិច្ឆេទ (Date):' : 'Date:'}</span>
-          <span>${window.POS_HELPERS.formatDate(tx.date, state.lang)} ${tx.date ? new Date(tx.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-          <span>${isKm ? 'អ្នកលក់ (Staff):' : 'Cashier:'}</span>
-          <span>${tx.staffName}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-          <span>${isKm ? 'អតិថិជន (Customer):' : 'Customer:'}</span>
-          <strong>${tx.customerName}</strong>
-        </div>
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+        <span>លេខវិក្កយបត្រ (Inv No):</span>
+        <strong>${tx.invoiceNo || tx.id}</strong>
       </div>
-
-      <table style="width: 100%; border-collapse: collapse; margin: 6px 0;">
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+        <span>កាលបរិច្ឆេទ (Date):</span>
+        <span>${window.POS_HELPERS.formatDate(tx.date, state.lang)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+        <span>អ្នកលក់ (Staff):</span>
+        <span>${tx.staffName || 'System'}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+        <span>ការទូទាត់ (Payment):</span>
+        <span style="text-transform:uppercase;">${methodTranslate}</span>
+      </div>
+      
+      <div class="receipt-divider"></div>
+      <div style="font-size:11px; font-weight:700; margin-bottom:4px;">ព័ត៌មានអតិថិជន / Customer:</div>
+      <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom: 2px;">
+        <span>ឈ្មោះ (Name):</span>
+        <strong>${tx.customerName || 'General Customer'}</strong>
+      </div>
+      
+      <!-- Attempt to find customer details for phone/address if available -->
+      ${(() => {
+        const custObj = state.customers.find(c => c.name === tx.customerName || c.id === tx.customerId);
+        const phone = custObj?.phone || '';
+        const address = custObj?.address || '';
+        let html = '';
+        if (phone) {
+          html += `
+            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom: 2px;">
+              <span>លេខទូរស័ព្ទ (Phone):</span>
+              <span>${phone}</span>
+            </div>
+          `;
+        }
+        if (address && address !== '-') {
+          html += `
+            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom: 2px;">
+              <span>អាសយដ្ឋាន (Address):</span>
+              <span style="max-width:180px; text-align:right;">${address}</span>
+            </div>
+          `;
+        }
+        return html;
+      })()}
+      
+      <div class="receipt-divider"></div>
+      <table style="width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 10px;">
         <thead>
-          <tr style="border-bottom: 1.5px solid #000; font-size: 10px; font-weight: 700; color: #555;">
-            <th style="text-align: left; padding-bottom: 4px;">${isKm ? 'ទំនិញ (Item)' : 'Item'}</th>
-            <th style="text-align: center; padding-bottom: 4px; width: 45px;">${isKm ? 'ចំនួន' : 'Qty'}</th>
-            <th style="text-align: right; padding-bottom: 4px; width: 60px;">${isKm ? 'តម្លៃ' : 'Price'}</th>
-            <th style="text-align: right; padding-bottom: 4px; width: 60px;">${isKm ? 'សរុប' : 'Total'}</th>
+          <tr style="border-bottom: 1.5px solid #000; font-weight: 700; color: #555;">
+            <th style="text-align: left; padding-bottom: 4px;">ទំនិញ (Item)</th>
+            <th style="text-align: center; padding-bottom: 4px; width: 45px;">ចំនួន (Qty)</th>
+            <th style="text-align: right; padding-bottom: 4px; width: 60px;">តម្លៃ (Price)</th>
+            <th style="text-align: right; padding-bottom: 4px; width: 60px;">សរុប (Total)</th>
           </tr>
         </thead>
         <tbody>
           ${itemsHtml}
         </tbody>
       </table>
-
-      <div style="border-top:1px dashed #000; padding-top:10px; font-size:10px; display:flex; flex-direction:column; gap:4px;">
-        <div style="display:flex; justify-content:space-between;">
-          <span>Subtotal:</span>
-          <span>${window.POS_HELPERS.formatUSD(tx.subtotal)}</span>
-        </div>
-        ${tx.discountPercent > 0 || tx.discountFixed > 0 ? `
-          <div style="display:flex; justify-content:space-between; color:#444;">
-            <span>Discount:</span>
-            <span>-${window.POS_HELPERS.formatUSD((tx.subtotal * (tx.discountPercent / 100)) + tx.discountFixed)}</span>
-          </div>
-        ` : ''}
-        ${(tx.shippingFee > 0 || tx.shippingCarrier) ? `
-          <div style="display:flex; justify-content:space-between; color:#444;">
-            <span>Shipping${tx.shippingCarrier ? ` (${tx.shippingCarrier})` : ''}:</span>
-            <span>${window.POS_HELPERS.formatUSD(tx.shippingFee || 0)}</span>
-          </div>
-        ` : ''}
-        <div style="display:flex; justify-content:space-between;">
-          <span>VAT (${tx.taxRate}%):</span>
-          <span>${window.POS_HELPERS.formatUSD(tx.taxAmount)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px; border-top:1px solid #000; padding-top:4px; margin-top:4px;">
-          <span>Total Due:</span>
-          <span>${window.POS_HELPERS.formatUSD(tx.total)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:10px; color:#555;">
-          <span>Riel Amount:</span>
-          <span>${window.POS_HELPERS.formatKHR(tx.total)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; border-top:1px dashed #000; padding-top:4px; margin-top:4px;">
-          <span>Payment:</span>
-          <span style="text-transform:uppercase;">${methodTranslate}</span>
-        </div>
-        ${tx.outstandingDebt > 0 ? `
-          <div style="display:flex; justify-content:space-between; font-weight:bold; color:red;">
-            <span>${tx.paymentMethod === 'COD (Cash on Delivery)' ? 'COD (Unpaid)' : 'On Account (Debt)'}:</span>
-            <span>${window.POS_HELPERS.formatUSD(tx.outstandingDebt)}</span>
-          </div>
-        ` : `
-          <div style="display:flex; justify-content:space-between; color:#555;">
-            <span>Cash Paid:</span>
-            <span>${window.POS_HELPERS.formatUSD(tx.cashReceived)}</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; color:#555;">
-            <span>Change:</span>
-            <span>${window.POS_HELPERS.formatUSD(tx.changeDue)}</span>
-          </div>
-        `}
-        ${tx.notes ? `
-          <div style="border-top:1px dashed #000; padding-top:6px; margin-top:6px; font-style:italic; font-size:9px; color:var(--text-secondary); text-align:left; word-wrap:break-word;">
-            <strong>Note:</strong> ${tx.notes}
-          </div>
-        ` : ''}
+      
+      <div class="receipt-divider"></div>
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+        <span>តម្លៃសរុប (Subtotal):</span>
+        <span>${window.POS_HELPERS.formatUSD(tx.subtotal)}</span>
       </div>
-
-      <div style="text-align:center; margin-top:16px; font-size:9px; border-top:1px dashed #000; padding-top:8px;">
-        <p style="margin:0;">${window.POS_TRANSLATIONS[state.lang].thankYou}</p>
-        <p style="margin:4px 0 0 0; font-size:8px; color:#555; font-weight:500;">
+      ${discountVal > 0 ? `
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+          <span>បញ្ចុះតម្លៃ (Discount):</span>
+          <span>-${window.POS_HELPERS.formatUSD(discountVal)}</span>
+        </div>
+      ` : ''}
+      ${(tx.shippingFee > 0 || tx.shippingCarrier) ? `
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+          <span>ថ្លៃដឹក (Shipping)${tx.shippingCarrier ? ` [${tx.shippingCarrier}]` : ''}:</span>
+          <span>${window.POS_HELPERS.formatUSD(tx.shippingFee || 0)}</span>
+        </div>
+      ` : ''}
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
+        <span>ពន្ធ (Tax ${tx.taxRate}%):</span>
+        <span>${window.POS_HELPERS.formatUSD(tx.taxAmount)}</span>
+      </div>
+      
+      <div class="receipt-divider"></div>
+      <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:800; align-items:center;">
+        <span>តម្លៃត្រូវបង់ (Grand Total):</span>
+        <span style="color:var(--primary);">${window.POS_HELPERS.formatUSD(tx.total)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-top:2px;">
+        <span>ជាប្រាក់រៀល (Riel Amount):</span>
+        <span>${window.POS_HELPERS.formatKHR(tx.total)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; align-items:center;">
+        <span>ស្ថានភាព (Status):</span>
+        <strong style="color:${isDebt ? '#ef4444' : '#10b981'};">
+          ${tx.paymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : tx.paymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : 'ទូទាត់រួច (Paid)'}
+        </strong>
+      </div>
+      
+      <div class="receipt-divider" style="margin-top:8px;"></div>
+      <div style="text-align:center; font-size:9.5px; color:#555; font-style:italic; margin-top:4px; line-height: 1.4;">
+        <p style="margin:0;">សូមអរគុណសម្រាប់ការគាំទ្រ! Thank you!</p>
+        <p style="margin:4px 0 0 0; font-size:8px; color:#777; font-weight:500; font-style:normal;">
           ${window.POS_TRANSLATIONS[state.lang].developedBy}: NOUEN Dany • Support: (+855) 10 955 536
         </p>
-        <div style="margin-top:6px; display:inline-block; opacity:0.85;">
-          ${window.POS_HELPERS.generateBarcode(tx.invoiceNo)}
-          <span style="font-size:8px; display:block; margin-top:2px;">${tx.invoiceNo}</span>
+        <div style="margin-top:8px; display:inline-block; opacity:0.85;">
+          ${window.POS_HELPERS.generateBarcode(tx.invoiceNo || tx.id)}
+          <span style="font-size:8px; display:block; margin-top:2px; font-family:monospace;">${tx.invoiceNo || tx.id}</span>
         </div>
       </div>
     `;
@@ -14210,6 +14232,9 @@ CREATE TABLE sale_items (
 
     listContainer.innerHTML = '';
     const notifications = [];
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const todayMMDD = todayStr.substring(5, 10); // MM-DD
 
     // Helper for Facebook-style Time Ago
     function timeAgo(dateString) {
@@ -14238,7 +14263,72 @@ CREATE TABLE sale_items (
       }
     }
 
-    // 1. Add order notifications from Firestore
+    // 1. Check birthdays (on-the-fly)
+    state.customers.forEach(c => {
+      if (c.birthday) {
+        const cMMDD = c.birthday.substring(5, 10);
+        if (cMMDD === todayMMDD) {
+          notifications.push({
+            id: 'bday-' + c.id,
+            type: 'birthday',
+            title: state.lang === 'km' ? `🎂 ថ្ងៃកំណើត៖ ${c.name}` : `🎂 Birthday: ${c.name}`,
+            desc: state.lang === 'km' ? `ថ្ងៃនេះជាថ្ងៃកំណើតរបស់គាត់! ផ្ញើសារជូនពរ។` : `Today is their birthday! Send them wishes.`,
+            customerId: c.id,
+            date: new Date().toISOString(), // top priority
+            icon: '🎉',
+            isRead: true
+          });
+        }
+      }
+    });
+
+    // 2. Check follow-ups (on-the-fly)
+    state.followups.forEach(f => {
+      if (f.schedules) {
+        f.schedules.forEach(sch => {
+          if (sch.status !== 'pending') return;
+
+          const d = new Date(sch.date);
+          const dStr = sch.date.split('T')[0];
+
+          const isToday = dStr === todayStr;
+          const isOverdue = d < today && !isToday;
+
+          const dayLabel = window.POS_TRANSLATIONS[state.lang]['day' + sch.day] || `Day ${sch.day} Contact`;
+
+          if (isToday) {
+            notifications.push({
+              id: `follow-${f.id}-${sch.day}`,
+              type: 'due_today',
+              title: `📅 Follow-up Due: ${f.customerName}`,
+              desc: `${dayLabel} is due today (Staff: ${f.salesStaffName || 'System'})`,
+              customerId: f.customerId,
+              followupId: f.id,
+              day: sch.day,
+              date: sch.date,
+              icon: '⏳',
+              isRead: true
+            });
+          } else if (isOverdue) {
+            const diffDays = Math.ceil((today - d) / (1000 * 60 * 60 * 24));
+            notifications.push({
+              id: `follow-${f.id}-${sch.day}`,
+              type: 'overdue',
+              title: `🚨 OVERDUE: ${f.customerName}`,
+              desc: `${dayLabel} was missed by ${diffDays} days! (Staff: ${f.salesStaffName || 'System'})`,
+              customerId: f.customerId,
+              followupId: f.id,
+              day: sch.day,
+              date: sch.date,
+              icon: '⚠️',
+              isRead: true
+            });
+          }
+        });
+      }
+    });
+
+    // 3. Add order notifications from Firestore
     const dbNotis = (state.notifications || []).map(n => {
       let avatarUrl = '';
       
