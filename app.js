@@ -3053,7 +3053,7 @@
         <h4 title="${state.lang === 'km' ? p.nameKh : p.nameEn}">${state.lang === 'km' ? p.nameKh : p.nameEn}</h4>
         <div class="product-card-footer">
           <span class="product-price">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span>
-          <span class="product-stock-text">Qty: <strong style="${isOutOfStock ? 'color: var(--danger);' : ''}">${branchQty}</strong></span>
+          <span class="product-stock-badge ${isOutOfStock ? 'out-of-stock' : ''}">Qty: <strong>${branchQty}</strong></span>
         </div>
       `;
 
