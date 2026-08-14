@@ -14267,11 +14267,11 @@ CREATE TABLE sale_items (
       let avatarUrl = '';
       
       // Try to find cashier photo from linked transaction staff
-      const tx = state.transactions.find(t => t.id === n.linkId || t.invoiceNo === n.linkId);
+      const tx = (state.transactions || []).find(t => t.id === n.linkId || t.invoiceNo === n.linkId);
       if (tx && tx.staffId) {
-        const staffObj = state.staff.find(s => s.id === tx.staffId || s.employeeId === tx.staffId);
+        const staffObj = (state.staff || []).find(s => s.id === tx.staffId || s.employeeId === tx.staffId);
         const empId = staffObj ? (staffObj.employeeId || staffObj.id) : tx.staffId;
-        const emp = state.employees.find(e => e.id === empId);
+        const emp = (state.employees || []).find(e => e.id === empId);
         if (emp && emp.photoBase64) {
           avatarUrl = emp.photoBase64;
         }
@@ -14315,7 +14315,7 @@ CREATE TABLE sale_items (
         if (n.avatarUrl) {
           iconHtml = `<img src="${n.avatarUrl}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border: 1.5px solid rgba(255,255,255,0.15);">`;
         } else {
-          const isTelegram = n.desc && n.desc.includes('Telegram Store');
+          const isTelegram = (n.title && n.title.includes('Telegram')) || (n.desc && n.desc.includes('Telegram'));
           const bg = isTelegram ? 'rgba(0,136,204,0.15)' : 'rgba(99,102,241,0.15)';
           const textEmoji = isTelegram ? '🤖' : n.icon;
           iconHtml = `<div class="noti-item-icon" style="font-size:18px; width:36px; height:36px; border-radius:50%; background:${bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${textEmoji}</div>`;
