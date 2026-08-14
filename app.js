@@ -1192,7 +1192,6 @@
     });
     safeSetItem('abc_followups', JSON.stringify(state.followups));
     safeSetItem('abc_customers', JSON.stringify(state.customers));
-    try { cleanupOldSelfies(); } catch(e) {}
   }
 
   function repairDuplicateCustomerIds() {
@@ -9504,6 +9503,10 @@
           let queryRef = dbInstance.collection(colName);
           if (colName === 'notifications') {
             queryRef = queryRef.orderBy('date', 'desc').limit(50);
+          } else if (colName === 'stock_logs') {
+            queryRef = queryRef.orderBy('date', 'desc').limit(150);
+          } else if (colName === 'attendance') {
+            queryRef = queryRef.orderBy('date', 'desc').limit(150);
           }
           queryRef.onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
@@ -9519,18 +9522,6 @@
               if (idKey && !data[idKey]) {
                 data[idKey] = doc.id;
               }
-              
-              // Filter out and delete legacy negative customer debt payment entries from Firebase
-              if (colName === 'expenses' && 
-                  data.amount < 0 && 
-                  (data.category === 'otherExpenses' || data.category === 'other') && 
-                  (data.description && data.description.includes('Customer debt payment'))) {
-                dbInstance.collection('expenses').doc(doc.id).delete()
-                  .then(() => console.log(`Successfully deleted legacy negative expense doc: ${doc.id}`))
-                  .catch(e => console.error("Error deleting legacy negative expense from Firebase:", e));
-                return; // Skip adding to local list
-              }
-
               list.push(data);
             });
 
@@ -9601,7 +9592,7 @@
         setupListener('payment_logs', 'paymentLogs', 'id', [renderFinance, renderCurrentView]);
         setupListener('followups', 'followups', 'id', [renderFollowups, renderCurrentView]);
         setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
-        setupListener('attendance', 'attendance', 'id', [cleanupOldSelfies, renderAttendanceLogs, renderHRDashboard]);
+        setupListener('attendance', 'attendance', 'id', [renderAttendanceLogs, renderHRDashboard]);
         setupListener('leave_requests', 'leaveRequests', 'id', [renderLeaveRequests, renderHRDashboard]);
         setupListener('companies', 'companies', 'id', [renderHROrg, populateEmployeeFormDropdowns]);
         setupListener('departments', 'departments', 'id', [renderHROrg]);
