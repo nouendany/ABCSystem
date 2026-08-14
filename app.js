@@ -5168,28 +5168,40 @@
   // 6. CRM AUTO FOLLOW-UPS
   // 6. CRM AUTO FOLLOW-UPS
   function renderFollowups() {
-    const areaToday = document.getElementById('k-cards-today');
-    const areaPending = document.getElementById('k-cards-pending');
-    const areaCompleted = document.getElementById('k-cards-completed');
+    const tableBody = document.getElementById('followup-table-body');
+    if (!tableBody) return;
 
-    if (!areaToday || !areaPending || !areaCompleted) return;
+    tableBody.innerHTML = '';
 
-    areaToday.innerHTML = '';
-    areaPending.innerHTML = '';
-    areaCompleted.innerHTML = '';
+    // Default tab state
+    if (!state.activeFollowupTab) {
+      state.activeFollowupTab = 'today';
+    }
+
+    // Set up active tab button style
+    ['today', 'pending', 'completed'].forEach(t => {
+      const btn = document.getElementById(`f-tab-${t}`);
+      if (btn) {
+        if (t === state.activeFollowupTab) {
+          btn.style.background = 'var(--primary)';
+          btn.style.color = '#ffffff';
+          btn.style.borderColor = 'var(--primary)';
+        } else {
+          btn.style.background = 'var(--input-bg)';
+          btn.style.color = 'var(--text-secondary)';
+          btn.style.borderColor = 'var(--border-color)';
+        }
+      }
+    });
 
     let countToday = 0;
     let countPending = 0;
     let countCompleted = 0;
 
-    // Create Document Fragments for batch DOM insertion
-    const fragmentToday = document.createDocumentFragment();
-    const fragmentPending = document.createDocumentFragment();
-    const fragmentCompleted = document.createDocumentFragment();
-
+    const fragment = document.createDocumentFragment();
     const filterBranch = getActiveBranchFilter();
 
-    // Map lookups for high performance O(1) searches
+    // Map lookups for performance
     const txMap = new Map();
     state.transactions.forEach(t => txMap.set(t.id, t));
 
@@ -5208,7 +5220,6 @@
       state.employees.forEach(e => {
         if (e.id) empMap.set(e.id, e);
         if (e.fullName) empMap.set(e.fullName, e);
-        if (e.name) empMap.set(e.name, e);
       });
     }
 
@@ -5216,10 +5227,9 @@
     state.users.forEach(u => {
       if (u.id) userMap.set(u.id, u);
       if (u.name) userMap.set(u.name, u);
-      if (u.username) userMap.set(u.username, u);
     });
 
-    // Set up search and filter elements
+    // Populate search and filters
     const filterStaffSelect = document.getElementById('f-filter-staff');
     if (filterStaffSelect) {
       if (filterStaffSelect.options.length === 0 || filterStaffSelect.dataset.lang !== state.lang) {
@@ -5261,7 +5271,6 @@
         if (getUnifiedStaffId(f.salesStaffId) !== getUnifiedStaffId(filterStaffId)) return;
       }
 
-      // Robust Search
       const custObj = custMap.get(f.customerId);
       const phone = (custObj && custObj.phone && custObj.phone !== '-') ? custObj.phone : '';
       const phoneClean = phone.toLowerCase();
@@ -5283,40 +5292,35 @@
           const d = new Date(sch.date);
           const todayDate = new Date();
           const isToday = d.toDateString() === todayDate.toDateString() && sch.status === 'pending';
+          const isOverdue = d < todayDate && sch.status === 'pending';
 
-          // Optimization: Skip DOM construction for items beyond column limit to save CPU/Memory
+          let tabCategory = '';
           if (sch.status === 'completed') {
-            if (countCompleted >= 50) {
-              countCompleted++;
-              return;
-            }
-          } else if (isToday || d < todayDate) {
-            if (countToday >= 100) {
-              countToday++;
-              return;
-            }
+            countCompleted++;
+            tabCategory = 'completed';
+          } else if (isToday || isOverdue) {
+            countToday++;
+            tabCategory = 'today';
           } else {
-            if (countPending >= 100) {
-              countPending++;
-              return;
-            }
+            countPending++;
+            tabCategory = 'pending';
           }
+
+          // Render only matching tab to screen to prevent performance bottlenecks
+          if (tabCategory !== state.activeFollowupTab) return;
 
           const source = custObj ? custObj.source : 'Walk-In';
-          
-          let sourceBadge = '🚶 Walk-In';
+          let sourceText = '🚶 Walk-In';
           const cleanSrc = source.toLowerCase();
           if (cleanSrc.includes('facebook') || cleanSrc.includes('fb')) {
-            sourceBadge = '📲 Facebook';
+            sourceText = '📲 Facebook';
           } else if (cleanSrc.includes('telegram') || cleanSrc.includes('tg')) {
-            sourceBadge = '💬 Telegram';
+            sourceText = '💬 Telegram';
           } else if (cleanSrc.includes('website')) {
-            sourceBadge = '🌐 Website';
-          } else if (cleanSrc.includes('referral')) {
-            sourceBadge = '🤝 Referral';
+            sourceText = '🌐 Website';
           }
 
-          // Facebook URL Helper
+          // Facebook link helper
           const getFacebookUrl = (link) => {
             if (!link) return '';
             const trimmed = link.trim();
@@ -5327,49 +5331,10 @@
             return 'https://facebook.com/' + trimmed;
           };
 
-          const card = document.createElement('div');
-          card.className = `kanban-card card-${sch.status} day-${sch.day}`;
-          
-          // Calculate status badge based on date difference
-          const dStart = new Date(sch.date);
-          dStart.setHours(0,0,0,0);
-          const todayStart = new Date();
-          todayStart.setHours(0,0,0,0);
-          const diffTime = dStart.getTime() - todayStart.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          let statusBadgeHtml = '';
-          if (sch.status === 'completed') {
-            statusBadgeHtml = `<span class="status-badge status-completed" style="font-size: 8.5px; padding: 1px 4px;">${state.lang === 'km' ? 'បានបញ្ចប់' : 'COMPLETED'}</span>`;
-          } else if (diffDays === 0) {
-            statusBadgeHtml = `<span class="status-badge status-today" style="font-size: 8.5px; padding: 1px 4px;">${state.lang === 'km' ? 'ថ្ងៃនេះ' : 'TODAY'}</span>`;
-          } else if (diffDays < 0) {
-            const overdueDays = Math.abs(diffDays);
-            statusBadgeHtml = `<span class="status-badge status-overdue" style="font-size: 8.5px; padding: 1px 4px;">${state.lang === 'km' ? overdueDays + ' ថ្ងៃមុន' : overdueDays + 'D AGO'}</span>`;
-          } else {
-            statusBadgeHtml = `<span class="status-badge status-future" style="font-size: 8.5px; padding: 1px 4px;">${state.lang === 'km' ? 'ក្នុង ' + diffDays + ' ថ្ងៃ' : 'In ' + diffDays + 'd'}</span>`;
-          }
-
           const fbLink = custObj && custObj.facebookLink ? custObj.facebookLink.trim() : '';
-          
-          let contactInfoHtml = '';
-          const phoneText = phone ? phone : '';
-          if (phoneText || fbLink) {
-            const fbUrl = getFacebookUrl(fbLink);
-            contactInfoHtml = `
-              <div class="cust-contact-line" style="font-size: 11px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 1px;">
-                ${phoneText ? `<span style="font-weight: 700; color: var(--primary);">📞 ${phoneText}</span>` : ''}
-                ${(phoneText && fbLink) ? `<span style="color: var(--text-muted); opacity: 0.5;">|</span>` : ''}
-                ${fbLink ? `
-                  <a href="${fbUrl}" target="_blank" class="fb-link" style="display: inline-flex; align-items: center; gap: 2px; font-weight: 600;" onclick="event.stopPropagation();">
-                    📲 ${state.lang === 'km' ? 'ឆាត' : 'Chat'}
-                  </a>
-                ` : ''}
-              </div>
-            `;
-          }
+          const fbUrl = getFacebookUrl(fbLink);
 
-          // Facebook Page info & Sales Staff Info
+          // Sales Staff Info
           let staffMember = staffMap.get(f.salesStaffId) || staffMap.get(f.salesStaffName);
           if (!staffMember) {
             const emp = empMap.get(f.salesStaffId) || empMap.get(f.salesStaffName);
@@ -5378,147 +5343,61 @@
             }
           }
           const staffUser = userMap.get(f.salesStaffName) || userMap.get(f.salesStaffId);
-          const pageNameVal = staffMember && staffMember.fbPage ? staffMember.fbPage : (staffUser ? (staffUser.pageName || "Direct Sales") : (tx && tx.pageName ? tx.pageName : (custObj && custObj.source ? custObj.source : 'Walk-In')));
+          const pageNameVal = staffMember && staffMember.fbPage ? staffMember.fbPage : (staffUser ? (staffUser.pageName || "Direct Sales") : (tx && tx.pageName ? tx.pageName : 'Walk-In'));
           const staffNameVal = f.salesStaffName || 'System';
 
-          const metadataLineHtml = `
-            <div class="cust-metadata-line" style="font-size: 10.5px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 2px 6px; margin-top: 2px; line-height: 1.2;">
-              <span>👤 <strong>${state.lang === 'km' ? 'លក់ដោយ' : 'Staff'}:</strong> ${staffNameVal}</span>
-              <span style="color: var(--text-muted); opacity: 0.3;">|</span>
-              <span>📄 <strong>${state.lang === 'km' ? 'ផេក' : 'Page'}:</strong> ${pageNameVal}</span>
-            </div>
-          `;
+          const dayLabel = window.POS_TRANSLATIONS[state.lang]['day' + sch.day] || `Day ${sch.day}`;
 
-          // Get exact products purchased as pill badges
-          let productsHtml = '';
-          let pillsHtml = '';
-
-          if (tx && tx.items && tx.items.length > 0) {
-            pillsHtml = tx.items.map(item => {
-              const pName = (state.lang === 'km' && item.nameKh) ? item.nameKh : (item.nameEn || item.sku);
-              return `
-                <span class="prod-pill">
-                  ${pName} <span class="prod-qty">x${item.qty}</span>
-                </span>
-              `;
-            }).join('');
-          } else if (custObj && custObj.orders && custObj.orders.length > 0) {
-            const lastOrder = custObj.orders[custObj.orders.length - 1];
-            if (lastOrder.product) {
-              pillsHtml = lastOrder.product.split(', ').map(pStr => {
-                const parts = pStr.split(/\s*x\s*(\d+)/i);
-                if (parts.length >= 2) {
-                  return `
-                    <span class="prod-pill">
-                      ${parts[0]} <span class="prod-qty">x${parts[1]}</span>
-                    </span>
-                  `;
-                }
-                return `<span class="prod-pill">${pStr}</span>`;
-              }).join('');
-            }
-          }
-
-          if (pillsHtml) {
-            productsHtml = `
-              <div class="card-products-container">
-                ${pillsHtml}
-              </div>
-            `;
-          }
-
-          // Avatar Initials
-          const nameParts = f.customerName ? f.customerName.trim().split(/\s+/) : [];
-          let initials = '👤';
-          if (nameParts.length > 0) {
-            if (nameParts.length >= 2) {
-              initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
-            } else {
-              initials = nameParts[0].slice(0, 2).toUpperCase();
-            }
-          }
-
-          const initialsHtml = `
-            <div class="cust-avatar" style="width: 26px; height: 26px; font-size: 10px; box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);">
-              ${initials}
-            </div>
-          `;
-
-          const dayLabel = window.POS_TRANSLATIONS[state.lang]['day' + sch.day] || `Day ${sch.day} Contact`;
-
-          card.innerHTML = `
-            <div class="card-header" style="margin-bottom: 4px;">
-              <span class="day-badge badge-${sch.day}" style="font-size: 9px; padding: 2px 4px;">${dayLabel}</span>
-              <div style="display: flex; gap: 4px; align-items: center;">
-                ${statusBadgeHtml}
-                <span class="source-badge" style="font-size: 9px; padding: 1px 4px;">${sourceBadge}</span>
-              </div>
-            </div>
-            
-            <div class="card-profile-section" style="gap: 8px; margin-top: 2px;">
-              ${initialsHtml}
-              <div class="cust-info-block">
-                <h4 class="cust-name" style="font-size: 13.5px; font-weight: 750; color: var(--text-primary); margin: 0;">${f.customerName}</h4>
-                ${contactInfoHtml}
-              </div>
-            </div>
-            
-            ${metadataLineHtml}
-            
-            <div class="invoice-info" style="margin-left: 0; font-size: 10px; display: flex; justify-content: space-between; margin-top: 2px; color: var(--text-muted);">
-              <span>Invoice: <strong>${tx ? tx.invoiceNo : (f.saleId || 'MANUAL')}</strong></span>
-              <span>Due: <strong>${window.POS_HELPERS.formatDate(sch.date, state.lang).split(' ')[0]}</strong></span>
-            </div>
-            
-            ${productsHtml}
-            
-            ${sch.notes ? `<div class="card-notes" style="margin-left: 0; padding: 4px 6px; font-size: 10.5px; margin-top: 2px;">"${sch.notes}"</div>` : ''}
-            
-            <div class="card-actions" style="margin-top: 6px; padding-top: 6px; gap: 4px; display: flex; justify-content: flex-end;">
-              ${phone ? `
-                <a href="tel:${phone}" class="action-btn btn-card-call" title="${window.POS_TRANSLATIONS[state.lang].callNow || 'Call Now'}" onclick="event.stopPropagation();" style="width: 24px; height: 24px;">
-                  <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                </a>
-              ` : ''}
-              ${fbLink ? `
-                <a href="${getFacebookUrl(fbLink)}" target="_blank" class="action-btn btn-card-fb" title="Chat on Messenger" onclick="event.stopPropagation();" style="width: 24px; height: 24px; color: #3b82f6; background: rgba(59, 130, 246, 0.06); border-color: rgba(59, 130, 246, 0.15);">
-                  <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                </a>
-              ` : ''}
-              ${sch.status === 'pending' ? `
-                <button class="action-btn btn-card-complete" title="${window.POS_TRANSLATIONS[state.lang].quickComplete || 'Quick Complete'}" onclick="event.stopPropagation();" style="width: 24px; height: 24px;">
-                  <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border-color)';
+          tr.style.cursor = 'pointer';
+          tr.addEventListener('click', () => openFollowupDetailsModal(f.id, sch.day));
+          
+          tr.innerHTML = `
+            <td style="padding: 10px 8px; font-weight: 700; color: var(--text-primary);">${f.customerName}</td>
+            <td style="padding: 10px 8px;">
+              ${phone ? `<span style="font-weight:700; color:var(--primary);">📞 ${phone}</span>` : ''}
+              ${(phone && fbLink) ? `<span style="color:var(--text-muted); margin:0 4px;">|</span>` : ''}
+              ${fbLink ? `<a href="${fbUrl}" target="_blank" style="color:#1877f2; font-weight:700;" onclick="event.stopPropagation();">📲 Chat</a>` : ''}
+            </td>
+            <td style="padding: 10px 8px;">${staffNameVal}</td>
+            <td style="padding: 10px 8px; color: var(--text-secondary);">${pageNameVal}</td>
+            <td style="padding: 10px 8px;">
+              <span class="day-badge badge-${sch.day}" style="font-size: 10px; padding: 2px 8px; border-radius: 4px;">${dayLabel}</span>
+            </td>
+            <td style="padding: 10px 8px;">
+              <strong style="color: ${sch.status === 'completed' ? 'var(--success)' : isToday ? 'var(--danger)' : isOverdue ? 'var(--danger)' : 'var(--warning)'};">
+                ${window.POS_HELPERS.formatDate(sch.date, state.lang).split(' ')[0]}
+              </strong>
+            </td>
+            <td style="padding: 10px 8px; text-align: right;" onclick="event.stopPropagation();">
+              <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                ${phone ? `
+                  <a href="tel:${phone}" class="action-btn" title="Call Now" style="width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; background: rgba(24,119,242,0.06); border: 1px solid rgba(24,119,242,0.12); border-radius: 4px; color: var(--primary);">
+                    <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  </a>
+                ` : ''}
+                ${sch.status === 'pending' ? `
+                  <button class="action-btn btn-card-complete" title="Quick Complete" style="width: 26px; height: 26px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15); border-radius: 4px; color: var(--success); cursor: pointer;">
+                    <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </button>
+                ` : ''}
+                <button class="action-btn btn-card-details" title="Details" style="width: 26px; height: 26px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; color: var(--text-primary);">
+                  <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 </button>
-              ` : ''}
-              <button class="action-btn btn-card-details" title="${window.POS_TRANSLATIONS[state.lang].viewDetails || 'Details'}" onclick="event.stopPropagation();" style="width: 24px; height: 24px;">
-                <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-              </button>
-            </div>
+              </div>
+            </td>
           `;
 
-          card.addEventListener('click', () => openFollowupDetailsModal(f.id, sch.day));
-
-          const btnCall = card.querySelector('.btn-card-call');
-          const btnFb = card.querySelector('.btn-card-fb');
-          const btnComplete = card.querySelector('.btn-card-complete');
-          const btnDetails = card.querySelector('.btn-card-details');
-
-          if (btnCall) {
-            btnCall.addEventListener('click', (e) => {
-              e.stopPropagation();
-            });
-          }
-          if (btnFb) {
-            btnFb.addEventListener('click', (e) => {
-              e.stopPropagation();
-            });
-          }
+          const btnComplete = tr.querySelector('.btn-card-complete');
           if (btnComplete) {
             btnComplete.addEventListener('click', (e) => {
               e.stopPropagation();
               quickCompleteFollowup(f.id, sch.day);
             });
           }
+
+          const btnDetails = tr.querySelector('.btn-card-details');
           if (btnDetails) {
             btnDetails.addEventListener('click', (e) => {
               e.stopPropagation();
@@ -5526,62 +5405,49 @@
             });
           }
 
-          if (sch.status === 'completed') {
-            fragmentCompleted.appendChild(card);
-            countCompleted++;
-          } else if (isToday || d < todayDate) {
-            fragmentToday.appendChild(card);
-            countToday++;
-          } else {
-            fragmentPending.appendChild(card);
-            countPending++;
-          }
+          fragment.appendChild(tr);
         });
       }
     });
 
-    areaToday.appendChild(fragmentToday);
-    areaPending.appendChild(fragmentPending);
-    areaCompleted.appendChild(fragmentCompleted);
+    // Update Counts Badges
+    const badgeToday = document.getElementById('col-count-today');
+    if (badgeToday) badgeToday.innerText = countToday;
 
-    if (countToday > 100) {
-      const moreToday = document.createElement('div');
-      moreToday.style.cssText = 'padding:8px; text-align:center; font-size:11px; color:var(--text-muted); font-weight:600;';
-      moreToday.innerText = state.lang === 'km' ? `និងមាន ${countToday - 100} ទៀត...` : `and ${countToday - 100} more...`;
-      areaToday.appendChild(moreToday);
-    }
-    if (countPending > 100) {
-      const morePending = document.createElement('div');
-      morePending.style.cssText = 'padding:8px; text-align:center; font-size:11px; color:var(--text-muted); font-weight:600;';
-      morePending.innerText = state.lang === 'km' ? `និងមាន ${countPending - 100} ទៀត...` : `and ${countPending - 100} more...`;
-      areaPending.appendChild(morePending);
-    }
-    if (countCompleted > 50) {
-      const moreCompleted = document.createElement('div');
-      moreCompleted.style.cssText = 'padding:8px; text-align:center; font-size:11px; color:var(--text-muted); font-weight:600; border-top: 1px dashed rgba(255,255,255,0.05);';
-      moreCompleted.innerText = state.lang === 'km' ? `បង្ហាញតែសកម្មភាពបញ្ចប់ថ្មីៗចំនួន ៥០ (មានសរុប ${countCompleted})` : `Showing top 50 completed tasks (Total: ${countCompleted})`;
-      areaCompleted.appendChild(moreCompleted);
-    }
+    const badgePending = document.getElementById('col-count-pending');
+    if (badgePending) badgePending.innerText = countPending;
 
-    if (countToday === 0) {
-      areaToday.innerHTML = `<div class="kanban-empty-state"><span class="empty-icon">📭</span><p>${window.POS_TRANSLATIONS[state.lang].noTasks || 'No tasks in this column'}</p></div>`;
-    }
-    if (countPending === 0) {
-      areaPending.innerHTML = `<div class="kanban-empty-state"><span class="empty-icon">📅</span><p>${window.POS_TRANSLATIONS[state.lang].noTasks || 'No tasks in this column'}</p></div>`;
-    }
-    if (countCompleted === 0) {
-      areaCompleted.innerHTML = `<div class="kanban-empty-state"><span class="empty-icon">✅</span><p>${window.POS_TRANSLATIONS[state.lang].noTasks || 'No tasks in this column'}</p></div>`;
+    const badgeCompleted = document.getElementById('col-count-completed');
+    if (badgeCompleted) badgeCompleted.innerText = countCompleted;
+
+    if (fragment.children.length === 0) {
+      const emptyTr = document.createElement('tr');
+      emptyTr.innerHTML = `
+        <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-secondary);" data-translate="noData">
+          ${window.POS_TRANSLATIONS[state.lang].noData || 'No Data'}
+        </td>
+      `;
+      tableBody.appendChild(emptyTr);
+    } else {
+      tableBody.appendChild(fragment);
     }
 
-    // Update counters
-    document.getElementById('col-count-today').innerText = countToday;
-    document.getElementById('col-count-pending').innerText = countPending;
-    document.getElementById('col-count-completed').innerText = countCompleted;
-
-    document.getElementById('f-val-today').innerText = countToday;
-    document.getElementById('f-val-pending').innerText = countPending;
-    document.getElementById('f-val-completed').innerText = countCompleted;
+    // Keep top counters updated
+    const valToday = document.getElementById('f-val-today');
+    if (valToday) valToday.innerText = countToday;
+    
+    const valPending = document.getElementById('f-val-pending');
+    if (valPending) valPending.innerText = countPending;
+    
+    const valCompleted = document.getElementById('f-val-completed');
+    if (valCompleted) valCompleted.innerText = countCompleted;
   }
+
+  // Global tab select helper
+  window.changeFollowupTab = function(tabName) {
+    state.activeFollowupTab = tabName;
+    renderFollowups();
+  };
 
   function getLevelLabel(level) {
     if (level === 1) return state.lang === 'km' ? "Day 3 Contact (សួរការប្រើប្រាស់)" : "Day 3 Contact (Product Experience)";

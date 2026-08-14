@@ -1122,42 +1122,40 @@
           </div>
         </div>
 
-        <!-- Kanban Columns Board -->
-        <div class="followup-kanban-board">
-          
-          <!-- Column 1: Today Actions -->
-          <div class="kanban-col">
-            <div class="col-title" style="border-left-color: var(--danger);">
-              <h4 data-translate="todayFollowUps">Today's Follow-Ups</h4>
-              <span id="col-count-today" class="col-count-badge">0</span>
-            </div>
-            <div class="kanban-cards-area" id="k-cards-today">
-              <!-- JS Injected -->
-            </div>
+        <!-- Follow-Up Table Container -->
+        <div class="glass-card" style="padding: 16px;">
+          <!-- Status Tabs -->
+          <div class="followup-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            <button type="button" class="btn" id="f-tab-today" style="padding: 8px 18px; border-radius: 20px; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onclick="changeFollowupTab('today')">
+              Today's Actions (ថ្ងៃនេះ) <span id="col-count-today" class="badge" style="background:var(--danger); color:white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span>
+            </button>
+            <button type="button" class="btn" id="f-tab-pending" style="padding: 8px 18px; border-radius: 20px; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onclick="changeFollowupTab('pending')">
+              Upcoming / Pending (បន្ទាប់) <span id="col-count-pending" class="badge" style="background:var(--warning); color:white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span>
+            </button>
+            <button type="button" class="btn" id="f-tab-completed" style="padding: 8px 18px; border-radius: 20px; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onclick="changeFollowupTab('completed')">
+              Completed Log (បានបញ្ចប់) <span id="col-count-completed" class="badge" style="background:var(--success); color:white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px;">0</span>
+            </button>
           </div>
 
-          <!-- Column 2: Upcoming / Pending -->
-          <div class="kanban-col">
-            <div class="col-title" style="border-left-color: var(--warning);">
-              <h4 data-translate="pendingFollowUps">Pending Follow-Ups</h4>
-              <span id="col-count-pending" class="col-count-badge">0</span>
-            </div>
-            <div class="kanban-cards-area" id="k-cards-pending">
-              <!-- JS Injected -->
-            </div>
+          <!-- Table Wrapper -->
+          <div class="table-responsive" style="max-height: calc(100vh - 320px); overflow-y: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+              <thead>
+                <tr style="text-align: left; border-bottom: 2px solid var(--border-color); color: var(--text-secondary); background: rgba(0,0,0,0.05);">
+                  <th style="padding: 10px 8px;" data-translate="customer">Customer</th>
+                  <th style="padding: 10px 8px;" data-translate="phone">Phone / Contact</th>
+                  <th style="padding: 10px 8px;" data-translate="staff">Sales Rep</th>
+                  <th style="padding: 10px 8px;" data-translate="source">Source</th>
+                  <th style="padding: 10px 8px;" data-translate="step">Step</th>
+                  <th style="padding: 10px 8px;" data-translate="dueDate">Due Date</th>
+                  <th style="padding: 10px 8px; text-align: right;" data-translate="actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="followup-table-body">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
           </div>
-
-          <!-- Column 3: Completed Log -->
-          <div class="kanban-col">
-            <div class="col-title" style="border-left-color: var(--success);">
-              <h4 data-translate="completedFollowUps">Completed Follow-Ups</h4>
-              <span id="col-count-completed" class="col-count-badge">0</span>
-            </div>
-            <div class="kanban-cards-area" id="k-cards-completed">
-              <!-- JS Injected -->
-            </div>
-          </div>
-
         </div>
       </div>
 
