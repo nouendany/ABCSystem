@@ -1561,6 +1561,12 @@
     const name = state.currentUser.name || state.currentUser.username;
     nameEl.innerText = name;
     
+    // Set Header display name in branch pill
+    const headerUserDisplayName = document.getElementById('header-user-display-name');
+    if (headerUserDisplayName) {
+      headerUserDisplayName.innerText = name;
+    }
+    
     // Profile Picture logic for Sidebar & Header Top-Right
     let userPhoto = state.currentUser.photoBase64 || '';
     if (!userPhoto && state.employees) {
@@ -1614,6 +1620,29 @@
     branchEl.innerText = branchName;
     branchBannerEl.innerText = branchName;
 
+    // Update Dropdown Values
+    const dropdownUserName = document.getElementById('dropdown-user-name');
+    const dropdownUserRole = document.getElementById('dropdown-user-role');
+    const dropdownUserBranch = document.getElementById('dropdown-user-branch');
+    const dropdownImg = document.getElementById('dropdown-user-avatar-img');
+    const dropdownInitial = document.getElementById('dropdown-user-avatar-initial');
+
+    if (dropdownUserName) dropdownUserName.innerText = name;
+    if (dropdownUserRole) dropdownUserRole.innerText = window.POS_TRANSLATIONS[state.lang][roleKey] || roleKey;
+    if (dropdownUserBranch) dropdownUserBranch.innerText = branchName;
+
+    if (dropdownImg && dropdownInitial) {
+      if (userPhoto) {
+        dropdownImg.src = userPhoto;
+        dropdownImg.style.display = 'block';
+        dropdownInitial.style.display = 'none';
+      } else {
+        dropdownImg.style.display = 'none';
+        dropdownInitial.style.display = 'flex';
+        dropdownInitial.innerText = name.charAt(0).toUpperCase();
+      }
+    }
+
     const editMarqueeBtn = document.getElementById('btn-edit-marquee');
     if (editMarqueeBtn) {
       if (state.currentUser && state.currentUser.role === 'super_admin') {
@@ -1623,15 +1652,47 @@
       }
     }
 
-    // Set up click handler for the header profile avatar button to open settings
+    // Set up click handler for the header profile avatar button to toggle popover dropdown
     const btnHeaderProfile = document.getElementById('btn-header-profile');
-    if (btnHeaderProfile && !btnHeaderProfile.dataset.listenerBound) {
-      btnHeaderProfile.addEventListener('click', () => {
-        const settingsNavItem = document.getElementById('nav-item-settings');
-        if (settingsNavItem) {
-          settingsNavItem.click();
+    const fbProfileDropdown = document.getElementById('fb-profile-dropdown');
+    if (btnHeaderProfile && fbProfileDropdown && !btnHeaderProfile.dataset.listenerBound) {
+      btnHeaderProfile.addEventListener('click', (e) => {
+        const isVisible = fbProfileDropdown.style.display === 'block';
+        fbProfileDropdown.style.display = isVisible ? 'none' : 'block';
+        e.stopPropagation();
+      });
+
+      // Close popover if clicked outside
+      document.addEventListener('click', (e) => {
+        if (!btnHeaderProfile.contains(e.target)) {
+          fbProfileDropdown.style.display = 'none';
         }
       });
+
+      fbProfileDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      const btnDropdownSettings = document.getElementById('btn-dropdown-settings');
+      if (btnDropdownSettings) {
+        btnDropdownSettings.addEventListener('click', () => {
+          fbProfileDropdown.style.display = 'none';
+          const settingsNavItem = document.getElementById('nav-item-settings');
+          if (settingsNavItem) settingsNavItem.click();
+        });
+      }
+
+      const btnDropdownLogout = document.getElementById('btn-dropdown-logout');
+      if (btnDropdownLogout) {
+        btnDropdownLogout.addEventListener('click', () => {
+          fbProfileDropdown.style.display = 'none';
+          const logoutBtnReal = document.getElementById('btn-logout');
+          if (logoutBtnReal) {
+            logoutBtnReal.click();
+          }
+        });
+      }
+
       btnHeaderProfile.dataset.listenerBound = 'true';
     }
 
