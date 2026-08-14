@@ -1561,9 +1561,47 @@
     const name = state.currentUser.name || state.currentUser.username;
     nameEl.innerText = name;
     
-    const initialEl = document.getElementById('display-user-initial');
-    if (initialEl) {
-      initialEl.innerText = name.charAt(0).toUpperCase();
+    // Profile Picture logic for Sidebar & Header Top-Right
+    let userPhoto = state.currentUser.photoBase64 || '';
+    if (!userPhoto && state.employees) {
+      const matchedEmp = state.employees.find(e => {
+        const empName = (e.fullName || e.name || '').trim().toLowerCase();
+        const curName = name.trim().toLowerCase();
+        return empName === curName || e.id === state.currentUser.employeeId || e.id === state.currentUser.id;
+      });
+      if (matchedEmp) {
+        userPhoto = matchedEmp.photoBase64 || '';
+      }
+    }
+
+    const sidebarImg = document.getElementById('sidebar-user-avatar-img');
+    const sidebarInitial = document.getElementById('display-user-initial');
+    if (sidebarImg && sidebarInitial) {
+      if (userPhoto) {
+        sidebarImg.src = userPhoto;
+        sidebarImg.style.display = 'block';
+        sidebarInitial.style.display = 'none';
+      } else {
+        sidebarImg.style.display = 'none';
+        sidebarInitial.style.display = 'flex';
+        sidebarInitial.innerText = name.charAt(0).toUpperCase();
+      }
+    } else if (sidebarInitial) {
+      sidebarInitial.innerText = name.charAt(0).toUpperCase();
+    }
+
+    const headerImg = document.getElementById('header-user-avatar-img');
+    const headerInitial = document.getElementById('header-user-avatar-initial');
+    if (headerImg && headerInitial) {
+      if (userPhoto) {
+        headerImg.src = userPhoto;
+        headerImg.style.display = 'block';
+        headerInitial.style.display = 'none';
+      } else {
+        headerImg.style.display = 'none';
+        headerInitial.style.display = 'inline';
+        headerInitial.innerText = name.charAt(0).toUpperCase();
+      }
     }
     
     const roleKey = state.currentUser.role;
@@ -1583,6 +1621,18 @@
       } else {
         editMarqueeBtn.style.display = 'none';
       }
+    }
+
+    // Set up click handler for the header profile avatar button to open settings
+    const btnHeaderProfile = document.getElementById('btn-header-profile');
+    if (btnHeaderProfile && !btnHeaderProfile.dataset.listenerBound) {
+      btnHeaderProfile.addEventListener('click', () => {
+        const settingsNavItem = document.getElementById('nav-item-settings');
+        if (settingsNavItem) {
+          settingsNavItem.click();
+        }
+      });
+      btnHeaderProfile.dataset.listenerBound = 'true';
     }
 
     applyFeatureToggles();
@@ -2053,9 +2103,12 @@
   // Live ticking clock
   function setupClock() {
     const clockEl = document.getElementById('clock-display');
+    const clockSidebarEl = document.getElementById('clock-display-sidebar');
     const tick = () => {
       const d = new Date();
-      clockEl.innerText = d.toLocaleTimeString(state.lang === 'km' ? 'kh-KH' : 'en-US');
+      const timeStr = d.toLocaleTimeString(state.lang === 'km' ? 'kh-KH' : 'en-US');
+      if (clockEl) clockEl.innerText = timeStr;
+      if (clockSidebarEl) clockSidebarEl.innerText = timeStr;
     };
     setInterval(tick, 1000);
     tick();
