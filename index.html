@@ -128,7 +128,7 @@
   <!-- Chart.js CDN for rich visual analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=2.8.0_facebook_login">
+  <link rel="stylesheet" href="style.css?v=2.9.0_system_theme_sync">
 </head>
 <body class="dark-theme">
 
@@ -140,7 +140,7 @@
       
       <!-- Left Column: Business Growth Info -->
       <div class="login-info-panel">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
           <!-- App Logo -->
           <div style="width: 48px; height: 48px; border-radius: 12px; overflow: hidden; background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
             <img id="login-custom-logo" src="" style="display:none; width: 100%; height: 100%; object-fit: contain;">
@@ -151,12 +151,20 @@
             <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0; font-weight: 600;" data-translate="login">Enterprise Login</p>
           </div>
         </div>
+
+        <!-- Cloud Sync Status (Moved under the logo) -->
+        <div style="margin-bottom: 16px;">
+          <div id="login-sync-status" style="font-size: 10.5px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); font-weight: 600; color: var(--text-secondary); width: fit-content;">
+            <span id="login-sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow: 0 0 6px #f59e0b; transition: all 0.3s ease;"></span>
+            <span id="login-sync-status-txt" data-translate="connectingCloud">Connecting to Cloud...</span>
+          </div>
+        </div>
         
-        <h2 style="font-size: 20px; font-weight: 750; color: var(--text-primary); margin-top: 10px; margin-bottom: 12px; line-height: 1.35; letter-spacing: -0.2px;">
+        <h2 style="font-size: 20px; font-weight: 750; color: var(--text-primary); margin-top: 6px; margin-bottom: 12px; line-height: 1.35; letter-spacing: -0.2px;">
           គ្រប់គ្រងអាជីវកម្មរបស់អ្នកឱ្យរីកចម្រើនយ៉ាងឆាប់រហ័ស និងមានប្រសិទ្ធភាពខ្ពស់
         </h2>
         <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px;">
-          ABC System ជួយសម្រួលដល់ការគ្រប់គ្រងការលក់ POS, គ្រប់គ្រងស្តុកទំនិញ, តាមដានចំណូលចំណាយ, និងគ្រប់គ្រងធនធានមនុស្សយ៉ាងងាយស្រួល ជាមួយល្បឿនលឿនបំផុត។
+          ABC System ជួយសម្រួលដល់ការគ្រប់គ្រងការលក់ POS, គ្រប់គ្រងស្តុកទំនិញ, តាមដានចំណូលចំណាយ, និងគ្រប់គ្រងធនធានមនុស្សយ៉ាងងាយស្រួល ។
         </p>
 
         <!-- Dynamic Growth Vector Image -->
@@ -167,13 +175,7 @@
 
       <!-- Right Column: Login Card -->
       <div class="login-card-wrapper">
-        <div class="login-card">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div id="login-sync-status" style="font-size: 11px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); font-weight: 600;">
-              <span id="login-sync-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow: 0 0 6px #f59e0b; transition: all 0.3s ease;"></span>
-              <span id="login-sync-status-txt" data-translate="connectingCloud">Connecting to Cloud...</span>
-            </div>
-          </div>
+        <div class="login-card" style="padding-top: 40px; padding-bottom: 40px;">
           
           <form id="login-form">
             <div class="ios-input-group" style="margin-bottom: 16px;">
@@ -3902,7 +3904,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Core logic engine application file -->
-  <script src="app.js?v=2.8.0_facebook_login"></script>
+  <script src="app.js?v=2.9.0_system_theme_sync"></script>
 
   <!-- Floating Diagnostics Trigger Button -->
   <button id="btn-diagnostics-toggle" style="position:fixed; bottom:16px; right:16px; z-index:999990; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); transition:all 0.2s ease-in-out; outline:none;" title="Diagnostics (វិភាគប្រព័ន្ធ)">

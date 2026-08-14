@@ -76,7 +76,7 @@
   });
   const state = {
     lang: safeGetItem('abc_lang') || 'en',
-    theme: safeGetItem('abc_theme') || 'dark',
+    theme: safeGetItem('abc_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'),
     activeView: 'view-dashboard',
     activeSettingTab: 'company',
     activeReportTab: 'summaryClosingReport',
@@ -17235,6 +17235,20 @@ CREATE TABLE sale_items (
     populatePOSSelects();
     updateRoadmapVisibility();
     checkCRMNotifications();
+
+    // Listen for OS theme preference changes dynamically
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (safeGetItem('abc_theme') === null) {
+          state.theme = e.matches ? 'light' : 'dark';
+          document.body.className = state.theme === 'light' ? 'light-theme' : 'dark-theme';
+          const themeToggleBtn = document.getElementById('btn-theme-toggle');
+          if (themeToggleBtn) {
+            themeToggleBtn.innerText = state.theme === 'light' ? '☀ Light Mode' : '🌙 Dark Mode';
+          }
+        }
+      });
+    }
   });
 
 })();
