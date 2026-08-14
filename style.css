@@ -4241,6 +4241,7 @@ body.light-theme .timeline-feedback {
   z-index: 2500;
   display: none;
   overflow: hidden;
+  max-height: calc(100vh - 80px);
 }
 body.light-theme .crm-notifications-dropdown {
   background: #ffffff;
@@ -4248,7 +4249,8 @@ body.light-theme .crm-notifications-dropdown {
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 0 15px rgba(99, 102, 241, 0.05);
 }
 .crm-notifications-dropdown.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .noti-header {
@@ -4260,9 +4262,10 @@ body.light-theme .crm-notifications-dropdown {
   align-items: center;
   font-weight: 800;
   font-size: 13.5px;
+  flex-shrink: 0;
 }
 .noti-body {
-  max-height: 320px;
+  max-height: calc(100vh - 140px);
   overflow-y: auto;
 }
 .noti-item {
