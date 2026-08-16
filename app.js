@@ -17537,6 +17537,8 @@ CREATE TABLE sale_items (
         if (navItem) navItem.click();
       });
     }
+  }
+
   function reconcileVoidedTransactions() {
     let repaired = false;
     state.voidedTransactions.forEach(vt => {
