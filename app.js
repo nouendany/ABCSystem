@@ -17368,6 +17368,72 @@ CREATE TABLE sale_items (
     updateKpisVisibility();
   }
 
+  function setupLowStockDetailsModal() {
+    const btnAlert = document.getElementById('btn-alert-trigger');
+    const modal = document.getElementById('modal-low-stock-details');
+    const btnClose = document.getElementById('btn-close-low-stock-details');
+    const btnCloseFooter = document.getElementById('btn-close-low-stock-details-footer');
+    const btnGoToInventory = document.getElementById('btn-go-to-inventory');
+    const rowsContainer = document.getElementById('modal-low-stock-rows');
+
+    if (!btnAlert || !modal || !rowsContainer) return;
+
+    function openModal() {
+      // Find low stock products
+      const filterBranch = getActiveBranchFilter();
+      const lowProducts = state.products.filter(p => {
+        const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
+        return qtyVal <= p.minStock;
+      });
+
+      // Render rows
+      rowsContainer.innerHTML = '';
+      if (lowProducts.length === 0) {
+        rowsContainer.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 15px; color:var(--text-muted);">ไม่มีสินค้าខ្វះស្តុកទេ / No low stock products.</td></tr>`;
+      } else {
+        lowProducts.forEach(p => {
+          const qtyVal = filterBranch ? (p.warehouseStock[filterBranch] || 0) : p.stockQty;
+          const statusText = qtyVal <= 0 
+            ? `<span class="badge badge-danger">ដាច់ស្តុក / Out of Stock</span>`
+            : `<span class="badge badge-warning">ស្តុកទាប / Low Stock</span>`;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <strong>${state.lang === 'km' ? p.nameKh : p.nameEn}</strong><br>
+              <span style="font-size:10px; color:var(--text-muted); font-family:monospace;">${p.sku}</span>
+            </td>
+            <td style="text-align:center; font-weight:700; color:var(--danger);">${qtyVal}</td>
+            <td style="text-align:center; font-weight:600; color:var(--text-secondary);">${p.minStock}</td>
+            <td style="text-align:center;">${statusText}</td>
+          `;
+          rowsContainer.appendChild(tr);
+        });
+      }
+
+      modal.classList.add('active-modal');
+      playSound('click');
+    }
+
+    function closeModal() {
+      modal.classList.remove('active-modal');
+      playSound('click');
+    }
+
+    btnAlert.addEventListener('click', openModal);
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCloseFooter) btnCloseFooter.addEventListener('click', closeModal);
+
+    if (btnGoToInventory) {
+      btnGoToInventory.addEventListener('click', () => {
+        closeModal();
+        // Switch view to Inventory
+        const navItem = document.querySelector('.nav-item[data-view="view-inventory"]');
+        if (navItem) navItem.click();
+      });
+    }
+  }
+
   // ==================== END HRMS UPGRADE LOGIC ====================
 
   // Bind main DOM event
@@ -17394,6 +17460,7 @@ CREATE TABLE sale_items (
     setupStickyNotes();
     setupProfileDropdown();
     setupMarquee();
+    setupLowStockDetailsModal();
     
     const viewStaffDetailsBtn = document.getElementById('btn-view-staff-sales-details');
     if (viewStaffDetailsBtn) {
