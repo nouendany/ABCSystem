@@ -2573,7 +2573,10 @@
     });
 
     const badgeCount = document.getElementById('alert-badge-count');
-    badgeCount.innerText = lowProducts.length;
+    if (badgeCount) {
+      badgeCount.innerText = lowProducts.length;
+      badgeCount.style.display = lowProducts.length > 0 ? 'flex' : 'none';
+    }
 
     const banner = document.getElementById('low-stock-banner');
     const bannerItems = document.getElementById('low-stock-list-items');
@@ -16602,7 +16605,7 @@ CREATE TABLE sale_items (
     if (badge) {
       if (notes.length > 0) {
         badge.textContent = notes.length;
-        badge.style.display = 'block';
+        badge.style.display = 'flex';
       } else {
         badge.style.display = 'none';
       }
@@ -16685,7 +16688,7 @@ CREATE TABLE sale_items (
       if (badge) {
         if (notes.length > 0) {
           badge.textContent = notes.length;
-          badge.style.display = 'block';
+          badge.style.display = 'flex';
         } else {
           badge.style.display = 'none';
         }
@@ -16731,7 +16734,7 @@ CREATE TABLE sale_items (
       const notes = state.companySettings.stickyNotes || [];
       if (notes.length > 0) {
         badge.textContent = notes.length;
-        badge.style.display = 'block';
+        badge.style.display = 'flex';
       } else {
         badge.style.display = 'none';
       }

@@ -828,7 +828,7 @@ body.light-theme .header-action-btn:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px var(--bg-body), 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 2px var(--bg-card), 0 4px 8px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   font-family: inherit;
   line-height: 1;
