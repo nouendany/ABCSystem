@@ -10568,14 +10568,7 @@
           const file = e.target.files[0];
           if (!file) return;
 
-          if (file.size > 1.5 * 1024 * 1024) {
-            alert(state.lang === 'km' ? 'សូមជ្រើសរើសរូបភាពដែលមានទំហំតូចជាង 1.5MB' : 'Please select an image smaller than 1.5MB.');
-            return;
-          }
-
-          const reader = new FileReader();
-          reader.onload = function(evt) {
-            const base64 = evt.target.result;
+          compressProductImage(file, (base64) => {
             const previewImg = document.getElementById('u-photo-preview');
             const previewInitial = document.getElementById('u-photo-initial');
             const photoBase64Input = document.getElementById('u-photo-base64');
@@ -10585,8 +10578,7 @@
               previewImg.style.display = 'block';
               previewInitial.style.display = 'none';
             }
-          };
-          reader.readAsDataURL(file);
+          });
         });
       }
 
@@ -12579,19 +12571,10 @@ CREATE TABLE sale_items (
       empPhotoFile.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-          if (file.size > 1.5 * 1024 * 1024) {
-            alert(state.lang === 'km' 
-              ? 'ទំហំរូបថតត្រូវតែតូចជាង 1.5MB' 
-              : 'Photo size must be less than 1.5MB');
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = (evt) => {
-            const base64 = evt.target.result;
+          compressProductImage(file, (base64) => {
             if (empPhotoPreview) empPhotoPreview.src = base64;
             if (empPhotoBase64) empPhotoBase64.value = base64;
-          };
-          reader.readAsDataURL(file);
+          });
         }
       });
     }
