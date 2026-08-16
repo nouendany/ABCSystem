@@ -445,72 +445,8 @@
           </div>
         </div>
 
-        <!-- Toggle Financial Cards Bar -->
-        <div class="kpi-toggle-bar" style="display: flex; justify-content: flex-end; margin: 0 0 12px 0;">
-          <button class="btn btn-secondary btn-sm" id="btn-toggle-kpis" style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: var(--radius-md); cursor: pointer; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); transition: all 0.2s ease;">
-            <span id="kpis-toggle-icon">👁️</span> 
-            <span id="kpis-toggle-text" data-translate="hideFinancials">Hide Financial Cards</span>
-          </button>
-        </div>
-
         <!-- Metric KPI Cards Widget Row -->
-        <div class="kpi-grid dashboard-kpis" id="dashboard-kpis-grid">
-          <div class="kpi-card kpi-capital" style="border-left-color:var(--warning);">
-            <div class="kpi-details">
-              <h4 data-translate="startingCapital">Starting Capital</h4>
-              <div class="kpi-value" id="kpi-capital-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-capital-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">🏦</div>
-          </div>
-          <div class="kpi-card kpi-revenue" style="border-left-color:var(--primary);">
-            <div class="kpi-details">
-              <h4 data-translate="totalRevenue">Total Revenue</h4>
-              <div class="kpi-value" id="kpi-revenue-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-revenue-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">📈</div>
-          </div>
-          <div class="kpi-card kpi-deducted" style="border-left-color:#a855f7;">
-            <div class="kpi-details">
-              <h4 data-translate="actualDeductedCapital">Deducted Capital</h4>
-              <div class="kpi-value" id="kpi-deducted-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-deducted-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">📉</div>
-          </div>
-          <div class="kpi-card kpi-expense" style="border-left-color:var(--danger);">
-            <div class="kpi-details">
-              <h4 data-translate="totalExpenses">Total Expenses</h4>
-              <div class="kpi-value" id="kpi-expense-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-expense-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">💸</div>
-          </div>
-          <div class="kpi-card kpi-profit" style="border-left-color:#10b981;">
-            <div class="kpi-details">
-              <h4 data-translate="actualNetProfit">Actual Net Profit</h4>
-              <div class="kpi-value" id="kpi-profit-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-profit-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">💰</div>
-          </div>
-          <div class="kpi-card kpi-capital-balance" style="border-left-color:#06b6d4;">
-            <div class="kpi-details">
-              <h4 data-translate="currentCapitalBalance">Current Capital Balance</h4>
-              <div class="kpi-value" id="kpi-capital-balance-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-capital-balance-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">⚖️</div>
-          </div>
-          <div class="kpi-card kpi-actual-cash" style="border-left-color:#f59e0b;">
-            <div class="kpi-details">
-              <h4 data-translate="totalCashBalance">Total Cash Balance</h4>
-              <div class="kpi-value" id="kpi-cash-balance-val">$0.00</div>
-              <div class="kpi-subvalue" id="kpi-cash-balance-riel">0 ៛</div>
-            </div>
-            <div class="kpi-icon-wrapper">💵</div>
-          </div>
+        <div class="kpi-grid dashboard-kpis" id="dashboard-kpis-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
           <div class="kpi-card kpi-sales" style="border-left-color:var(--secondary);">
             <div class="kpi-details" style="width: 100%;">
               <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">

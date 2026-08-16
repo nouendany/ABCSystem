@@ -2266,19 +2266,36 @@
       deductedRielDash.innerText = window.POS_HELPERS.formatKHR(totalDeducted);
     }
 
-    document.getElementById('kpi-revenue-val').innerText = window.POS_HELPERS.formatUSD(totalRevenue);
-    document.getElementById('kpi-revenue-riel').innerText = window.POS_HELPERS.formatKHR(totalRevenue);
-    document.getElementById('kpi-expense-val').innerText = window.POS_HELPERS.formatUSD(totalExpenses);
-    document.getElementById('kpi-expense-riel').innerText = window.POS_HELPERS.formatKHR(totalExpenses);
-    document.getElementById('kpi-profit-val').innerText = window.POS_HELPERS.formatUSD(actualProfit);
-    document.getElementById('kpi-profit-riel').innerText = window.POS_HELPERS.formatKHR(actualProfit);
-    document.getElementById('kpi-profit-val').style.color = actualProfit < 0 ? 'var(--danger)' : '';
-    document.getElementById('kpi-sales-count').innerText = salesCount;
+    const revenueValDash = document.getElementById('kpi-revenue-val');
+    if (revenueValDash) revenueValDash.innerText = window.POS_HELPERS.formatUSD(totalRevenue);
+    const revenueRielDash = document.getElementById('kpi-revenue-riel');
+    if (revenueRielDash) revenueRielDash.innerText = window.POS_HELPERS.formatKHR(totalRevenue);
+
+    const expenseValDash = document.getElementById('kpi-expense-val');
+    if (expenseValDash) expenseValDash.innerText = window.POS_HELPERS.formatUSD(totalExpenses);
+    const expenseRielDash = document.getElementById('kpi-expense-riel');
+    if (expenseRielDash) expenseRielDash.innerText = window.POS_HELPERS.formatKHR(totalExpenses);
+
+    const profitValDash = document.getElementById('kpi-profit-val');
+    if (profitValDash) {
+      profitValDash.innerText = window.POS_HELPERS.formatUSD(actualProfit);
+      profitValDash.style.color = actualProfit < 0 ? 'var(--danger)' : '';
+    }
+    const profitRielDash = document.getElementById('kpi-profit-riel');
+    if (profitRielDash) profitRielDash.innerText = window.POS_HELPERS.formatKHR(actualProfit);
+
+    const salesCountEl = document.getElementById('kpi-sales-count');
+    if (salesCountEl) salesCountEl.innerText = salesCount;
+
     const personalItemsCountEl = document.getElementById('kpi-personal-items-count');
     if (personalItemsCountEl) {
       personalItemsCountEl.innerText = totalItemsSold;
     }
-    document.getElementById('kpi-followups-badge').innerText = `${pendingFollows} Pending CRM Follow-ups`;
+
+    const followupsBadgeEl = document.getElementById('kpi-followups-badge');
+    if (followupsBadgeEl) {
+      followupsBadgeEl.innerText = `${pendingFollows} Pending CRM Follow-ups`;
+    }
     checkCRMNotifications();
 
     // 2. Render charts using Chart.js CDN (Checking availability)
@@ -17337,40 +17354,18 @@ CREATE TABLE sale_items (
     }
   }
 
-  let kpisVisible = localStorage.getItem('abc_kpis_visible') !== 'false';
+  let kpisVisible = true;
 
   function updateKpisVisibility() {
     const grid = document.getElementById('dashboard-kpis-grid');
-    const textSpan = document.getElementById('kpis-toggle-text');
-    const iconSpan = document.getElementById('kpis-toggle-icon');
-    
     if (grid) {
-      grid.style.display = kpisVisible ? 'grid' : 'none';
-    }
-    if (textSpan) {
-      const key = kpisVisible ? 'hideFinancials' : 'showFinancials';
-      textSpan.setAttribute('data-translate', key);
-      const val = window.POS_TRANSLATIONS[state.lang][key];
-      if (val) {
-        textSpan.textContent = val;
-      }
-    }
-    if (iconSpan) {
-      iconSpan.textContent = kpisVisible ? '👁️' : '🕶️';
+      grid.style.display = 'grid';
     }
   }
 
   function setupKpiVisibilityToggle() {
-    const btnToggleKpis = document.getElementById('btn-toggle-kpis');
-    if (btnToggleKpis) {
-      updateKpisVisibility();
-
-      btnToggleKpis.addEventListener('click', () => {
-        kpisVisible = !kpisVisible;
-        localStorage.setItem('abc_kpis_visible', kpisVisible);
-        updateKpisVisibility();
-      });
-    }
+    // Hidden toggle since financial cards are removed from dashboard
+    updateKpisVisibility();
   }
 
   // ==================== END HRMS UPGRADE LOGIC ====================
