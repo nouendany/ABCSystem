@@ -265,6 +265,10 @@
           <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
           <span data-translate="inventory">Products & Inventory</span>
         </li>
+        <li class="nav-item" data-view="view-branches">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          <span data-translate="branchManagement">Branch Management</span>
+        </li>
         <li class="nav-item" data-view="view-customers">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           <span data-translate="customers">Customer CRM</span>
@@ -816,9 +820,20 @@
         </div>
       </div>
 
-      <!-- VIEW 4: MULTI-BRANCH MANAGEMENT -->
-      <!-- VIEW 4: MULTI-BRANCH MANAGEMENT (Moved into Settings) -->
-      <div id="view-branches" class="view-panel" style="display:none;"></div>
+      <!-- VIEW 4: BRANCH MANAGEMENT (Displays Branch Stock Inventory Matrix only) -->
+      <div id="view-branches" class="view-panel">
+        <!-- Branch inventory stocks matrix -->
+        <div class="glass-card">
+          <div class="table-header">
+            <h3 data-translate="stockByBranch">Branch Inventory</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table" id="branch-inventory-matrix-table">
+              <!-- Dynamically rendered via JS -->
+            </table>
+          </div>
+        </div>
+      </div>
 
       <div id="view-customers" class="view-panel">
         <!-- CRM Sub-tabs -->

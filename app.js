@@ -4395,60 +4395,62 @@
 
   // 4. MULTI-BRANCH PANEL
   function renderBranches() {
+    // 1. Branches list (if element exists - usually in legacy/settings context)
+    const tbody = document.getElementById('branches-table-body');
+    if (tbody) {
+      tbody.innerHTML = '';
+      state.branches.forEach((b) => {
+        const statusBadge = b.status === 'active'
+          ? `<span class="badge badge-success" data-translate="active">${window.POS_TRANSLATIONS[state.lang].active}</span>`
+          : `<span class="badge badge-danger" data-translate="inactive">${window.POS_TRANSLATIONS[state.lang].inactive}</span>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong style="color:var(--secondary); font-family:monospace;">${b.code}</strong></td>
+          <td><strong>${state.lang === 'km' ? b.nameKh : b.name}</strong></td>
+          <td>${b.phone}</td>
+          <td>${b.manager}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <button class="btn btn-outline btn-sm btn-edit-b" data-id="${b.id}" style="padding:2px 6px;">✏️</button>
+            <button class="btn btn-danger btn-sm btn-del-b" data-id="${b.id}" style="padding:2px 6px;">🗑️</button>
+          </td>
+        `;
+
+        tr.querySelector('.btn-edit-b').addEventListener('click', () => openEditBranchModal(b.id));
+        tr.querySelector('.btn-del-b').addEventListener('click', () => deleteBranch(b.id));
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 2. Stock Matrix Grid (renders stock quantities per branch on main Branch Management sidebar view)
+    const matrix = document.getElementById('branch-inventory-matrix-table');
+    if (matrix) {
+      matrix.innerHTML = '';
+      let headHtml = '<tr><th>Product (SKU)</th>';
+      state.branches.forEach(b => {
+        headHtml += `<th class="branch-cell-header">${state.lang === 'km' ? b.nameKh : b.name}</th>`;
+      });
+      headHtml += '<th style="text-align:center;">Total Qty</th></tr>';
+
+      let bodyHtml = '';
+      state.products.forEach(p => {
+        bodyHtml += `<tr><td><strong>${state.lang === 'km' ? p.nameKh : p.nameEn}</strong><br><span style="font-size:9px;color:var(--text-muted); font-family:monospace;">${p.sku}</span></td>`;
+        state.branches.forEach(b => {
+          const qty = p.warehouseStock[b.id] || 0;
+          bodyHtml += `<td class="branch-stock-val" style="color:${qty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${qty}</td>`;
+        });
+        bodyHtml += `<td style="text-align:center; font-weight:800; color:var(--primary);">${p.stockQty}</td></tr>`;
+      });
+
+      matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody>`;
+    }
+
+    // 3. Sync Settings Branches Tab if currently active
     if (state.activeSettingTab === 'branches') {
       renderSettings();
-      return;
     }
-    const tbody = document.getElementById('branches-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    state.branches.forEach((b) => {
-      const statusBadge = b.status === 'active'
-        ? `<span class="badge badge-success" data-translate="active">${window.POS_TRANSLATIONS[state.lang].active}</span>`
-        : `<span class="badge badge-danger" data-translate="inactive">${window.POS_TRANSLATIONS[state.lang].inactive}</span>`;
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><strong style="color:var(--secondary); font-family:monospace;">${b.code}</strong></td>
-        <td><strong>${state.lang === 'km' ? b.nameKh : b.name}</strong></td>
-        <td>${b.phone}</td>
-        <td>${b.manager}</td>
-        <td>${statusBadge}</td>
-        <td>
-          <button class="btn btn-outline btn-sm btn-edit-b" data-id="${b.id}" style="padding:2px 6px;">✏️</button>
-          <button class="btn btn-danger btn-sm btn-del-b" data-id="${b.id}" style="padding:2px 6px;">🗑️</button>
-        </td>
-      `;
-
-      tr.querySelector('.btn-edit-b').addEventListener('click', () => openEditBranchModal(b.id));
-      tr.querySelector('.btn-del-b').addEventListener('click', () => deleteBranch(b.id));
-
-      tbody.appendChild(tr);
-    });
-
-    // 2. Stock Matrix Grid
-    const matrix = document.getElementById('branch-inventory-matrix-table');
-    if (!matrix) return;
-    matrix.innerHTML = '';
-
-    let headHtml = '<tr><th>Product (SKU)</th>';
-    state.branches.forEach(b => {
-      headHtml += `<th class="branch-cell-header">${state.lang === 'km' ? b.nameKh : b.name}</th>`;
-    });
-    headHtml += '<th style="text-align:center;">Total Qty</th></tr>';
-
-    let bodyHtml = '';
-    state.products.forEach(p => {
-      bodyHtml += `<tr><td><strong>${state.lang === 'km' ? p.nameKh : p.nameEn}</strong><br><span style="font-size:9px;color:var(--text-muted); font-family:monospace;">${p.sku}</span></td>`;
-      state.branches.forEach(b => {
-        const qty = p.warehouseStock[b.id] || 0;
-        bodyHtml += `<td class="branch-stock-val" style="color:${qty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${qty}</td>`;
-      });
-      bodyHtml += `<td style="text-align:center; font-weight:800; color:var(--primary);">${p.stockQty}</td></tr>`;
-    });
-
-    matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody>`;
   }
 
   function openEditBranchModal(id) {
