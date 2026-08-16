@@ -132,10 +132,21 @@
 </head>
 <body class="dark-theme">
 
+  <!-- ==================== SPLASH SCREEN OVERLAY ==================== -->
+  <div class="splash-overlay active-splash" id="splash-screen">
+    <div class="splash-logo-container">
+      <div class="splash-logo">
+        <img id="splash-custom-logo" src="" style="display:none; width: 75%; height: 75%; object-fit: contain;">
+        <span id="splash-default-logo">🚀</span>
+      </div>
+      <h2 id="splash-system-title" style="color: white; font-size: 24px; font-weight: 850; margin: 8px 0 0 0; letter-spacing: -0.5px;">ABC</h2>
+      <div class="splash-spinner" style="margin-top: 12px;"></div>
+    </div>
+  </div>
 
   <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
   <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
-  <div class="login-overlay active-login" id="login-screen">
+  <div class="login-overlay" id="login-screen">
     <div class="login-container">
       
       <!-- Left Column: Business Growth Info -->

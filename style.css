@@ -5444,4 +5444,65 @@ body.light-theme .glass-card:hover {
   display: block !important;
 }
 
+/* ==================== SPLASH SCREEN STYLES ==================== */
+.splash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #0b0f19;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  visibility: hidden;
+}
+.splash-overlay.active-splash {
+  opacity: 1;
+  visibility: visible;
+}
+.splash-logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.splash-logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 22px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(99,102,241,0.25);
+  animation: splashPulse 2s infinite ease-in-out;
+}
+.splash-logo img {
+  width: 75%;
+  height: 75%;
+  object-fit: contain;
+}
+.splash-logo span {
+  font-size: 44px;
+}
+.splash-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s infinite linear;
+}
+@keyframes splashPulse {
+  0% { transform: scale(1); box-shadow: 0 10px 30px rgba(99,102,241,0.25); }
+  50% { transform: scale(1.06); box-shadow: 0 16px 40px rgba(99,102,241,0.45); }
+  100% { transform: scale(1); box-shadow: 0 10px 30px rgba(99,102,241,0.25); }
+}
+
 

@@ -1083,16 +1083,46 @@
     document.body.className = state.theme === 'light' ? 'light-theme' : 'dark-theme';
     document.getElementById('btn-theme-toggle').innerText = state.theme === 'light' ? '☀ Light Mode' : '🌙 Dark Mode';
 
+    // Configure splash screen with cached logo and title
+    const cachedSettings = safeParse('abc_company_settings', {});
+    const splashCustomLogo = document.getElementById('splash-custom-logo');
+    const splashDefaultLogo = document.getElementById('splash-default-logo');
+    const splashSystemTitle = document.getElementById('splash-system-title');
+    if (cachedSettings) {
+      if (cachedSettings.companyLogo) {
+        if (splashCustomLogo) {
+          splashCustomLogo.src = cachedSettings.companyLogo;
+          splashCustomLogo.style.display = 'block';
+        }
+        if (splashDefaultLogo) splashDefaultLogo.style.display = 'none';
+      }
+      if (cachedSettings.companyName && splashSystemTitle) {
+        splashSystemTitle.innerText = cachedSettings.companyName;
+      }
+    }
+
     // Active session
     const savedUser = safeGetItem('abc_current_user');
+    const splash = document.getElementById('splash-screen');
+    const loginScreen = document.getElementById('login-screen');
+
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
       state.currentUser = parsedUser;
-      document.getElementById('login-screen').classList.remove('active-login');
+      if (loginScreen) loginScreen.classList.remove('active-login');
       updateUserCardHeader();
+
+      // Fade out splash screen after 600ms
+      setTimeout(() => {
+        if (splash) splash.classList.remove('active-splash');
+      }, 600);
     } else {
       state.currentUser = null;
-      document.getElementById('login-screen').classList.add('active-login');
+      // Show login screen, and fade out splash screen after 600ms
+      setTimeout(() => {
+        if (loginScreen) loginScreen.classList.add('active-login');
+        if (splash) splash.classList.remove('active-splash');
+      }, 600);
     }
 
     // Default dates
