@@ -178,7 +178,9 @@
     testimonials: [],
     accounts: [],
     accountTransactions: [],
-    notifications: []
+    notifications: [],
+    closingLogs: [],
+    auditLogs: []
   };
 
   let firebaseActive = false;
@@ -1358,6 +1360,8 @@
         syncChanges('testimonials', state.testimonials, lastSyncedState.testimonials, 'id');
         syncChanges('voided_transactions', state.voidedTransactions, lastSyncedState.voidedTransactions, 'id');
         syncChanges('notifications', state.notifications, lastSyncedState.notifications, 'id');
+        syncChanges('closing_logs', state.closingLogs, lastSyncedState.closingLogs, 'id');
+        syncChanges('audit_logs', state.auditLogs, lastSyncedState.auditLogs, 'id');
 
         db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
         db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error("Firebase commission rules save error:", e));
@@ -1387,7 +1391,9 @@
           voidedTransactions: JSON.parse(JSON.stringify(state.voidedTransactions)),
           testimonials: JSON.parse(JSON.stringify(state.testimonials)),
           accounts: JSON.parse(JSON.stringify(state.accounts)),
-          accountTransactions: JSON.parse(JSON.stringify(state.accountTransactions))
+          accountTransactions: JSON.parse(JSON.stringify(state.accountTransactions)),
+          closingLogs: JSON.parse(JSON.stringify(state.closingLogs)),
+          auditLogs: JSON.parse(JSON.stringify(state.auditLogs))
         };
       } catch (err) {
         console.error("Cloud sync diff error:", err);
@@ -1494,6 +1500,11 @@
     };
     state.auditLogs.push(newLog);
     safeSetItem('abc_audit_logs', JSON.stringify(state.auditLogs));
+
+    if (state.firebaseDb) {
+      state.firebaseDb.collection('audit_logs').doc(newLog.id).set(newLog)
+        .catch(e => console.error("Firebase audit write error:", e));
+    }
   }
 
   // Permission Verification Helper
@@ -9542,6 +9553,10 @@
             queryRef = queryRef.orderBy('date', 'desc').limit(150);
           } else if (colName === 'attendance') {
             queryRef = queryRef.orderBy('date', 'desc').limit(150);
+          } else if (colName === 'audit_logs') {
+            queryRef = queryRef.orderBy('timestamp', 'desc').limit(200);
+          } else if (colName === 'closing_logs') {
+            queryRef = queryRef.orderBy('closedDate', 'desc').limit(500);
           }
           queryRef.onSnapshot(snapshot => {
             if (snapshot.metadata.hasPendingWrites) return;
@@ -9638,6 +9653,8 @@
         setupListener('testimonials', 'testimonials', 'id', [renderTestimonials, renderCurrentView]);
         setupListener('voided_transactions', 'voidedTransactions', 'id', []);
         setupListener('notifications', 'notifications', 'id', [checkCRMNotifications]);
+        setupListener('closing_logs', 'closingLogs', 'id', [renderSalesClosingView]);
+        setupListener('audit_logs', 'auditLogs', 'id', []);
 
         // Company settings listener
         let isFirstSettingsSnapshot = true;
