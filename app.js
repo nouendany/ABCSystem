@@ -1087,16 +1087,9 @@
     const savedUser = safeGetItem('abc_current_user');
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
-      const actualUserObj = state.users.find(u => u.id === parsedUser.id);
-      if (actualUserObj && actualUserObj.status !== 'suspended') {
-        state.currentUser = actualUserObj; // Use fresh database copy
-        document.getElementById('login-screen').classList.remove('active-login');
-        updateUserCardHeader();
-      } else {
-        state.currentUser = null;
-        safeRemoveItem('abc_current_user');
-        document.getElementById('login-screen').classList.add('active-login');
-      }
+      state.currentUser = parsedUser;
+      document.getElementById('login-screen').classList.remove('active-login');
+      updateUserCardHeader();
     } else {
       state.currentUser = null;
       document.getElementById('login-screen').classList.add('active-login');
@@ -9594,6 +9587,22 @@
                 });
               } else {
                 adminDoc.status = 'active';
+              }
+
+              // Re-validate and sync the currentUser from Firestore list
+              if (state.currentUser) {
+                const freshUserObj = list.find(u => u.id === state.currentUser.id);
+                if (freshUserObj) {
+                  if (freshUserObj.status === 'suspended') {
+                    performSystemLogout();
+                  } else {
+                    state.currentUser = freshUserObj;
+                    safeSetItem('abc_current_user', JSON.stringify(freshUserObj));
+                    updateUserCardHeader();
+                  }
+                } else {
+                  performSystemLogout();
+                }
               }
             }
 
