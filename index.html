@@ -128,7 +128,7 @@
   <!-- Chart.js CDN for rich visual analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=3.0.1_kantumruy_pro_everywhere">
+  <link rel="stylesheet" href="style.css?v=3.0.0_debt_cod_checkout">
 </head>
 <body class="dark-theme">
 
@@ -264,10 +264,6 @@
         <li class="nav-item" data-view="view-inventory">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
           <span data-translate="inventory">Products & Inventory</span>
-        </li>
-        <li class="nav-item" data-view="view-branches">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-          <span data-translate="branches">Multi-Branch Management</span>
         </li>
         <li class="nav-item" data-view="view-customers">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
@@ -821,89 +817,8 @@
       </div>
 
       <!-- VIEW 4: MULTI-BRANCH MANAGEMENT -->
-      <div id="view-branches" class="view-panel">
-        <div class="settings-split-grid">
-          <!-- Left side: Branch Table list -->
-          <div class="glass-card">
-            <div class="table-header">
-              <h3 data-translate="branchList">Branches Database</h3>
-            </div>
-            <div class="table-responsive">
-              <table class="pos-table">
-                <thead>
-                  <tr>
-                    <th data-translate="branchCode">Code</th>
-                    <th data-translate="branchName">Branch Name</th>
-                    <th data-translate="branchPhone">Phone</th>
-                    <th data-translate="branchManager">Manager</th>
-                    <th data-translate="status">Status</th>
-                    <th data-translate="action">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="branches-table-body">
-                  <!-- JS Injected -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Right side: Add Branch profile form -->
-          <div class="glass-card" id="branch-form-card">
-            <div class="table-header">
-              <h3 id="branch-card-title" data-translate="addBranch">Register New Branch</h3>
-            </div>
-            <form id="branch-profile-form">
-              <input type="hidden" id="branch-edit-id">
-              <div class="form-group">
-                <label data-translate="branchCode">Branch Code</label>
-                <input type="text" class="form-control" id="br-form-code" required placeholder="e.g. B-BTB">
-              </div>
-              <div class="form-group">
-                <label data-translate="branchName">Branch Name (English)</label>
-                <input type="text" class="form-control" id="br-form-name" required placeholder="e.g. Battambang Branch">
-              </div>
-              <div class="form-group">
-                <label>Branch Name (Khmer)</label>
-                <input type="text" class="form-control" id="br-form-name-kh" required placeholder="ឧ. សាខាខេត្តបាត់ដំបង">
-              </div>
-              <div class="form-group">
-                <label data-translate="branchAddress">Branch Address</label>
-                <input type="text" class="form-control" id="br-form-address" required placeholder="e.g. St 3, Battambang">
-              </div>
-              <div class="checkout-method-grid" style="margin-bottom:0;">
-                <div class="form-group">
-                  <label data-translate="branchPhone">Branch Phone</label>
-                  <input type="text" class="form-control" id="br-form-phone" required placeholder="e.g. 053-999-111">
-                </div>
-                <div class="form-group">
-                  <label data-translate="branchManager">Manager Name</label>
-                  <input type="text" class="form-control" id="br-form-manager" required placeholder="Manager Fullname">
-                </div>
-              </div>
-              <div class="form-group">
-                <label data-translate="status">Status</label>
-                <select class="form-control" id="br-form-status">
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:10px; font-weight:700;">Save Branch</button>
-            </form>
-          </div>
-        </div>
-
-        <!-- Branch inventory stocks matrix -->
-        <div class="glass-card" style="margin-top:20px;">
-          <div class="table-header">
-            <h3 data-translate="stockByBranch">Branch Inventory</h3>
-          </div>
-          <div class="table-responsive">
-            <table class="pos-table" id="branch-inventory-matrix-table">
-              <!-- Dynamically rendered via JS -->
-            </table>
-          </div>
-        </div>
-      </div>
+      <!-- VIEW 4: MULTI-BRANCH MANAGEMENT (Moved into Settings) -->
+      <div id="view-branches" class="view-panel" style="display:none;"></div>
 
       <div id="view-customers" class="view-panel">
         <!-- CRM Sub-tabs -->
@@ -2299,6 +2214,7 @@
       <div id="view-settings" class="view-panel">
         <div class="pos-categories-slider" id="settings-tabs" style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
           <span class="category-tab active" data-setting="company" data-translate="company">Company Info</span>
+          <span class="category-tab" data-setting="branches" data-translate="branches">Multi-Branch Management</span>
           <span class="category-tab" data-setting="users" data-translate="usersList">Users List</span>
           <span class="category-tab" data-setting="product-config" data-translate="productConfig">Categories, Brands & Units</span>
           <span class="category-tab" data-setting="features" data-translate="featureSettings">Feature Management</span>

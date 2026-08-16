@@ -4395,8 +4395,12 @@
 
   // 4. MULTI-BRANCH PANEL
   function renderBranches() {
-    // 1. Branches list
+    if (state.activeSettingTab === 'branches') {
+      renderSettings();
+      return;
+    }
     const tbody = document.getElementById('branches-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     state.branches.forEach((b) => {
@@ -4425,6 +4429,7 @@
 
     // 2. Stock Matrix Grid
     const matrix = document.getElementById('branch-inventory-matrix-table');
+    if (!matrix) return;
     matrix.innerHTML = '';
 
     let headHtml = '<tr><th>Product (SKU)</th>';
@@ -9998,6 +10003,206 @@
           renderSettings();
         });
       }
+    } else if (tab === 'branches') {
+      // Render Branches Database View Panel inside Settings
+      container.innerHTML = `
+        <div class="settings-split-grid">
+          <!-- Left side: Branch Table list -->
+          <div class="glass-card">
+            <div class="table-header">
+              <h3 data-translate="branchList">Branches Database</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th data-translate="branchCode">Code</th>
+                    <th data-translate="branchName">Branch Name</th>
+                    <th data-translate="branchPhone">Phone</th>
+                    <th data-translate="branchManager">Manager</th>
+                    <th data-translate="status">Status</th>
+                    <th data-translate="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="branches-table-body-settings">
+                  <!-- JS Injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right side: Add Branch profile form -->
+          <div class="glass-card" id="branch-form-card">
+            <div class="table-header">
+              <h3 id="branch-card-title-settings" data-translate="addBranch">Register New Branch</h3>
+            </div>
+            <form id="branch-profile-form-settings" style="padding: 16px;">
+              <input type="hidden" id="branch-edit-id-settings">
+              <div class="form-group">
+                <label data-translate="branchCode">Branch Code</label>
+                <input type="text" class="form-control" id="br-form-code-settings" required placeholder="e.g. B-BTB">
+              </div>
+              <div class="form-group">
+                <label data-translate="branchName">Branch Name (English)</label>
+                <input type="text" class="form-control" id="br-form-name-settings" required placeholder="e.g. Battambang Branch">
+              </div>
+              <div class="form-group">
+                <label>Branch Name (Khmer)</label>
+                <input type="text" class="form-control" id="br-form-name-kh-settings" required placeholder="ឧ. សាខាខេត្តបាត់ដំបង">
+              </div>
+              <div class="form-group">
+                <label data-translate="branchAddress">Branch Address</label>
+                <input type="text" class="form-control" id="br-form-address-settings" required placeholder="e.g. St 3, Battambang">
+              </div>
+              <div class="checkout-method-grid" style="margin-bottom:0;">
+                <div class="form-group">
+                  <label data-translate="branchPhone">Branch Phone</label>
+                  <input type="text" class="form-control" id="br-form-phone-settings" required placeholder="e.g. 053-999-111">
+                </div>
+                <div class="form-group">
+                  <label data-translate="branchManager">Manager Name</label>
+                  <input type="text" class="form-control" id="br-form-manager-settings" required placeholder="Manager Fullname">
+                </div>
+              </div>
+              <div class="form-group">
+                <label data-translate="status">Status</label>
+                <select class="form-control" id="br-form-status-settings">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:10px; font-weight:700; margin-top:12px;">Save Branch</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Branch inventory stocks matrix -->
+        <div class="glass-card" style="margin-top:20px;">
+          <div class="table-header">
+            <h3 data-translate="stockByBranch">Branch Inventory</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="pos-table" id="branch-inventory-matrix-table-settings">
+              <!-- Dynamically rendered via JS -->
+            </table>
+          </div>
+        </div>
+      `;
+
+      // Build & Bind Branches table
+      const tbody = container.querySelector('#branches-table-body-settings');
+      state.branches.forEach((b) => {
+        const statusBadge = b.status === 'active'
+          ? `<span class="badge badge-success" data-translate="active">${window.POS_TRANSLATIONS[state.lang].active}</span>`
+          : `<span class="badge badge-danger" data-translate="inactive">${window.POS_TRANSLATIONS[state.lang].inactive}</span>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong style="color:var(--secondary); font-family:monospace;">${b.code}</strong></td>
+          <td><strong>${state.lang === 'km' ? b.nameKh : b.name}</strong></td>
+          <td>${b.phone}</td>
+          <td>${b.manager}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <button class="btn btn-outline btn-sm btn-edit-b" data-id="${b.id}" style="padding:2px 6px;">✏️</button>
+            <button class="btn btn-danger btn-sm btn-del-b" data-id="${b.id}" style="padding:2px 6px;">🗑️</button>
+          </td>
+        `;
+
+        tr.querySelector('.btn-edit-b').addEventListener('click', () => {
+          if (!guardAction('edit')) return;
+          container.querySelector('#branch-card-title-settings').innerText = window.POS_TRANSLATIONS[state.lang].editBranch || 'Edit Branch';
+          container.querySelector('#branch-edit-id-settings').value = b.id;
+          container.querySelector('#br-form-code-settings').value = b.code;
+          container.querySelector('#br-form-name-settings').value = b.name;
+          container.querySelector('#br-form-name-kh-settings').value = b.nameKh;
+          container.querySelector('#br-form-address-settings').value = b.address;
+          container.querySelector('#br-form-phone-settings').value = b.phone;
+          container.querySelector('#br-form-manager-settings').value = b.manager;
+          container.querySelector('#br-form-status-settings').value = b.status;
+        });
+
+        tr.querySelector('.btn-del-b').addEventListener('click', () => {
+          if (!guardAction('delete')) return;
+          if (state.branches.length <= 1) {
+            alert(state.lang === 'km' ? 'ត្រូវតែមានសាខាយ៉ាងហោចណាស់មួយជានិច្ច!' : 'Must always maintain at least one branch!');
+            return;
+          }
+          if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
+            state.branches = state.branches.filter(br => br.id !== b.id);
+            state.products.forEach(p => {
+              if (p.warehouseStock && p.warehouseStock[b.id] !== undefined) {
+                delete p.warehouseStock[b.id];
+                let sum = 0;
+                for (const key in p.warehouseStock) sum += parseInt(p.warehouseStock[key]) || 0;
+                p.stockQty = sum;
+              }
+            });
+            saveStateToLocalStorage();
+            renderSettings();
+            populatePOSSelects();
+          }
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      // Build Inventory Matrix
+      const matrix = container.querySelector('#branch-inventory-matrix-table-settings');
+      let headHtml = '<tr><th>Product (SKU)</th>';
+      state.branches.forEach(b => {
+        headHtml += `<th class="branch-cell-header">${state.lang === 'km' ? b.nameKh : b.name}</th>`;
+      });
+      headHtml += '<th style="text-align:center;">Total Qty</th></tr>';
+
+      let bodyHtml = '';
+      state.products.forEach(p => {
+        bodyHtml += `<tr><td><strong>${state.lang === 'km' ? p.nameKh : p.nameEn}</strong><br><span style="font-size:9px;color:var(--text-muted); font-family:monospace;">${p.sku}</span></td>`;
+        state.branches.forEach(b => {
+          const qty = p.warehouseStock[b.id] || 0;
+          bodyHtml += `<td class="branch-stock-val" style="color:${qty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${qty}</td>`;
+        });
+        bodyHtml += `<td style="text-align:center; font-weight:800; color:var(--primary);">${p.stockQty}</td></tr>`;
+      });
+      matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody>`;
+
+      // Bind form submission
+      container.querySelector('#branch-profile-form-settings').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = container.querySelector('#branch-edit-id-settings').value;
+        const code = container.querySelector('#br-form-code-settings').value.trim();
+        const name = container.querySelector('#br-form-name-settings').value.trim();
+        const nameKh = container.querySelector('#br-form-name-kh-settings').value.trim();
+        const address = container.querySelector('#br-form-address-settings').value.trim();
+        const phone = container.querySelector('#br-form-phone-settings').value.trim();
+        const manager = container.querySelector('#br-form-manager-settings').value.trim();
+        const status = container.querySelector('#br-form-status-settings').value;
+
+        if (id !== '') {
+          if (!guardAction('edit')) return;
+          const b = state.branches.find(br => br.id === id);
+          if (b) {
+            b.code = code; b.name = name; b.nameKh = nameKh; b.address = address; b.phone = phone; b.manager = manager; b.status = status;
+          }
+        } else {
+          if (!guardAction('add')) return;
+          if (state.branches.some(br => br.code === code)) {
+            alert('Branch Code already exists!');
+            return;
+          }
+          const newId = 'BR-' + String(state.branches.length + 1).padStart(3, '0');
+          state.branches.push({ id: newId, code, name, nameKh, address, phone, manager, status });
+          state.products.forEach(p => {
+            p.warehouseStock[newId] = 0;
+          });
+        }
+
+        saveStateToLocalStorage();
+        renderSettings();
+        populatePOSSelects();
+      });
+
+      translateApp();
 
     } else if (tab === 'hr-bot') {
       container.innerHTML = `
@@ -13476,48 +13681,51 @@ CREATE TABLE sale_items (
     setupThemeToggle();
 
     // Multi-branch CRUD submissions
-    document.getElementById('branch-profile-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const id = document.getElementById('branch-edit-id').value;
-      const code = document.getElementById('br-form-code').value.trim();
-      const name = document.getElementById('br-form-name').value.trim();
-      const nameKh = document.getElementById('br-form-name-kh').value.trim();
-      const address = document.getElementById('br-form-address').value.trim();
-      const phone = document.getElementById('br-form-phone').value.trim();
-      const manager = document.getElementById('br-form-manager').value.trim();
-      const status = document.getElementById('br-form-status').value;
+    const oldBranchForm = document.getElementById('branch-profile-form');
+    if (oldBranchForm) {
+      oldBranchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('branch-edit-id').value;
+        const code = document.getElementById('br-form-code').value.trim();
+        const name = document.getElementById('br-form-name').value.trim();
+        const nameKh = document.getElementById('br-form-name-kh').value.trim();
+        const address = document.getElementById('br-form-address').value.trim();
+        const phone = document.getElementById('br-form-phone').value.trim();
+        const manager = document.getElementById('br-form-manager').value.trim();
+        const status = document.getElementById('br-form-status').value;
 
-      if (id !== '') {
-        if (!guardAction('edit')) return;
-        const b = state.branches.find(br => br.id === id);
-        if (b) {
-          b.code = code; b.name = name; b.nameKh = nameKh; b.address = address; b.phone = phone; b.manager = manager; b.status = status;
+        if (id !== '') {
+          if (!guardAction('edit')) return;
+          const b = state.branches.find(br => br.id === id);
+          if (b) {
+            b.code = code; b.name = name; b.nameKh = nameKh; b.address = address; b.phone = phone; b.manager = manager; b.status = status;
+          }
+        } else {
+          if (!guardAction('add')) return;
+          // Check duplicate code
+          if (state.branches.some(br => br.code === code)) {
+            alert('Branch Code already exists!');
+            return;
+          }
+          const newId = 'BR-' + String(state.branches.length + 1).padStart(3, '0');
+          state.branches.push({ id: newId, code, name, nameKh, address, phone, manager, status });
+          
+          // Add new branch stock map to all products
+          state.products.forEach(p => {
+            p.warehouseStock[newId] = 0;
+          });
         }
-      } else {
-        if (!guardAction('add')) return;
-        // Check duplicate code
-        if (state.branches.some(br => br.code === code)) {
-          alert('Branch Code already exists!');
-          return;
-        }
-        const newId = 'BR-' + String(state.branches.length + 1).padStart(3, '0');
-        state.branches.push({ id: newId, code, name, nameKh, address, phone, manager, status });
+
+        saveStateToLocalStorage();
+        document.getElementById('branch-profile-form').reset();
+        document.getElementById('branch-edit-id').value = '';
+        document.getElementById('branch-card-title').innerText = 'Register New Branch';
         
-        // Add new branch stock map to all products
-        state.products.forEach(p => {
-          p.warehouseStock[newId] = 0;
-        });
-      }
-
-      saveStateToLocalStorage();
-      document.getElementById('branch-profile-form').reset();
-      document.getElementById('branch-edit-id').value = '';
-      document.getElementById('branch-card-title').innerText = 'Register New Branch';
-      
-      renderBranches();
-      populatePOSSelects();
-      alert('Branch database record saved successfully!');
-    });
+        renderBranches();
+        populatePOSSelects();
+        alert('Branch database record saved successfully!');
+      });
+    }
 
     // Finance Tab Switching (Advanced Update Requirement 1)
     const finTabs = document.querySelectorAll('#finance-tabs .category-tab');
