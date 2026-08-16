@@ -1089,9 +1089,9 @@
     const splashDefaultLogo = document.getElementById('splash-default-logo');
     const splashSystemTitle = document.getElementById('splash-system-title');
     if (cachedSettings) {
-      if (cachedSettings.companyLogo) {
+      if (cachedSettings.logoBase64) {
         if (splashCustomLogo) {
-          splashCustomLogo.src = cachedSettings.companyLogo;
+          splashCustomLogo.src = cachedSettings.logoBase64;
           splashCustomLogo.style.display = 'block';
         }
         if (splashDefaultLogo) splashDefaultLogo.style.display = 'none';
@@ -1741,6 +1741,29 @@
   function updateCompanyLogoUI() {
     const logoBase64 = state.companySettings.logoBase64;
     const companyName = state.companySettings.companyName || 'ABC System';
+
+    // Update Splash Screen logo
+    const splashDefaultLogo = document.getElementById('splash-default-logo');
+    const splashCustomLogo = document.getElementById('splash-custom-logo');
+    const splashSystemTitle = document.getElementById('splash-system-title');
+
+    if (splashSystemTitle) {
+      splashSystemTitle.innerText = companyName;
+    }
+
+    if (logoBase64) {
+      if (splashDefaultLogo) splashDefaultLogo.style.display = 'none';
+      if (splashCustomLogo) {
+        splashCustomLogo.src = logoBase64;
+        splashCustomLogo.style.display = 'block';
+      }
+    } else {
+      if (splashDefaultLogo) splashDefaultLogo.style.display = 'block';
+      if (splashCustomLogo) {
+        splashCustomLogo.src = '';
+        splashCustomLogo.style.display = 'none';
+      }
+    }
 
     // Update Login Screen logo
     const loginDefaultLogo = document.getElementById('login-default-logo');
