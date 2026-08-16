@@ -17537,6 +17537,38 @@ CREATE TABLE sale_items (
         if (navItem) navItem.click();
       });
     }
+  function reconcileVoidedTransactions() {
+    let repaired = false;
+    state.voidedTransactions.forEach(vt => {
+      const invoiceNo = vt.invoiceNo || vt.id;
+      if (!invoiceNo) return;
+
+      const relatedAccTxs = state.accountTransactions.filter(act => 
+        act.description && (act.description.includes(invoiceNo) || act.description.includes(vt.id))
+      );
+
+      if (relatedAccTxs.length > 0) {
+        console.log(`Reconciling unreversed ledger entries for voided transaction ${invoiceNo}:`, relatedAccTxs);
+        relatedAccTxs.forEach(act => {
+          const acc = state.accounts.find(a => a.id === act.toAccountId);
+          if (acc) {
+            acc.balance = parseFloat((acc.balance - act.amount).toFixed(2));
+            console.log(`Auto-repaired voided transaction balance: subtracted $${act.amount} from account ${acc.name} (${acc.id}). New balance: ${acc.balance}`);
+          }
+        });
+
+        // Filter out these account transactions
+        state.accountTransactions = state.accountTransactions.filter(act => 
+          !relatedAccTxs.some(x => x.id === act.id)
+        );
+        repaired = true;
+      }
+    });
+
+    if (repaired) {
+      saveStateToLocalStorage();
+      renderFinance();
+    }
   }
 
   // ==================== END HRMS UPGRADE LOGIC ====================
@@ -17566,6 +17598,7 @@ CREATE TABLE sale_items (
     setupProfileDropdown();
     setupMarquee();
     setupLowStockDetailsModal();
+    reconcileVoidedTransactions();
     
     const viewStaffDetailsBtn = document.getElementById('btn-view-staff-sales-details');
     if (viewStaffDetailsBtn) {
