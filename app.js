@@ -8750,7 +8750,24 @@
       voidReason: reason
     });
 
-    // Remove transaction
+    // Deduct the sales income from the accounts (Reverse payment balance)
+    const invoiceNo = tx.invoiceNo || tx.id;
+    const relatedAccTxs = state.accountTransactions.filter(act => 
+      act.description && (act.description.includes(invoiceNo) || act.description.includes(tx.id))
+    );
+
+    relatedAccTxs.forEach(act => {
+      const acc = state.accounts.find(a => a.id === act.toAccountId);
+      if (acc) {
+        acc.balance = parseFloat((acc.balance - act.amount).toFixed(2));
+      }
+    });
+
+    state.accountTransactions = state.accountTransactions.filter(act => 
+      !relatedAccTxs.some(x => x.id === act.id)
+    );
+
+    // Remove transaction from active list
     state.transactions.splice(idx, 1);
 
     saveStateToLocalStorage();
