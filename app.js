@@ -10077,18 +10077,6 @@
             </form>
           </div>
         </div>
-
-        <!-- Branch inventory stocks matrix -->
-        <div class="glass-card" style="margin-top:20px;">
-          <div class="table-header">
-            <h3 data-translate="stockByBranch">Branch Inventory</h3>
-          </div>
-          <div class="table-responsive">
-            <table class="pos-table" id="branch-inventory-matrix-table-settings">
-              <!-- Dynamically rendered via JS -->
-            </table>
-          </div>
-        </div>
       `;
 
       // Build & Bind Branches table
@@ -10148,25 +10136,6 @@
 
         tbody.appendChild(tr);
       });
-
-      // Build Inventory Matrix
-      const matrix = container.querySelector('#branch-inventory-matrix-table-settings');
-      let headHtml = '<tr><th>Product (SKU)</th>';
-      state.branches.forEach(b => {
-        headHtml += `<th class="branch-cell-header">${state.lang === 'km' ? b.nameKh : b.name}</th>`;
-      });
-      headHtml += '<th style="text-align:center;">Total Qty</th></tr>';
-
-      let bodyHtml = '';
-      state.products.forEach(p => {
-        bodyHtml += `<tr><td><strong>${state.lang === 'km' ? p.nameKh : p.nameEn}</strong><br><span style="font-size:9px;color:var(--text-muted); font-family:monospace;">${p.sku}</span></td>`;
-        state.branches.forEach(b => {
-          const qty = p.warehouseStock[b.id] || 0;
-          bodyHtml += `<td class="branch-stock-val" style="color:${qty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${qty}</td>`;
-        });
-        bodyHtml += `<td style="text-align:center; font-weight:800; color:var(--primary);">${p.stockQty}</td></tr>`;
-      });
-      matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody>`;
 
       // Bind form submission
       container.querySelector('#branch-profile-form-settings').addEventListener('submit', (e) => {
