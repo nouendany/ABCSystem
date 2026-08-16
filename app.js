@@ -1095,9 +1095,18 @@
           splashCustomLogo.style.display = 'block';
         }
         if (splashDefaultLogo) splashDefaultLogo.style.display = 'none';
+      } else {
+        if (splashDefaultLogo) splashDefaultLogo.style.display = 'block';
+        if (splashCustomLogo) splashCustomLogo.style.display = 'none';
       }
       if (cachedSettings.companyName && splashSystemTitle) {
         splashSystemTitle.innerText = cachedSettings.companyName;
+      }
+    } else {
+      if (splashDefaultLogo) splashDefaultLogo.style.display = 'block';
+      if (splashCustomLogo) {
+        splashCustomLogo.src = '';
+        splashCustomLogo.style.display = 'none';
       }
     }
 
