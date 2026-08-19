@@ -8,3 +8,22 @@ Desktop.ini
 
 # Portable Git binaries
 git/
+
+# Node dependencies and scratch scripts
+node_modules/
+scratch/
+
+# Ignore generated reports but keep core application pages
+*.pdf
+*.csv
+*.html
+!index.html
+!telegram-store.html
+!telegram-camera.html
+!financial_report.html
+!Detailed_Stock_Movement_Report.html
+!Detailed_Sales_Stock_Report.html
+!July_Sales_Report.html
+!July_Staff_Sales_Summary_Report.html
+!Yuk_Thetrinda_Sales_Report.html
+
