@@ -1373,7 +1373,9 @@
         syncChanges('users', state.users, lastSyncedState.users, 'id');
         syncChanges('branches', state.branches, lastSyncedState.branches, 'id');
         syncChanges('customers', state.customers, lastSyncedState.customers, 'id');
-        syncChanges('products', state.products, lastSyncedState.products, 'sku');
+        // Products are synchronized directly upon creation, adjustment, checkout, or deletion.
+        // This prevents memory sync overwrites from outdated browser states.
+        // syncChanges('products', state.products, lastSyncedState.products, 'sku');
         syncChanges('staff', state.staff, lastSyncedState.staff, 'id');
         syncChanges('transactions', state.transactions, lastSyncedState.transactions, 'id');
         syncChanges('expenses', state.expenses, lastSyncedState.expenses, 'id');
@@ -3325,6 +3327,19 @@
     }
     product.stockQty = unitSum;
 
+    // Direct update to Firestore for both split products to prevent overwrites
+    if (state.firebaseDb) {
+      state.firebaseDb.collection('products').doc(parentBoxProduct.sku).update({
+        [`warehouseStock.${branchId}`]: parentBoxProduct.warehouseStock[branchId],
+        stockQty: parentSum
+      }).catch(e => console.error("Firebase auto-split parent update error:", e));
+
+      state.firebaseDb.collection('products').doc(product.sku).update({
+        [`warehouseStock.${branchId}`]: product.warehouseStock[branchId],
+        stockQty: unitSum
+      }).catch(e => console.error("Firebase auto-split unit update error:", e));
+    }
+
     const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
 
     // Create negative log for source (decrease Box)
@@ -3956,13 +3971,22 @@
       const product = state.products.find(p => p.sku === item.sku);
       if (product) {
         const branchStock = product.warehouseStock[branchId] || 0;
-        product.warehouseStock[branchId] = Math.max(0, branchStock - item.qty);
+        const newBranchStock = Math.max(0, branchStock - item.qty);
+        product.warehouseStock[branchId] = newBranchStock;
         
         let sum = 0;
         for (const b in product.warehouseStock) {
           sum += parseInt(product.warehouseStock[b]) || 0;
         }
         product.stockQty = sum;
+
+        // Direct update to Firestore to prevent overwrites
+        if (state.firebaseDb) {
+          state.firebaseDb.collection('products').doc(product.sku).update({
+            [`warehouseStock.${branchId}`]: newBranchStock,
+            stockQty: sum
+          }).catch(e => console.error("Firebase stock update error:", e));
+        }
 
         // Log Stock Movement
         state.stockLogs.push({
@@ -4472,6 +4496,10 @@
   function deleteProduct(idx) {
     if (!guardAction('delete')) return;
     if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
+      const sku = state.products[idx].sku;
+      if (state.firebaseDb) {
+        state.firebaseDb.collection('products').doc(sku).delete().catch(e => console.error("Firebase product delete error:", e));
+      }
       state.products.splice(idx, 1);
       saveStateToLocalStorage();
       updateLowStockAlertCount();
@@ -8704,11 +8732,20 @@
       const p = state.products.find(prod => prod.sku === item.sku);
       if (p) {
         const brId = tx.branchId || "BR-001";
-        p.warehouseStock[brId] = (p.warehouseStock[brId] || 0) + item.qty;
+        const newBranchStock = (p.warehouseStock[brId] || 0) + item.qty;
+        p.warehouseStock[brId] = newBranchStock;
         
         let sum = 0;
         for (const b in p.warehouseStock) sum += parseInt(p.warehouseStock[b]) || 0;
         p.stockQty = sum;
+
+        // Direct update to Firestore to prevent overwrites
+        if (state.firebaseDb) {
+          state.firebaseDb.collection('products').doc(p.sku).update({
+            [`warehouseStock.${brId}`]: newBranchStock,
+            stockQty: sum
+          }).catch(e => console.error("Firebase stock restore error:", e));
+        }
 
         // Log restoration
         state.stockLogs.push({
@@ -12906,6 +12943,11 @@ CREATE TABLE sale_items (
         state.products.push(newProduct);
       }
 
+      // Direct set to Firestore to prevent overwrites
+      if (state.firebaseDb) {
+        state.firebaseDb.collection('products').doc(sku).set(newProduct).catch(e => console.error("Firebase product save error:", e));
+      }
+
       saveStateToLocalStorage();
       updateLowStockAlertCount();
       document.getElementById('modal-product').classList.remove('active-modal');
@@ -13483,6 +13525,15 @@ CREATE TABLE sale_items (
       for (const b in product.warehouseStock) sum += parseInt(product.warehouseStock[b]) || 0;
       product.stockQty = sum;
 
+      // Direct update to Firestore to prevent overwrites
+      if (state.firebaseDb) {
+        state.firebaseDb.collection('products').doc(sku).update({
+          [`warehouseStock.${brId}`]: product.warehouseStock[brId],
+          stockQty: sum,
+          costPrice: product.costPrice
+        }).catch(e => console.error("Firebase stock adjustment error:", e));
+      }
+
       // Log Stock movement
       state.stockLogs.push({
         id: 'SLG-' + (1000 + state.stockLogs.length + 1),
@@ -13535,6 +13586,14 @@ CREATE TABLE sale_items (
       // Transfer stock
       product.warehouseStock[src] = srcStock - qty;
       product.warehouseStock[tar] = (product.warehouseStock[tar] || 0) + qty;
+
+      // Direct update to Firestore to prevent overwrites
+      if (state.firebaseDb) {
+        state.firebaseDb.collection('products').doc(sku).update({
+          [`warehouseStock.${src}`]: product.warehouseStock[src],
+          [`warehouseStock.${tar}`]: product.warehouseStock[tar]
+        }).catch(e => console.error("Firebase stock transfer error:", e));
+      }
 
       const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
 
@@ -13634,6 +13693,19 @@ CREATE TABLE sale_items (
         targetSum += parseInt(targetProduct.warehouseStock[b]) || 0;
       }
       targetProduct.stockQty = targetSum;
+
+      // Direct update to Firestore to prevent overwrites
+      if (state.firebaseDb) {
+        state.firebaseDb.collection('products').doc(sourceSku).update({
+          [`warehouseStock.${brId}`]: sourceProduct.warehouseStock[brId],
+          stockQty: sourceSum
+        }).catch(e => console.error("Firebase split pack source update error:", e));
+
+        state.firebaseDb.collection('products').doc(targetSku).update({
+          [`warehouseStock.${brId}`]: targetProduct.warehouseStock[brId],
+          stockQty: targetSum
+        }).catch(e => console.error("Firebase split pack target update error:", e));
+      }
 
       const randSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
 
