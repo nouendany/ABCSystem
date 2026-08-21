@@ -307,8 +307,7 @@ async function handleWebAppOrder(req, res, body) {
       });
 
       // Log Stock Movement
-      const logId = "SLG-" + nextStockLogNum + "-" + randSuffix;
-      nextStockLogNum++;
+      const logId = "SLG-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7).toUpperCase();
       
       await setDoc(doc(db, "stock_logs", logId), {
         id: logId,

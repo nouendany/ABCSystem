@@ -3344,7 +3344,7 @@
 
     // Create negative log for source (decrease Box)
     state.stockLogs.push({
-      id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+      id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
       date: new Date().toISOString(),
       sku: parentBoxProduct.sku,
       type: 'adjustment',
@@ -3359,7 +3359,7 @@
 
     // Create positive log for target (increase Sheet)
     state.stockLogs.push({
-      id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+      id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
       date: new Date().toISOString(),
       sku: product.sku,
       type: 'replenishment',
@@ -3990,7 +3990,7 @@
 
         // Log Stock Movement
         state.stockLogs.push({
-          id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+          id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
           date: txDate,
           sku: product.sku,
           type: 'sale',
@@ -8749,7 +8749,7 @@
 
         // Log restoration
         state.stockLogs.push({
-          id: 'SLG-' + (1000 + state.stockLogs.length + 1),
+          id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
           date: new Date().toISOString(),
           sku: item.sku,
           type: 'replenishment',
@@ -13214,7 +13214,8 @@ CREATE TABLE sale_items (
           // Deduct stock and log
           if (productObj) {
             const branchStock = productObj.warehouseStock[activeBranch] || 0;
-            productObj.warehouseStock[activeBranch] = Math.max(0, branchStock - qty);
+            const newBranchStock = Math.max(0, branchStock - qty);
+            productObj.warehouseStock[activeBranch] = newBranchStock;
             
             let sum = 0;
             for (const b in productObj.warehouseStock) {
@@ -13222,9 +13223,17 @@ CREATE TABLE sale_items (
             }
             productObj.stockQty = sum;
 
+            // Direct update to Firestore to prevent overwrites
+            if (state.firebaseDb) {
+              state.firebaseDb.collection('products').doc(productObj.sku).update({
+                [`warehouseStock.${activeBranch}`]: newBranchStock,
+                stockQty: sum
+              }).catch(e => console.error("Firebase CRM stock update error:", e));
+            }
+
             // Log Stock Movement
             state.stockLogs.push({
-              id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+              id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
               date: txIsoDate,
               sku: prodSku,
               type: 'sale',
@@ -13536,7 +13545,7 @@ CREATE TABLE sale_items (
 
       // Log Stock movement
       state.stockLogs.push({
-        id: 'SLG-' + (1000 + state.stockLogs.length + 1),
+        id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
         date: adjustmentDate,
         sku: sku,
         type: 'replenishment',
@@ -13605,7 +13614,7 @@ CREATE TABLE sale_items (
 
       // Logs
       state.stockLogs.push({
-        id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+        id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
         date: new Date().toISOString(),
         sku: sku,
         type: 'transfer',
@@ -13619,7 +13628,7 @@ CREATE TABLE sale_items (
         extraPrice: extraPrice
       });
       state.stockLogs.push({
-        id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+        id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
         date: new Date().toISOString(),
         sku: sku,
         type: 'transfer',
@@ -13711,7 +13720,7 @@ CREATE TABLE sale_items (
 
       // Create negative log for source (decrease e.g. Box)
       state.stockLogs.push({
-        id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+        id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
         date: new Date().toISOString(),
         sku: sourceSku,
         type: 'adjustment',
@@ -13726,7 +13735,7 @@ CREATE TABLE sale_items (
 
       // Create positive log for target (increase e.g. Sheet)
       state.stockLogs.push({
-        id: 'SLG-' + (1000 + state.stockLogs.length + 1) + '-' + randSuffix,
+        id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
         date: new Date().toISOString(),
         sku: targetSku,
         type: 'replenishment',
