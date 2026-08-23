@@ -2041,24 +2041,38 @@
 
         // Fetch followups, testimonials, attendance, transactions for KPI
         try {
-          const followSnap = await db.collection('followups').get();
-          followupsList = [];
-          followSnap.forEach(doc => followupsList.push({ id: doc.id, ...doc.data() }));
+          if (employeeId) {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const startOfMonthDate = currentMonth + '-01';
 
-          const testSnap = await db.collection('testimonials').get();
-          testimonialsList = [];
-          testSnap.forEach(doc => testimonialsList.push({ id: doc.id, ...doc.data() }));
+            // 1. Followups: Query only for this staff member
+            const followSnap = await db.collection('followups').where('salesStaffId', '==', employeeId).get();
+            followupsList = [];
+            followSnap.forEach(doc => followupsList.push({ id: doc.id, ...doc.data() }));
 
-          const attSnap = await db.collection('attendance').get();
-          attendanceList = [];
-          attSnap.forEach(doc => attendanceList.push({ id: doc.id, ...doc.data() }));
+            // 2. Testimonials: Query only for this staff member
+            const testSnap = await db.collection('testimonials').where('staffId', '==', employeeId).get();
+            testimonialsList = [];
+            testSnap.forEach(doc => testimonialsList.push({ id: doc.id, ...doc.data() }));
 
-          const txSnap = await db.collection('transactions').get();
-          transactionsList = [];
-          txSnap.forEach(doc => transactionsList.push({ id: doc.id, ...doc.data() }));
+            // 3. Attendance: Query only current month's logs to minimize download size
+            const attSnap = await db.collection('attendance').where('date', '>=', startOfMonthDate).get();
+            attendanceList = [];
+            attSnap.forEach(doc => attendanceList.push({ id: doc.id, ...doc.data() }));
 
-          // Render scorecard to populate the header balance display with current points
-          renderKpiScorecardTMA();
+            // 4. Transactions: Query only current month's transactions to minimize download size
+            const txSnap = await db.collection('transactions').where('date', '>=', startOfMonthDate).get();
+            transactionsList = [];
+            txSnap.forEach(doc => transactionsList.push({ id: doc.id, ...doc.data() }));
+
+            // Render scorecard to populate the header balance display with current points
+            renderKpiScorecardTMA();
+          } else {
+            followupsList = [];
+            testimonialsList = [];
+            attendanceList = [];
+            transactionsList = [];
+          }
         } catch (err) {
           console.error("Optional collections fetch error (skipping non-blocking):", err);
         }
