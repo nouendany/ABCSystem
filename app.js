@@ -344,25 +344,33 @@
         return false;
       });
     }
-    return state.transactions.filter(t => t.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.transactions;
+    return state.transactions.filter(t => t.branchId === filterBranch);
   }
 
   function getBranchTransactions() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.transactions;
-    return state.transactions.filter(t => t.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.transactions;
+    return state.transactions.filter(t => t.branchId === filterBranch);
   }
 
   function getFilteredExpenses() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.expenses;
-    return state.expenses.filter(e => e.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.expenses;
+    return state.expenses.filter(e => e.branchId === filterBranch);
   }
 
   function getFilteredStaff() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.staff;
-    return state.staff.filter(s => s.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.staff;
+    return state.staff.filter(s => s.branchId === filterBranch);
   }
 
   function getUnifiedStaffId(id) {
@@ -554,25 +562,33 @@
   function getFilteredFollowups() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.followups;
-    return state.followups.filter(f => f.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.followups;
+    return state.followups.filter(f => f.branchId === filterBranch);
   }
 
   function getFilteredPaymentLogs() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.paymentLogs;
-    return state.paymentLogs.filter(p => p.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.paymentLogs;
+    return state.paymentLogs.filter(p => p.branchId === filterBranch);
   }
 
   function getFilteredStockLogs() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.stockLogs;
-    return state.stockLogs.filter(s => s.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.stockLogs;
+    return state.stockLogs.filter(s => s.branchId === filterBranch);
   }
 
   function getFilteredCustomers() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.customers;
-    return state.customers.filter(c => c.branchId === state.currentUser.branchId || c.id === 'CST-001');
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.customers;
+    return state.customers.filter(c => c.branchId === filterBranch || c.id === 'CST-001');
   }
 
 
@@ -855,13 +871,17 @@
   function getFilteredUsers() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.users;
-    return state.users.filter(u => u.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.users;
+    return state.users.filter(u => u.branchId === filterBranch);
   }
 
   function getFilteredVoidedTransactions() {
     if (!state.currentUser) return [];
     if (state.currentUser.role === 'super_admin') return state.voidedTransactions;
-    return state.voidedTransactions.filter(v => v.branchId === state.currentUser.branchId);
+    const filterBranch = getActiveBranchFilter();
+    if (!filterBranch) return state.voidedTransactions;
+    return state.voidedTransactions.filter(v => v.branchId === filterBranch);
   }
 
   // Database LocalStorage Seeding
@@ -1520,7 +1540,12 @@
     if (!state.currentUser) return null;
     if (state.currentUser.role === 'super_admin' || state.currentUser.role === 'accountant') return null;
     if (state.currentUser.branchId === 'all') return null;
-    return state.currentUser.branchId;
+    
+    // Only restrict branch if the global setting toggle is enabled
+    if (state.companySettings && state.companySettings.restrictBranchOrders) {
+      return state.currentUser.branchId;
+    }
+    return null;
   }
 
   // System Security Audit Logging Helper
@@ -7282,10 +7307,9 @@
           
           let stockQty = 0;
           if (p) {
-            if (state.currentUser && state.currentUser.role === 'super_admin') {
-              stockQty = p.stockQty || 0;
-            } else if (state.currentUser && state.currentUser.branchId) {
-              stockQty = p.warehouseStock ? (p.warehouseStock[state.currentUser.branchId] || 0) : 0;
+            const filterBranch = getActiveBranchFilter();
+            if (filterBranch) {
+              stockQty = p.warehouseStock ? (p.warehouseStock[filterBranch] || 0) : 0;
             } else {
               stockQty = p.stockQty || 0;
             }
@@ -10016,6 +10040,16 @@
               </div>
 
               <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.15);">
+              <h4 style="margin-bottom: 12px; font-weight: 600; color: var(--primary-light);">Branch Ordering Restrictions (សិទ្ធិបញ្ជាទិញតាមសាខា)</h4>
+              <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom: 15px;">
+                <input type="checkbox" id="c-restrict-branch" style="width:20px; height:20px; cursor:pointer;" ${state.companySettings.restrictBranchOrders ? 'checked' : ''}>
+                <label for="c-restrict-branch" style="cursor:pointer; margin-bottom:0; font-weight: 600;">Enable Branch Ordering Restrictions for Staff / បើកសិទ្ធិកុម្ម៉ង់ទំនិញតាមសាខាសម្រាប់បុគ្គលិក</label>
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.4;">
+                If enabled, staff members can only view and place orders for their assigned branch.
+                (ប្រសិនបើបើក គឺបុគ្គលិកអាចមើលឃើញ និងដាក់ការកម្មង់សម្រាប់តែសាខារបស់ពួកគេផ្ទាល់ប៉ុណ្ណោះ។)
+              </div>
+              <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.15);">
               <h4 style="margin-bottom: 12px; font-weight: 600; color: var(--primary-light);" data-translate="telegramSettings">Telegram Bot Notification Settings</h4>
               
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 15px;">
@@ -10090,6 +10124,7 @@
         window.POS_HELPERS.EXCHANGE_RATE = state.companySettings.exchangeRate;
         state.companySettings.telegramToken = document.getElementById('c-tg-token').value.trim();
         state.companySettings.telegramChatId = document.getElementById('c-tg-chatid').value.trim();
+        state.companySettings.restrictBranchOrders = document.getElementById('c-restrict-branch').checked;
 
         saveStateToLocalStorage();
         alert('Company settings saved successfully!');
