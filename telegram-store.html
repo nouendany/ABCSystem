@@ -1994,6 +1994,24 @@
             }
           }
 
+          // Enforce branch ordering restriction if enabled
+          if (employeeData && companySettings.restrictBranchOrders) {
+            const userRole = employeeData.role;
+            const userBranch = employeeData.branchId;
+
+            if (userRole !== 'super_admin' && userRole !== 'accountant' && userBranch && userBranch !== 'all') {
+              activeBranchId = userBranch;
+              localStorage.setItem('abc_active_branch', userBranch);
+              
+              const b = branchesList.find(x => x.id === userBranch);
+              if (b) {
+                branchSelect.innerHTML = `<option value="${b.id}" selected>${b.nameKh || b.name} (${b.code})</option>`;
+                branchSelect.disabled = true;
+                renderProducts(); // Refresh product stock displaying for the locked branch
+              }
+            }
+          }
+
           // Trigger header update once loaded
           updateHeaderProfile();
 
