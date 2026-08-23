@@ -884,6 +884,32 @@
     return state.voidedTransactions.filter(v => v.branchId === filterBranch);
   }
 
+  function syncStaffToEmployees() {
+    if (!state.staff || !state.employees) return;
+    let changed = false;
+    state.staff.forEach(s => {
+      if (s.employeeId) {
+        const emp = state.employees.find(e => e.id === s.employeeId);
+        if (emp) {
+          if (emp.branchId !== s.branchId || emp.role !== s.role) {
+            emp.branchId = s.branchId;
+            emp.role = s.role;
+            changed = true;
+            if (state.firebaseDb) {
+              state.firebaseDb.collection('employees').doc(emp.id).update({
+                branchId: s.branchId,
+                role: s.role
+              }).catch(e => console.error("Error syncing employee branch/role:", e));
+            }
+          }
+        }
+      }
+    });
+    if (changed) {
+      saveStateToLocalStorage();
+    }
+  }
+
   // Database LocalStorage Seeding
   function initLocalStorageData() {
     const seed = (key, fallback) => {
@@ -9784,13 +9810,13 @@
         setupListener('branches', 'branches', 'id', [populatePOSSelects, renderCurrentView]);
         setupListener('customers', 'customers', 'id', [renderCustomers, populatePOSSelects, renderFinance, renderCurrentView]);
         setupListener('products', 'products', 'sku', [renderPOS, renderInventory, renderCurrentView]);
-        setupListener('staff', 'staff', 'id', [populatePOSSelects, renderCurrentView]);
+        setupListener('staff', 'staff', 'id', [populatePOSSelects, syncStaffToEmployees, renderCurrentView]);
         setupListener('transactions', 'transactions', 'id', [renderDashboard, renderPOS, populatePOSSelects, renderFinance, renderCustomers, renderCurrentView]);
         setupListener('expenses', 'expenses', 'id', [renderFinance, renderCurrentView]);
         setupListener('stock_logs', 'stockLogs', 'id', [renderCurrentView]);
         setupListener('payment_logs', 'paymentLogs', 'id', [renderFinance, renderCurrentView]);
         setupListener('followups', 'followups', 'id', [renderFollowups, renderCurrentView]);
-        setupListener('employees', 'employees', 'id', [renderEmployeeList, renderHRDashboard]);
+        setupListener('employees', 'employees', 'id', [renderEmployeeList, syncStaffToEmployees, renderHRDashboard]);
         setupListener('attendance', 'attendance', 'id', [renderAttendanceLogs, renderHRDashboard]);
         setupListener('leave_requests', 'leaveRequests', 'id', [renderLeaveRequests, renderHRDashboard]);
         setupListener('companies', 'companies', 'id', [renderHROrg, populateEmployeeFormDropdowns]);
@@ -13465,6 +13491,21 @@ CREATE TABLE sale_items (
           updatedBy: state.currentUser ? state.currentUser.username : 'system',
           timestamp: new Date().toISOString()
         });
+      }
+
+      // Sync branchId and role to the linked employee document
+      if (employeeId && state.employees) {
+        const emp = state.employees.find(e => e.id === employeeId);
+        if (emp) {
+          emp.branchId = branchId;
+          emp.role = role;
+          if (state.firebaseDb) {
+            state.firebaseDb.collection('employees').doc(emp.id).update({
+              branchId: branchId,
+              role: role
+            }).catch(e => console.error("Firebase sync employee branch/role error:", e));
+          }
+        }
       }
 
       saveStateToLocalStorage();
