@@ -51,6 +51,8 @@
       /* Default dark theme tokens (matching the screenshot) */
       --bg-color: #0b0f19;
       --card-bg: #151f32;
+      --header-bg: rgba(21, 31, 50, 0.7);
+      --nav-bg: rgba(15, 23, 42, 0.85);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --primary: #0ea5e9;
@@ -69,6 +71,8 @@
     body.light-theme {
       --bg-color: #f1f5f9;
       --card-bg: #ffffff;
+      --header-bg: rgba(255, 255, 255, 0.7);
+      --nav-bg: rgba(248, 250, 252, 0.85);
       --text-main: #0f172a;
       --text-muted: #64748b;
       --primary: #2563eb;
@@ -469,17 +473,21 @@
     /* Cart Action Bar (Bottom Bar) */
     .cart-action-bar {
       position: fixed;
-      bottom: 64px; /* Lift above bottom nav bar */
-      left: 0;
-      right: 0;
-      background-color: var(--card-bg);
-      border-top: 1px solid var(--border);
-      padding: 14px 20px;
+      bottom: 74px; /* Floating slightly above glassy bottom nav bar */
+      left: 12px;
+      right: 12px;
+      background: var(--header-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
       z-index: 99;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .cart-info {
@@ -515,18 +523,35 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 4px 6px rgba(37, 99, 235, 0.15);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
       transition: var(--transition);
     }
 
-    .view-cart-btn:hover {
+    .view-cart-btn:not(:disabled) {
+      animation: cartPulse 2s infinite alternate;
+    }
+
+    @keyframes cartPulse {
+      0% {
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+        transform: scale(1);
+      }
+      100% {
+        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.45), 0 0 10px rgba(14, 165, 233, 0.2);
+        transform: scale(1.02);
+      }
+    }
+
+    .view-cart-btn:hover:not(:disabled) {
       background-color: var(--primary-hover);
     }
 
     .view-cart-btn:disabled {
-      background-color: #cbd5e1;
+      background-color: var(--border);
+      color: var(--text-muted);
       box-shadow: none;
       cursor: not-allowed;
+      opacity: 0.5;
     }
 
     /* Cart Drawer / Bottom Sheet */
@@ -953,13 +978,15 @@
       left: 0;
       width: 100%;
       height: 64px;
-      background: #0f172a;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
       align-items: center;
       z-index: 1000;
-      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
     }
 
     .nav-tab {
@@ -1068,12 +1095,12 @@
 <body>
 
   <!-- App Header -->
-  <header style="background: var(--card-bg); border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; padding: 12px 16px;">
+  <header style="background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 1000; padding: 12px 16px;">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
       
       <!-- Left: User Profile info block -->
       <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden;">
-        <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.1); position: relative;">
+        <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15); position: relative;">
           <img id="header-user-avatar-img" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
           <span id="header-user-avatar-initial" style="color: white; font-weight: bold; font-size: 15px;">👤</span>
         </div>
@@ -1082,28 +1109,28 @@
           <span id="header-user-username" style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1;">@guest_seller</span>
         </div>
       </div>
-
+ 
       <!-- Right: Controls & Balance / Sales indicator -->
       <div style="display: flex; align-items: center; gap: 8px;">
         <!-- Theme Toggle button -->
-        <button id="btn-toggle-theme" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: rgba(0,0,0,0.05); color: var(--text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; outline: none;">☀️</button>
+        <button id="btn-toggle-theme" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; outline: none;">☀️</button>
         
         <!-- Balance Card -->
-        <div style="display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);">
           <div style="display: flex; flex-direction: column; text-align: right;">
             <span style="font-size: 8px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px;">លទ្ធផល (Sales)</span>
             <strong id="header-user-balance" style="font-size: 13.5px; color: var(--success); font-weight: 750; line-height: 1.1;">$0.00</strong>
           </div>
           <!-- Plus Icon or Info -->
-          <div style="width: 18px; height: 18px; border-radius: 4px; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">+</div>
+          <div style="width: 18px; height: 18px; border-radius: 50%; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; box-shadow: 0 0 8px var(--success);">+</div>
         </div>
       </div>
-
+ 
     </div>
     
     <!-- Branch select dropdown inline -->
     <div class="branch-select-wrapper">
-      <select id="branch-select" style="background: rgba(0,0,0,0.05); color: var(--text-main); border: 1px solid var(--border);">
+      <select id="branch-select" style="background: rgba(255,255,255,0.04); color: var(--text-main); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 12.5px; width: 100%; outline: none; transition: var(--transition); cursor: pointer;">
         <!-- Load dynamically -->
       </select>
     </div>
