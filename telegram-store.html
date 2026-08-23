@@ -1959,10 +1959,13 @@
           });
         });
 
-        // 3. Fetch Customers for autosuggest
-        const custSnap = await db.collection('customers').get();
-        customersList = [];
-        custSnap.forEach(doc => customersList.push({ id: doc.id, ...doc.data() }));
+        // 3. Fetch Customers for autosuggest in the background (non-blocking)
+        db.collection('customers').get().then(custSnap => {
+          customersList = [];
+          custSnap.forEach(doc => customersList.push({ id: doc.id, ...doc.data() }));
+        }).catch(err => {
+          console.error("Customers background fetch error:", err);
+        });
 
         // 4. Fetch Products and setup live listener
         db.collection('products').onSnapshot(snapshot => {
@@ -2057,45 +2060,48 @@
           };
         }
 
-        // Fetch followups, testimonials, attendance, transactions for KPI
-        try {
-          if (employeeId) {
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            const startOfMonthDate = currentMonth + '-01';
-
-            // 1. Followups: Query only for this staff member
-            const followSnap = await db.collection('followups').where('salesStaffId', '==', employeeId).get();
-            followupsList = [];
-            followSnap.forEach(doc => followupsList.push({ id: doc.id, ...doc.data() }));
-
-            // 2. Testimonials: Query only for this staff member
-            const testSnap = await db.collection('testimonials').where('staffId', '==', employeeId).get();
-            testimonialsList = [];
-            testSnap.forEach(doc => testimonialsList.push({ id: doc.id, ...doc.data() }));
-
-            // 3. Attendance: Query only current month's logs to minimize download size
-            const attSnap = await db.collection('attendance').where('date', '>=', startOfMonthDate).get();
-            attendanceList = [];
-            attSnap.forEach(doc => attendanceList.push({ id: doc.id, ...doc.data() }));
-
-            // 4. Transactions: Query only current month's transactions to minimize download size
-            const txSnap = await db.collection('transactions').where('date', '>=', startOfMonthDate).get();
-            transactionsList = [];
-            txSnap.forEach(doc => transactionsList.push({ id: doc.id, ...doc.data() }));
-
-            // Render scorecard to populate the header balance display with current points
-            renderKpiScorecardTMA();
-          } else {
-            followupsList = [];
-            testimonialsList = [];
-            attendanceList = [];
-            transactionsList = [];
-          }
-        } catch (err) {
-          console.error("Optional collections fetch error (skipping non-blocking):", err);
-        }
-
+        // Hide the loading overlay immediately since core catalog data is loaded
         hideOverlay();
+
+        // Fetch followups, testimonials, attendance, transactions for KPI in the background (non-blocking)
+        if (employeeId) {
+          (async () => {
+            try {
+              const currentMonth = new Date().toISOString().slice(0, 7);
+              const startOfMonthDate = currentMonth + '-01';
+
+              // 1. Followups: Query only for this staff member
+              const followSnap = await db.collection('followups').where('salesStaffId', '==', employeeId).get();
+              followupsList = [];
+              followSnap.forEach(doc => followupsList.push({ id: doc.id, ...doc.data() }));
+
+              // 2. Testimonials: Query only for this staff member
+              const testSnap = await db.collection('testimonials').where('staffId', '==', employeeId).get();
+              testimonialsList = [];
+              testSnap.forEach(doc => testimonialsList.push({ id: doc.id, ...doc.data() }));
+
+              // 3. Attendance: Query only current month's logs to minimize download size
+              const attSnap = await db.collection('attendance').where('date', '>=', startOfMonthDate).get();
+              attendanceList = [];
+              attSnap.forEach(doc => attendanceList.push({ id: doc.id, ...doc.data() }));
+
+              // 4. Transactions: Query only current month's transactions to minimize download size
+              const txSnap = await db.collection('transactions').where('date', '>=', startOfMonthDate).get();
+              transactionsList = [];
+              txSnap.forEach(doc => transactionsList.push({ id: doc.id, ...doc.data() }));
+
+              // Render scorecard to populate the header balance display with current points
+              renderKpiScorecardTMA();
+            } catch (err) {
+              console.error("Optional collections fetch error (skipping non-blocking):", err);
+            }
+          })();
+        } else {
+          followupsList = [];
+          testimonialsList = [];
+          attendanceList = [];
+          transactionsList = [];
+        }
       } catch (err) {
         console.error("Fetch data error:", err);
         showOverlayError("Failed to fetch database records: " + err.message);
