@@ -1090,6 +1090,17 @@
       border-top: 1px solid var(--border);
       padding: 14px 16px;
     }
+
+    @keyframes modalPop {
+      0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(15px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
@@ -1280,6 +1291,35 @@
     </div>
   </div>
 
+  <!-- Modal: Delivery Destination Selector -->
+  <div id="modal-destination-selector" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(11,15,25,0.9); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:1500; align-items:center; justify-content:center; padding:20px; font-family:'Kantumruy Pro', sans-serif;">
+    <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:24px; padding:30px 24px; width:100%; max-width:340px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:20px; animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);">
+      <div style="font-size:48px; filter: drop-shadow(0 0 10px var(--primary));">📍</div>
+      <div>
+        <h3 style="font-size:18px; font-weight:700; color:var(--text-main); margin-bottom:8px;">សូមជ្រើសរើសគោលដៅដឹកជញ្ជូន</h3>
+        <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">ដើម្បីទាញយកស្តុកទំនិញឱ្យបានត្រឹមត្រូវសម្រាប់អតិថិជន (Select Order Destination)</p>
+      </div>
+      
+      <!-- Option 1: Phnom Penh (MOHA Stock) -->
+      <button id="btn-dest-pp" style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:16px 20px; border-radius:16px; background:linear-gradient(135deg, rgba(14,165,233,0.12) 0%, rgba(14,165,233,0.02) 100%); border:1.5px solid var(--primary); color:var(--text-main); font-weight:700; font-size:15px; cursor:pointer; text-align:left; transition:all 0.2s; outline:none; font-family:inherit;">
+        <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+          <span style="font-size:15px; color:var(--text-main);">🛵 ភ្នំពេញ (Phnom Penh)</span>
+          <span style="font-size:10px; color:var(--primary); font-weight:600; line-height:1.2;">ដឹកជញ្ជូនតាមរយៈក្រុមហ៊ុន MOHA Delivery</span>
+        </div>
+        <span style="font-size:16px; margin-left:10px;">➡️</span>
+      </button>
+
+      <!-- Option 2: Provinces (Chhouk Meas Stock) -->
+      <button id="btn-dest-province" style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:16px 20px; border-radius:16px; background:linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.02) 100%); border:1.5px solid var(--success); color:var(--text-main); font-weight:700; font-size:15px; cursor:pointer; text-align:left; transition:all 0.2s; outline:none; font-family:inherit;">
+        <div style="display:flex; flex-direction:column; gap:2px; flex:1;">
+          <span style="font-size:15px; color:var(--text-main);">🚚 តាមខេត្ត (Provinces)</span>
+          <span style="font-size:10px; color:var(--success); font-weight:600; line-height:1.2;">លក់ចេញពីស្តុក សាខាឈូកមាសធំ</span>
+        </div>
+        <span style="font-size:16px; margin-left:10px;">➡️</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Cart Drawer Sheet -->
   <div class="cart-drawer-backdrop" id="cart-backdrop"></div>
   <div class="cart-drawer" id="cart-drawer">
@@ -1463,6 +1503,28 @@
     if (tg) {
       tg.ready();
       tg.expand();
+    }
+
+    // Text to Speech Notice Helper (TTS)
+    function playVoiceNotice(text) {
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'km-KH'; // Khmer voice
+          utterance.rate = 0.85;     // Natural pace
+          utterance.pitch = 1.0;
+          
+          const voices = window.speechSynthesis.getVoices();
+          const khmerVoice = voices.find(v => v.lang.includes('KH') || v.lang.includes('km'));
+          if (khmerVoice) {
+            utterance.voice = khmerVoice;
+          }
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.error("Speech Synthesis error:", e);
+        }
+      }
     }
 
     // Modern theme detection & switcher logic (Defaults to Dark Theme for premium look)
@@ -1961,9 +2023,12 @@
         }
 
         // Render Branch select
-        branchSelect.innerHTML = branchesList.map(b => 
-          `<option value="${b.id}" ${b.id === activeBranchId ? 'selected' : ''}>${b.nameKh || b.name} (${b.code})</option>`
-        ).join('');
+        branchSelect.innerHTML = branchesList.map(b => {
+          let label = b.nameKh || b.name;
+          if (b.id === 'BR-001') label += ' (ខេត្ត - Province)';
+          if (b.id === 'BR-004') label += ' (ភ្នំពេញ - Phnom Penh)';
+          return `<option value="${b.id}" ${b.id === activeBranchId ? 'selected' : ''}>${label} (${b.code})</option>`;
+        }).join('');
 
         // 2. Fetch Categories
         const catSnap = await db.collection('categories').get();
@@ -2030,15 +2095,54 @@
             const userBranch = employeeData.branchId;
 
             if (userRole !== 'super_admin' && userRole !== 'accountant' && userBranch && userBranch !== 'all') {
-              activeBranchId = userBranch;
-              localStorage.setItem('abc_active_branch', userBranch);
-              
-              const b = branchesList.find(x => x.id === userBranch);
-              if (b) {
-                branchSelect.innerHTML = `<option value="${b.id}" selected>${b.nameKh || b.name} (${b.code})</option>`;
-                branchSelect.disabled = true;
-                renderProducts(); // Refresh product stock displaying for the locked branch
+              if (userBranch === 'BR-001') {
+                // If Chhouk Meas, they can access both BR-001 (Provinces) and BR-004 (Phnom Penh)
+                const b1 = branchesList.find(x => x.id === 'BR-001');
+                const b4 = branchesList.find(x => x.id === 'BR-004');
+                let optionsHtml = '';
+                if (b1) optionsHtml += `<option value="${b1.id}">${b1.nameKh || b1.name} (ខេត្ត - Province)</option>`;
+                if (b4) optionsHtml += `<option value="${b4.id}">${b4.nameKh || b4.name} (ភ្នំពេញ - Phnom Penh)</option>`;
+                branchSelect.innerHTML = optionsHtml;
+                branchSelect.disabled = false; // Allow manual switching in dropdown
+                
+                // Keep active branch valid
+                if (activeBranchId !== 'BR-001' && activeBranchId !== 'BR-004') {
+                  activeBranchId = 'BR-001';
+                }
+                branchSelect.value = activeBranchId;
+                localStorage.setItem('abc_active_branch', activeBranchId);
+              } else {
+                activeBranchId = userBranch;
+                localStorage.setItem('abc_active_branch', userBranch);
+                const b = branchesList.find(x => x.id === userBranch);
+                if (b) {
+                  branchSelect.innerHTML = `<option value="${b.id}" selected>${b.nameKh || b.name} (${b.code})</option>`;
+                  branchSelect.disabled = true;
+                }
               }
+              renderProducts(); // Refresh product stock displaying for the branch
+            }
+          }
+
+          // Show Destination Selector Popup if staff has multi-stock access (Chhouk Meas BR-001 or Admin/Accountant)
+          const userBranchVal = employeeData ? employeeData.branchId : null;
+          const userRoleVal = employeeData ? employeeData.role : null;
+          const hasMultiStockAccess = (userBranchVal === 'BR-001' || userRoleVal === 'super_admin' || userRoleVal === 'accountant');
+          
+          if (hasMultiStockAccess) {
+            const destModal = document.getElementById('modal-destination-selector');
+            if (destModal) {
+              destModal.style.display = 'flex';
+              
+              // Speak Khmer welcoming notice
+              setTimeout(() => {
+                playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
+              }, 600);
+              
+              destModal.addEventListener('click', function playOnInteraction() {
+                playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
+                destModal.removeEventListener('click', playOnInteraction);
+              });
             }
           }
 
@@ -2403,7 +2507,60 @@
       cart = [];
       updateCartUI();
       renderProducts();
+
+      // Speak corresponding selection voice notice
+      if (activeBranchId === 'BR-004') {
+        playVoiceNotice("ភ្នំពេញ ក្រុមហ៊ុនមហា");
+      } else if (activeBranchId === 'BR-001') {
+        playVoiceNotice("តាមខេត្ត សាខាឈូកមាសធំ");
+      } else {
+        const b = branchesList.find(x => x.id === activeBranchId);
+        if (b) playVoiceNotice(b.nameKh || b.name);
+      }
     });
+
+    // Bind click events for the Destination Selector Popup
+    const btnDestPP = document.getElementById('btn-dest-pp');
+    const btnDestProvince = document.getElementById('btn-dest-province');
+    const destModal = document.getElementById('modal-destination-selector');
+    
+    if (btnDestPP && btnDestProvince && destModal) {
+      btnDestPP.addEventListener('click', () => {
+        // Select MOHA Delivery
+        activeBranchId = 'BR-004';
+        branchSelect.value = 'BR-004';
+        localStorage.setItem('abc_active_branch', 'BR-004');
+        
+        // Speak confirmation
+        playVoiceNotice("ភ្នំពេញ ក្រុមហ៊ុនមហា");
+        
+        // Close modal
+        destModal.style.display = 'none';
+        
+        // Refresh catalog and reset cart
+        cart = [];
+        updateCartUI();
+        renderProducts();
+      });
+      
+      btnDestProvince.addEventListener('click', () => {
+        // Select ABC Chhouk Meas
+        activeBranchId = 'BR-001';
+        branchSelect.value = 'BR-001';
+        localStorage.setItem('abc_active_branch', 'BR-001');
+        
+        // Speak confirmation
+        playVoiceNotice("តាមខេត្ត សាខាឈូកមាសធំ");
+        
+        // Close modal
+        destModal.style.display = 'none';
+        
+        // Refresh catalog and reset cart
+        cart = [];
+        updateCartUI();
+        renderProducts();
+      });
+    }
 
     // Search input typing
     searchInput.addEventListener('input', (e) => {
