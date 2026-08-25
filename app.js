@@ -4600,17 +4600,33 @@
       });
       headHtml += '<th style="text-align:center;">Total Qty</th></tr>';
 
+      // Initialize sums for each branch
+      const branchSums = {};
+      state.branches.forEach(b => {
+        branchSums[b.id] = 0;
+      });
+      let grandTotalSum = 0;
+
       let bodyHtml = '';
       state.products.forEach(p => {
         bodyHtml += `<tr><td><strong>${state.lang === 'km' ? p.nameKh : p.nameEn}</strong><br><span style="font-size:9px;color:var(--text-muted); font-family:monospace;">${p.sku}</span></td>`;
         state.branches.forEach(b => {
-          const qty = p.warehouseStock[b.id] || 0;
+          const qty = parseInt(p.warehouseStock[b.id]) || 0;
+          branchSums[b.id] += qty;
           bodyHtml += `<td class="branch-stock-val" style="color:${qty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${qty}</td>`;
         });
+        grandTotalSum += p.stockQty || 0;
         bodyHtml += `<td style="text-align:center; font-weight:800; color:var(--primary);">${p.stockQty}</td></tr>`;
       });
 
-      matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody>`;
+      // Render Totals footer row
+      let footerHtml = `<tr><td style="padding:10px 8px;"><strong style="color:var(--warning);">${state.lang === 'km' ? 'សរុបទំនិញទាំងអស់' : 'Total Stock'}</strong></td>`;
+      state.branches.forEach(b => {
+        footerHtml += `<td style="font-weight:900; color:var(--warning);">${branchSums[b.id]}</td>`;
+      });
+      footerHtml += `<td style="text-align:center; font-weight:900; color:var(--warning);">${grandTotalSum}</td></tr>`;
+
+      matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody><tfoot>${footerHtml}</tfoot>`;
     }
 
     // 3. Sync Settings Branches Tab if currently active
