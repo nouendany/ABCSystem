@@ -4620,11 +4620,14 @@
       });
 
       // Render Totals footer row
-      let footerHtml = `<tr><td style="padding:10px 8px;"><strong style="color:var(--warning);">${state.lang === 'km' ? 'សរុបទំនិញទាំងអស់' : 'Total Stock'}</strong></td>`;
+      let footerHtml = `
+        <tr style="background: rgba(255, 193, 7, 0.05); border-top: 2px solid var(--warning); border-bottom: 2px solid var(--warning);">
+          <td style="padding: 12px 16px;"><strong style="color:var(--warning);">${state.lang === 'km' ? 'សរុបទំនិញទាំងអស់' : 'Total Stock'}</strong></td>
+      `;
       state.branches.forEach(b => {
-        footerHtml += `<td style="font-weight:900; color:var(--warning);">${branchSums[b.id]}</td>`;
+        footerHtml += `<td style="padding: 12px 16px; font-weight: 900; color: var(--warning);">${branchSums[b.id]}</td>`;
       });
-      footerHtml += `<td style="text-align:center; font-weight:900; color:var(--warning);">${grandTotalSum}</td></tr>`;
+      footerHtml += `<td style="text-align:center; padding: 12px 16px; font-weight: 900; color: var(--warning);">${grandTotalSum}</td></tr>`;
 
       matrix.innerHTML = `<thead>${headHtml}</thead><tbody>${bodyHtml}</tbody><tfoot>${footerHtml}</tfoot>`;
     }
