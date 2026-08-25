@@ -4625,7 +4625,7 @@
           <td style="padding: 12px 16px;"><strong style="color:#ffffff;">${state.lang === 'km' ? 'សរុបទំនិញទាំងអស់' : 'Total Stock'}</strong></td>
       `;
       state.branches.forEach(b => {
-        footerHtml += `<td style="padding: 12px 16px; font-weight: 800; color: #ffffff;">${branchSums[b.id]}</td>`;
+        footerHtml += `<td style="text-align: center; padding: 12px 16px; font-weight: 800; color: #ffffff;">${branchSums[b.id]}</td>`;
       });
       footerHtml += `<td style="text-align:center; padding: 12px 16px; font-weight: 800; color: var(--primary);">${grandTotalSum}</td></tr>`;
 
