@@ -83,6 +83,7 @@
     hideFollowupRoadmap: safeGetItem('abc_hide_followup_roadmap') === 'true',
     crmCurrentPage: 1,
     crmPageSize: 10,
+    showDebtorsOnly: false,
     finSalesPage: 1,
     finExpensePage: 1,
     finPageSize: 10,
@@ -4758,6 +4759,12 @@
         const matchesId = c.id && c.id.toLowerCase().includes(searchQuery);
         if (!matchesName && !matchesPhone && !matchesId) return false;
       }
+
+      // Filter by Debtors Only
+      if (state.showDebtorsOnly && (parseFloat(c.outstandingDebt) || 0) <= 0) {
+        return false;
+      }
+
       return true;
     });
 
@@ -12403,6 +12410,27 @@ CREATE TABLE sale_items (
     if (searchCustomerInput) {
       searchCustomerInput.addEventListener('input', () => {
         state.crmCurrentPage = 1;
+        renderCustomers();
+      });
+    }
+
+    const btnToggleDebtors = document.getElementById('btn-toggle-debtors');
+    if (btnToggleDebtors) {
+      btnToggleDebtors.addEventListener('click', () => {
+        state.showDebtorsOnly = !state.showDebtorsOnly;
+        state.crmCurrentPage = 1;
+        
+        // Update button visual state
+        if (state.showDebtorsOnly) {
+          btnToggleDebtors.style.background = 'var(--warning)';
+          btnToggleDebtors.style.color = '#000';
+          btnToggleDebtors.innerHTML = `🟢 <span>${state.lang === 'km' ? 'មើលតែអ្នកជំពាក់ (Debtors Only)' : 'Debtors Only'}</span>`;
+        } else {
+          btnToggleDebtors.style.background = 'transparent';
+          btnToggleDebtors.style.color = 'var(--warning)';
+          btnToggleDebtors.innerHTML = `🔴 <span>${state.lang === 'km' ? 'មើលតែអ្នកជំពាក់ (Debtors Only)' : 'Debtors Only'}</span>`;
+        }
+        
         renderCustomers();
       });
     }
