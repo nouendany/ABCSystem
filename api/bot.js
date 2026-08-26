@@ -358,6 +358,9 @@ async function handleWebAppOrder(req, res, body) {
         const newCount = (existingCust.purchaseCount || 0) + 1;
         purchaseCountVal = newCount;
         const timeline = existingCust.timeline || [];
+        const oldStaffId = existingCust.staffId;
+        const isDifferentStaff = oldStaffId && oldStaffId !== employee.id;
+
         timeline.push({
           date: new Date().toISOString(),
           status: 'Purchase',
@@ -365,16 +368,24 @@ async function handleWebAppOrder(req, res, body) {
           feedback: 'Purchase placed via Telegram bot',
           notes: `Ordered via Telegram WebApp`
         });
+
+        if (isDifferentStaff) {
+          timeline.push({
+            date: new Date().toISOString(),
+            status: 'Staff Transferred',
+            staffName: employee.fullName,
+            feedback: 'Reassigned from old staff via new Telegram WebApp purchase',
+            notes: `Customer transferred to ${employee.fullName} due to new order.`
+          });
+        }
         
         const updatePayload = {
           purchaseCount: newCount,
-          timeline: timeline
+          timeline: timeline,
+          staffId: employee.id // Always update to current salesperson
         };
         if (isDebt) {
           updatePayload.outstandingDebt = (existingCust.outstandingDebt || 0) + total;
-        }
-        if (!existingCust.staffId) {
-          updatePayload.staffId = employee.id;
         }
         if (req.body.customerFacebook && !existingCust.facebookLink) {
           updatePayload.facebookLink = req.body.customerFacebook;
