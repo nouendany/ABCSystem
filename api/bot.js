@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
-  getFirestore, doc, getDoc, setDoc, updateDoc, 
+  getFirestore, doc, getDoc, setDoc, updateDoc, increment,
   collection, query, where, getDocs, addDoc, orderBy, limit,
   getCountFromServer
 } from "firebase/firestore";
@@ -178,6 +178,7 @@ async function handleWebAppOrder(req, res, body) {
       let currentBranchQty = p.warehouseStock ? (p.warehouseStock[branchId] || 0) : 0;
       
       // Auto-Split in storefront checkout
+      let boxesSplit = 0;
       if (currentBranchQty < item.qty) {
         let parentSku = null;
         if (item.sku.endsWith("-SHEET")) {
@@ -197,14 +198,11 @@ async function handleWebAppOrder(req, res, body) {
             const boxesNeeded = Math.ceil(missingQty / ratio);
 
             if (boxesNeeded <= boxStock) {
-              const updatedParentStock = { ...parentData.warehouseStock };
-              updatedParentStock[branchId] = boxStock - boxesNeeded;
-              let parentSum = 0;
-              for (const b in updatedParentStock) parentSum += parseInt(updatedParentStock[b]) || 0;
-
+              boxesSplit = boxesNeeded;
+              // Direct update to Firestore using atomic increment to prevent overwrites
               await updateDoc(parentRef, {
-                warehouseStock: updatedParentStock,
-                stockQty: parentSum
+                [`warehouseStock.${branchId}`]: increment(-boxesNeeded),
+                stockQty: increment(-boxesNeeded)
               });
 
               const slgSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
@@ -261,19 +259,11 @@ async function handleWebAppOrder(req, res, body) {
         total: itemTotal
       });
 
-      // Deduct warehouse stock
-      const updatedWarehouseStock = { ...p.warehouseStock };
-      updatedWarehouseStock[branchId] = Math.max(0, currentBranchQty - item.qty);
-      
-      let sumQty = 0;
-      for (const b in updatedWarehouseStock) {
-        sumQty += parseInt(updatedWarehouseStock[b]) || 0;
-      }
-
+      // Calculate net change (auto-split addition minus sale subtraction)
+      const netChange = (boxesSplit * 5) - item.qty;
       stockUpdates.push({
         sku: item.sku,
-        warehouseStock: updatedWarehouseStock,
-        stockQty: sumQty
+        netChange: netChange
       });
     }
 
@@ -300,10 +290,10 @@ async function handleWebAppOrder(req, res, body) {
       const update = stockUpdates[i];
       const cartItem = cart[i];
       
-      // Update Firestore Product
+      // Update Firestore Product atomically to prevent overwrites
       await updateDoc(doc(db, "products", update.sku), {
-        warehouseStock: update.warehouseStock,
-        stockQty: update.stockQty
+        [`warehouseStock.${branchId}`]: increment(update.netChange),
+        stockQty: increment(update.netChange)
       });
 
       // Log Stock Movement

@@ -3382,13 +3382,13 @@
     // Direct update to Firestore for both split products to prevent overwrites
     if (state.firebaseDb) {
       state.firebaseDb.collection('products').doc(parentBoxProduct.sku).update({
-        [`warehouseStock.${branchId}`]: parentBoxProduct.warehouseStock[branchId],
-        stockQty: parentSum
+        [`warehouseStock.${branchId}`]: firebase.firestore.FieldValue.increment(-boxesNeeded),
+        stockQty: firebase.firestore.FieldValue.increment(-boxesNeeded)
       }).catch(e => console.error("Firebase auto-split parent update error:", e));
 
       state.firebaseDb.collection('products').doc(product.sku).update({
-        [`warehouseStock.${branchId}`]: product.warehouseStock[branchId],
-        stockQty: unitSum
+        [`warehouseStock.${branchId}`]: firebase.firestore.FieldValue.increment(boxesNeeded * ratio),
+        stockQty: firebase.firestore.FieldValue.increment(boxesNeeded * ratio)
       }).catch(e => console.error("Firebase auto-split unit update error:", e));
     }
 
@@ -4035,8 +4035,8 @@
         // Direct update to Firestore to prevent overwrites
         if (state.firebaseDb) {
           state.firebaseDb.collection('products').doc(product.sku).update({
-            [`warehouseStock.${branchId}`]: newBranchStock,
-            stockQty: sum
+            [`warehouseStock.${branchId}`]: firebase.firestore.FieldValue.increment(-item.qty),
+            stockQty: firebase.firestore.FieldValue.increment(-item.qty)
           }).catch(e => console.error("Firebase stock update error:", e));
         }
 
@@ -8818,8 +8818,8 @@
         // Direct update to Firestore to prevent overwrites
         if (state.firebaseDb) {
           state.firebaseDb.collection('products').doc(p.sku).update({
-            [`warehouseStock.${brId}`]: newBranchStock,
-            stockQty: sum
+            [`warehouseStock.${brId}`]: firebase.firestore.FieldValue.increment(item.qty),
+            stockQty: firebase.firestore.FieldValue.increment(item.qty)
           }).catch(e => console.error("Firebase stock restore error:", e));
         }
 
@@ -13334,8 +13334,8 @@ CREATE TABLE sale_items (
             // Direct update to Firestore to prevent overwrites
             if (state.firebaseDb) {
               state.firebaseDb.collection('products').doc(productObj.sku).update({
-                [`warehouseStock.${activeBranch}`]: newBranchStock,
-                stockQty: sum
+                [`warehouseStock.${activeBranch}`]: firebase.firestore.FieldValue.increment(-qty),
+                stockQty: firebase.firestore.FieldValue.increment(-qty)
               }).catch(e => console.error("Firebase CRM stock update error:", e));
             }
 
@@ -13660,8 +13660,8 @@ CREATE TABLE sale_items (
       // Direct update to Firestore to prevent overwrites
       if (state.firebaseDb) {
         state.firebaseDb.collection('products').doc(sku).update({
-          [`warehouseStock.${brId}`]: product.warehouseStock[brId],
-          stockQty: sum,
+          [`warehouseStock.${brId}`]: firebase.firestore.FieldValue.increment(shift),
+          stockQty: firebase.firestore.FieldValue.increment(shift),
           costPrice: product.costPrice
         }).catch(e => console.error("Firebase stock adjustment error:", e));
       }
@@ -13722,8 +13722,8 @@ CREATE TABLE sale_items (
       // Direct update to Firestore to prevent overwrites
       if (state.firebaseDb) {
         state.firebaseDb.collection('products').doc(sku).update({
-          [`warehouseStock.${src}`]: product.warehouseStock[src],
-          [`warehouseStock.${tar}`]: product.warehouseStock[tar]
+          [`warehouseStock.${src}`]: firebase.firestore.FieldValue.increment(-qty),
+          [`warehouseStock.${tar}`]: firebase.firestore.FieldValue.increment(qty)
         }).catch(e => console.error("Firebase stock transfer error:", e));
       }
 
