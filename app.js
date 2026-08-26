@@ -8803,38 +8803,28 @@
     if (idx === -1) return;
     const tx = state.transactions[idx];
 
-    // Restore warehouse stock
-    tx.items.forEach(item => {
-      const p = state.products.find(prod => prod.sku === item.sku);
-      if (p) {
-        const brId = tx.branchId || "BR-001";
-        const newBranchStock = (p.warehouseStock[brId] || 0) + item.qty;
-        p.warehouseStock[brId] = newBranchStock;
-        
-        let sum = 0;
-        for (const b in p.warehouseStock) sum += parseInt(p.warehouseStock[b]) || 0;
-        p.stockQty = sum;
+    // Clean up corresponding sale logs from local state and Firestore (do not restore stock)
+    const descriptionsToDelete = [
+      `Sold via Invoice ${tx.invoiceNo || tx.id}`,
+      `Sold via Telegram WebApp Invoice ${tx.invoiceNo || tx.id}`
+    ];
+    state.stockLogs = state.stockLogs.filter(log => !descriptionsToDelete.includes(log.description || log.notes));
 
-        // Direct update to Firestore to prevent overwrites
-        if (state.firebaseDb) {
-          state.firebaseDb.collection('products').doc(p.sku).update({
-            [`warehouseStock.${brId}`]: newBranchStock,
-            stockQty: sum
-          }).catch(e => console.error("Firebase stock restore error:", e));
-        }
-
-        // Log restoration
-        state.stockLogs.push({
-          id: 'SLG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
-          date: new Date().toISOString(),
-          sku: item.sku,
-          type: 'replenishment',
-          qty: item.qty,
-          warehouseId: brId,
-          description: `Restored stock from voided transaction ${tx.invoiceNo || tx.id}`
-        });
-      }
-    });
+    if (state.firebaseDb) {
+      tx.items.forEach(item => {
+        state.firebaseDb.collection('stock_logs')
+          .where('sku', '==', item.sku)
+          .where('type', '==', 'sale')
+          .where('description', 'in', descriptionsToDelete)
+          .get()
+          .then(snapshot => {
+            snapshot.forEach(doc => {
+              doc.ref.delete().catch(e => console.error("Error deleting sale log:", e));
+            });
+          })
+          .catch(e => console.error("Error querying sale logs for deletion:", e));
+      });
+    }
 
     // Rollback customer debt & clean history
     if (tx.customerId) {
