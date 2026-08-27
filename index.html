@@ -1381,8 +1381,14 @@
 
           <!-- Expenses Log -->
           <div class="glass-card">
-            <div class="table-header">
+            <div class="table-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <h3 data-translate="operationalExpenses">Operational Expenses (OpEx)</h3>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:var(--text-muted);" data-translate="filterByCategory">Filter by Category:</label>
+                <select id="expense-category-filter" class="form-control" style="width:180px; font-size:12px; padding:4px 8px; height:auto; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; cursor:pointer;">
+                  <option value="all" data-translate="allCategories">All Categories</option>
+                </select>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="pos-table">

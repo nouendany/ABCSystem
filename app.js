@@ -3140,10 +3140,6 @@
 
   function populateExpenseCategories() {
     const selectEl = document.getElementById('exp-category');
-    if (!selectEl) return;
-    
-    const selectedValue = selectEl.value;
-    selectEl.innerHTML = '';
     
     const standardCats = [
       { value: 'rent', langKey: 'rent' },
@@ -3156,25 +3152,59 @@
       { value: 'otherExpenses', langKey: 'otherExpenses' }
     ];
     
-    standardCats.forEach(cat => {
-      const option = document.createElement('option');
-      option.value = cat.value;
-      option.setAttribute('data-translate', cat.langKey);
-      option.innerText = window.POS_TRANSLATIONS[state.lang][cat.langKey] || cat.value;
-      selectEl.appendChild(option);
-    });
-    
-    if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
-      state.companySettings.customExpenseCategories.forEach(cat => {
+    if (selectEl) {
+      const selectedValue = selectEl.value;
+      selectEl.innerHTML = '';
+      
+      standardCats.forEach(cat => {
         const option = document.createElement('option');
-        option.value = cat;
-        option.innerText = cat;
+        option.value = cat.value;
+        option.setAttribute('data-translate', cat.langKey);
+        option.innerText = window.POS_TRANSLATIONS[state.lang][cat.langKey] || cat.value;
         selectEl.appendChild(option);
       });
+      
+      if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
+        state.companySettings.customExpenseCategories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.innerText = cat;
+          selectEl.appendChild(option);
+        });
+      }
+      
+      if (selectedValue) {
+        selectEl.value = selectedValue;
+      }
     }
-    
-    if (selectedValue) {
-      selectEl.value = selectedValue;
+
+    const filterEl = document.getElementById('expense-category-filter');
+    if (filterEl) {
+      const currentFilterVal = filterEl.value || 'all';
+      filterEl.innerHTML = '';
+      
+      const allOption = document.createElement('option');
+      allOption.value = 'all';
+      allOption.setAttribute('data-translate', 'allCategories');
+      allOption.innerText = window.POS_TRANSLATIONS[state.lang].allCategories || 'All Categories';
+      filterEl.appendChild(allOption);
+      
+      standardCats.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.value;
+        option.innerText = window.POS_TRANSLATIONS[state.lang][cat.langKey] || cat.value;
+        filterEl.appendChild(option);
+      });
+      
+      if (state.companySettings && Array.isArray(state.companySettings.customExpenseCategories)) {
+        state.companySettings.customExpenseCategories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.innerText = cat;
+          filterEl.appendChild(option);
+        });
+      }
+      filterEl.value = currentFilterVal;
     }
   }
 
@@ -6167,7 +6197,13 @@
     };
 
     const txList = getFilteredTransactions().filter(t => filterByDateRange(t.date));
-    const expenseList = getFilteredExpenses().filter(e => filterByDateRange(e.date));
+    
+    const categoryFilterVal = document.getElementById('expense-category-filter')?.value || 'all';
+    const expenseList = getFilteredExpenses().filter(e => {
+      const matchDate = filterByDateRange(e.date);
+      const matchCategory = (categoryFilterVal === 'all' || e.category === categoryFilterVal);
+      return matchDate && matchCategory;
+    });
 
     let totalRevenue = 0;
     let totalCOGS = 0;
@@ -14465,6 +14501,14 @@ CREATE TABLE sale_items (
     if (finEndDate) {
       finEndDate.addEventListener('change', () => {
         state.finSalesPage = 1;
+        state.finExpensePage = 1;
+        renderFinance();
+      });
+    }
+
+    const expCatFilter = document.getElementById('expense-category-filter');
+    if (expCatFilter) {
+      expCatFilter.addEventListener('change', () => {
         state.finExpensePage = 1;
         renderFinance();
       });
