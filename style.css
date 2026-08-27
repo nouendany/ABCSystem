@@ -1078,23 +1078,47 @@ body.light-theme .kpi-icon-wrapper {
 }
 
 /* Split Grids */
-.dashboard-grid, .settings-split-grid {
+.dashboard-grid {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
   gap: 20px;
 }
-.settings-split-grid > .glass-card {
+.settings-split-grid {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+.settings-split-grid > .glass-card:first-of-type {
+  flex: 1.2 !important;
   display: flex !important;
   flex-direction: column !important;
   align-self: stretch !important;
+  margin-bottom: 20px !important;
+}
+.settings-split-grid > .glass-card:last-of-type {
+  flex: 0.8 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-self: stretch !important;
+  margin-bottom: 20px !important;
 }
 .settings-split-grid > .glass-card > .table-responsive {
   flex: 1 1 auto !important;
 }
 
 @media (max-width: 1024px) {
-  .dashboard-grid, .settings-split-grid {
+  .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+  .settings-split-grid {
+    flex-direction: column !important;
+  }
+  .settings-split-grid > .glass-card:first-of-type,
+  .settings-split-grid > .glass-card:last-of-type {
+    flex: 1 !important;
+    width: 100% !important;
   }
 }
 
