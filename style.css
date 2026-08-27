@@ -1083,6 +1083,14 @@ body.light-theme .kpi-icon-wrapper {
   grid-template-columns: 1.2fr 0.8fr;
   gap: 20px;
 }
+.settings-split-grid > .glass-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.settings-split-grid > .glass-card > .table-responsive {
+  flex: 1;
+}
 
 @media (max-width: 1024px) {
   .dashboard-grid, .settings-split-grid {
