@@ -84,6 +84,7 @@
     crmCurrentPage: 1,
     crmPageSize: 10,
     showDebtorsOnly: false,
+    listenersLoaded: {},
     finSalesPage: 1,
     finExpensePage: 1,
     finPageSize: 10,
@@ -1415,37 +1416,46 @@
       };
 
       try {
-        syncChanges('accounts', state.accounts, lastSyncedState.accounts, 'id');
-        syncChanges('account_transactions', state.accountTransactions, lastSyncedState.accountTransactions, 'id');
-        syncChanges('users', state.users, lastSyncedState.users, 'id');
-        syncChanges('branches', state.branches, lastSyncedState.branches, 'id');
-        syncChanges('customers', state.customers, lastSyncedState.customers, 'id');
-        // Products are synchronized directly upon creation, adjustment, checkout, or deletion.
-        // This prevents memory sync overwrites from outdated browser states.
-        // syncChanges('products', state.products, lastSyncedState.products, 'sku');
-        syncChanges('staff', state.staff, lastSyncedState.staff, 'id');
-        syncChanges('transactions', state.transactions, lastSyncedState.transactions, 'id');
-        syncChanges('expenses', state.expenses, lastSyncedState.expenses, 'id');
-        syncChanges('stock_logs', state.stockLogs, lastSyncedState.stockLogs, 'id');
-        syncChanges('payment_logs', state.paymentLogs, lastSyncedState.paymentLogs, 'id');
-        syncChanges('followups', state.followups, lastSyncedState.followups, 'id');
-        syncChanges('employees', state.employees, lastSyncedState.employees, 'id');
-        syncChanges('attendance', state.attendance, lastSyncedState.attendance, 'id');
-        syncChanges('leave_requests', state.leaveRequests, lastSyncedState.leaveRequests, 'id');
-        syncChanges('companies', state.companies, lastSyncedState.companies, 'id');
-        syncChanges('departments', state.departments, lastSyncedState.departments, 'id');
-        syncChanges('teams', state.teams, lastSyncedState.teams, 'id');
-        syncChanges('positions', state.positions, lastSyncedState.positions, 'id');
-        syncChanges('payroll_items', state.payrollItems, lastSyncedState.payrollItems, 'id');
-        syncChanges('kpis', state.kpis, lastSyncedState.kpis, 'id');
-        syncChanges('testimonials', state.testimonials, lastSyncedState.testimonials, 'id');
-        syncChanges('voided_transactions', state.voidedTransactions, lastSyncedState.voidedTransactions, 'id');
-        syncChanges('notifications', state.notifications, lastSyncedState.notifications, 'id');
-        syncChanges('closing_logs', state.closingLogs, lastSyncedState.closingLogs, 'id');
-        syncChanges('audit_logs', state.auditLogs, lastSyncedState.auditLogs, 'id');
+        const collectionsToSync = [
+          { col: 'accounts', key: 'accounts', id: 'id' },
+          { col: 'account_transactions', key: 'accountTransactions', id: 'id' },
+          { col: 'users', key: 'users', id: 'id' },
+          { col: 'branches', key: 'branches', id: 'id' },
+          { col: 'customers', key: 'customers', id: 'id' },
+          { col: 'staff', key: 'staff', id: 'id' },
+          { col: 'transactions', key: 'transactions', id: 'id' },
+          { col: 'expenses', key: 'expenses', id: 'id' },
+          { col: 'stock_logs', key: 'stockLogs', id: 'id' },
+          { col: 'payment_logs', key: 'paymentLogs', id: 'id' },
+          { col: 'followups', key: 'followups', id: 'id' },
+          { col: 'employees', key: 'employees', id: 'id' },
+          { col: 'attendance', key: 'attendance', id: 'id' },
+          { col: 'leave_requests', key: 'leaveRequests', id: 'id' },
+          { col: 'companies', key: 'companies', id: 'id' },
+          { col: 'departments', key: 'departments', id: 'id' },
+          { col: 'teams', key: 'teams', id: 'id' },
+          { col: 'positions', key: 'positions', id: 'id' },
+          { col: 'payroll_items', key: 'payrollItems', id: 'id' },
+          { col: 'kpis', key: 'kpis', id: 'id' },
+          { col: 'testimonials', key: 'testimonials', id: 'id' },
+          { col: 'voided_transactions', key: 'voidedTransactions', id: 'id' },
+          { col: 'notifications', key: 'notifications', id: 'id' },
+          { col: 'closing_logs', key: 'closingLogs', id: 'id' },
+          { col: 'audit_logs', key: 'auditLogs', id: 'id' }
+        ];
 
-        db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
-        db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error("Firebase commission rules save error:", e));
+        collectionsToSync.forEach(c => {
+          if (state.listenersLoaded && state.listenersLoaded[c.col]) {
+            syncChanges(c.col, state[c.key], lastSyncedState[c.key], c.id);
+          }
+        });
+
+        if (state.listenersLoaded && state.listenersLoaded['company_settings']) {
+          db.collection('company_settings').doc('global').set(state.companySettings).catch(e => console.error("Firebase config save error:", e));
+        }
+        if (state.listenersLoaded && state.listenersLoaded['commission_rules']) {
+          db.collection('company_settings').doc('commission_rules').set(state.commissionRules).catch(e => console.error("Firebase commission rules save error:", e));
+        }
 
 
         // Update baseline sync cache to reflect current state
@@ -9816,6 +9826,7 @@
                 }
               });
             }
+            state.listenersLoaded[colName] = true;
             isInitial = false;
 
             // Re-render UI views (debounced to prevent rendering bottlenecks during synchronization)
@@ -9875,6 +9886,7 @@
             }
           }
 
+          state.listenersLoaded['company_settings'] = true;
           if (doc.exists && doc.data() && Object.keys(doc.data()).length > 0) {
             const settings = doc.data();
             if (settings.stickyNotes === undefined && state.companySettings && state.companySettings.stickyNotes) {
@@ -9929,6 +9941,7 @@
             }
           }
 
+          state.listenersLoaded['commission_rules'] = true;
           if (doc.exists && doc.data() && Object.keys(doc.data()).length > 0) {
             const rules = doc.data();
             state.commissionRules = rules;
