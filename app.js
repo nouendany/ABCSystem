@@ -6529,7 +6529,9 @@
 
     // Expense ledger
     const expenseBody = document.getElementById('fin-expense-ledger');
+    const expenseFoot = document.getElementById('fin-expense-ledger-foot');
     expenseBody.innerHTML = '';
+    if (expenseFoot) expenseFoot.innerHTML = '';
     const sortedExp = [...expenseList].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     if (sortedExp.length === 0) {
@@ -6603,6 +6605,22 @@
 
         expenseBody.appendChild(tr);
       });
+
+      // Calculate dynamic sum for filtered expenses
+      let sumExpense = 0;
+      sortedExp.forEach(e => {
+        sumExpense += e.amount;
+      });
+
+      if (expenseFoot) {
+        expenseFoot.innerHTML = `
+          <tr style="background:rgba(255,255,255,0.05); font-weight:800; border-top: 2px solid var(--border-color);">
+            <td colspan="3" style="text-align:left; font-size:12px;">📈 ${state.lang === 'km' ? 'សរុបការចំណាយ (Total Expense)' : 'Total Expense'}</td>
+            <td style="font-weight:800; color:var(--danger);">${window.POS_HELPERS.formatUSD(sumExpense)}</td>
+            <td></td>
+          </tr>
+        `;
+      }
 
       // Update Expense Pagination UI
       const expPageStart = document.getElementById('fin-exp-page-start');
