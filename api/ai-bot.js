@@ -55,7 +55,7 @@ const aiTools = [
     functionDeclarations: [
       {
         name: "checkStock",
-        description: "Check the current stock of a product by its name or SKU, optionally at a specific branch.",
+        description: "Check the current stock of a product. ONLY call this when the user explicitly asks to check stock, look up stock, or see count of items.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -65,7 +65,7 @@ const aiTools = [
             },
             branchName: {
               type: "STRING",
-              description: "Optional branch name (e.g. 'Chhouk Meas' or 'HQ'). Defaults to listing all branches if not specified."
+              description: "Optional branch name. Defaults to listing all branches if not specified."
             }
           },
           required: ["productNameOrSku"]
@@ -73,7 +73,7 @@ const aiTools = [
       },
       {
         name: "adjustStock",
-        description: "Adjust (increase/add or decrease/remove) the stock of a product. Requires 'adjust_stock' permission.",
+        description: "Adjust (increase/add or decrease/remove) the stock of a product. ONLY call this when the user explicitly instructs to add, remove, increase, or decrease stock counts.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -92,7 +92,7 @@ const aiTools = [
             },
             branchName: {
               type: "STRING",
-              description: "The branch name where the stock is adjusted (e.g. 'Chhouk Meas' or 'HQ')."
+              description: "The branch name where the stock is adjusted."
             },
             reason: {
               type: "STRING",
@@ -104,7 +104,7 @@ const aiTools = [
       },
       {
         name: "getSalesReport",
-        description: "Retrieve a sales report total for a specific time period. Requires 'sales_report' permission.",
+        description: "Retrieve a sales report total. ONLY call this when the user explicitly asks for a sales report, today's sales, or daily revenue summaries.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -119,7 +119,7 @@ const aiTools = [
       },
       {
         name: "lookupCustomer",
-        description: "Search for a customer's phone number, address, and outstanding debt. Requires 'customer_lookup' permission.",
+        description: "Search for a customer's profile details. ONLY call this when the user explicitly asks to lookup, search, or check a customer's profile, debt, or phone number. NEVER call this just because the user greetings you, says hello, or calls your name.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -450,7 +450,7 @@ export default async function handler(req, res) {
 
     // 6. Initialize Gemini conversation with instructions
     const systemPrompt = settings.telegramAiBotInstructions || 
-      "Your name is ស៊ីការ (Ceaca). You are a loyal and highly intelligent AI Sales & Inventory assistant for ABC System, created to serve your Boss (ម្ចាស់ហាង/ប្រធាន) named បងដានី (Dany). Answer politely in Khmer or English. Always refer to yourself as ស៊ីការ (Ceaca). Address your boss respectfully as 'បងដានី' (Brother Dany) or 'លោកប្រធាន'. Treat him and staff with high respect. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools.";
+      "Your name is ស៊ីការ (Ceaca). You are a loyal and highly intelligent AI Sales & Inventory assistant for ABC System, created to serve your Boss (ម្ចាស់ហាង/ប្រធាន) named បងដានី (Dany). Answer politely in Khmer or English. Always refer to yourself as ស៊ីការ (Ceaca). Address your boss respectfully as 'បងដានី' (Brother Dany) or 'លោកប្រធាន'. Treat him and staff with high respect. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools. CRITICAL: If the user is just saying hello, greeting you, or calling your name (e.g. 'sika', 'ceaca', 'ជម្រាបសួរ', 'សួស្តី'), DO NOT call any tool functions. Just reply with a warm, respectful greeting addressing your boss 'បងដានី' or the staff member, and ask how you can help them.";
 
     const geminiApiKey = settings.telegramAiBotApiKey || process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {
