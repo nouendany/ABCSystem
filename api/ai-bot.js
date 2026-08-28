@@ -30,7 +30,7 @@ async function sendTelegram(token, method, payload) {
 
 // Helper to call Google Gemini API
 async function callGemini(apiKey, systemInstruction, contents, tools) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
   const payload = {
     contents,
     systemInstruction: {
