@@ -10587,6 +10587,101 @@
             </div>
           </form>
         </div>
+
+        <div class="glass-card" style="padding: 24px; max-width: 600px; margin: 20px auto 0 auto;">
+          <div class="table-header" style="margin-bottom: 20px;">
+            <h3>🤖 Telegram AI Agent Bot Settings</h3>
+          </div>
+          <form id="ai-bot-settings-form-master" onsubmit="return false;">
+            <div class="form-group" style="margin-bottom: 15px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" id="ai-settings-enabled-master" ${state.companySettings.telegramAiBotEnabled ? 'checked' : ''}>
+                <span>Enable AI Agent Bot (បើកដំណើរការ AI Bot)</span>
+              </label>
+            </div>
+            
+            <div class="form-group">
+              <label>AI Bot Token</label>
+              <input type="text" class="form-control" id="ai-settings-token-master" placeholder="Enter AI Bot Token from BotFather" value="${state.companySettings.telegramAiBotToken || ''}">
+            </div>
+            <div class="form-group">
+              <label>AI Bot Username</label>
+              <input type="text" class="form-control" id="ai-settings-username-master" placeholder="e.g. abc_ai_bot" value="${state.companySettings.telegramAiBotUsername || ''}">
+            </div>
+            <div class="form-group">
+              <label>Gemini API Key</label>
+              <input type="password" class="form-control" id="ai-settings-api-key-master" placeholder="AIzaSy..." value="${state.companySettings.telegramAiBotApiKey || ''}">
+              <small style="color: var(--text-muted); font-size: 11px;">Google Gemini API Key for model requests. If empty, falls back to server env.</small>
+            </div>
+            <div class="form-group">
+              <label>AI Instructions / System Prompt</label>
+              <textarea class="form-control" id="ai-settings-instructions-master" rows="4" style="height:auto; resize:vertical;" placeholder="System prompt for the AI Agent...">${state.companySettings.telegramAiBotInstructions || "You are a helpful AI Sales & Inventory assistant for ABC System. Answer politely in Khmer or English. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools when requested by staff."}</textarea>
+            </div>
+
+            <!-- Permission Manager -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+              <h4 style="margin-bottom:10px;">👤 Authorized Users & Permissions</h4>
+              
+              <!-- Add User Form -->
+              <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <div class="form-group" style="margin-bottom: 10px;">
+                  <label style="font-size:11px;">Telegram Username or user ID</label>
+                  <input type="text" class="form-control" id="ai-add-user-username" placeholder="e.g. @chanthou or 123456789">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; margin-bottom: 10px;">
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="checkbox" id="ai-perm-check-stock" checked> Check Stock
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="checkbox" id="ai-perm-adjust-stock"> Adjust Stock
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="checkbox" id="ai-perm-sales-report"> Sales Reports
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input type="checkbox" id="ai-perm-customer-lookup"> Customer Info
+                  </label>
+                </div>
+                
+                <button type="button" class="btn btn-primary btn-sm" id="btn-ai-add-user" style="padding: 4px 10px; font-size: 11px; min-height: auto;">Add User</button>
+              </div>
+
+              <!-- Users List Table -->
+              <div class="table-responsive">
+                <table class="pos-table" style="font-size:11px;">
+                  <thead>
+                    <tr>
+                      <th>Telegram User</th>
+                      <th>Permissions</th>
+                      <th style="width: 50px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ai-bot-users-list">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Webhook Registration Helper -->
+            <div class="form-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 20px;">
+              <label style="margin-bottom:4px; font-weight:700;">AI Bot Webhook URL</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-control" id="ai-settings-webhook-url-master" readonly style="background: rgba(0,0,0,0.2);" value="${window.location.origin + '/api/ai-bot?token=' + (state.companySettings.telegramAiBotToken || '')}">
+                <button type="button" class="btn btn-outline" id="btn-copy-ai-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;">Copy</button>
+                <button type="button" class="btn btn-primary" id="btn-register-ai-webhook-master" style="min-height:auto; padding: 6px 12px; font-size:12px;">Set Webhook</button>
+              </div>
+              <small style="color: var(--text-muted); font-size: 11px; display:block; margin-top:10px;">
+                Click "Set Webhook" after saving to register Vercel to your Telegram bot.
+              </small>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+              <button type="button" class="btn btn-primary" id="btn-save-ai-settings-master">Save AI Settings</button>
+            </div>
+          </form>
+        </div>
       `;
 
       document.getElementById('hr-settings-form-master').addEventListener('submit', (e) => {
@@ -10664,6 +10759,117 @@
         const registerUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
         window.open(registerUrl, '_blank');
       });
+
+      // Render AI Bot Users function
+      const renderAiBotUsers = () => {
+        const listEl = document.getElementById('ai-bot-users-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        
+        const users = state.companySettings.telegramAiBotAllowedUsers || [];
+        if (users.length === 0) {
+          listEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No authorized users</td></tr>`;
+          return;
+        }
+        
+        users.forEach((u, index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-weight:700;">${u.username}</td>
+            <td style="font-size:10px; color:var(--text-secondary);">${u.permissions.join(', ')}</td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline" style="color:var(--danger); border-color:rgba(239,68,68,0.3); min-height:auto; padding:2px 6px;" onclick="deleteAiBotUser(${index})">Delete</button>
+            </td>
+          `;
+          listEl.appendChild(tr);
+        });
+      };
+
+      window.deleteAiBotUser = (index) => {
+        if (!state.companySettings.telegramAiBotAllowedUsers) {
+          state.companySettings.telegramAiBotAllowedUsers = [];
+        }
+        state.companySettings.telegramAiBotAllowedUsers.splice(index, 1);
+        renderAiBotUsers();
+      };
+
+      // Add AI Bot User listener
+      document.getElementById('btn-ai-add-user').addEventListener('click', () => {
+        const usernameInput = document.getElementById('ai-add-user-username');
+        const username = usernameInput.value.trim();
+        if (!username) {
+          alert("Please enter a username or ID!");
+          return;
+        }
+        
+        const permissions = [];
+        if (document.getElementById('ai-perm-check-stock').checked) permissions.push('check_stock');
+        if (document.getElementById('ai-perm-adjust-stock').checked) permissions.push('adjust_stock');
+        if (document.getElementById('ai-perm-sales-report').checked) permissions.push('sales_report');
+        if (document.getElementById('ai-perm-customer-lookup').checked) permissions.push('customer_lookup');
+        
+        if (!state.companySettings.telegramAiBotAllowedUsers) {
+          state.companySettings.telegramAiBotAllowedUsers = [];
+        }
+        
+        const exists = state.companySettings.telegramAiBotAllowedUsers.some(u => u.username.toLowerCase() === username.toLowerCase());
+        if (exists) {
+          alert("This username is already added!");
+          return;
+        }
+        
+        state.companySettings.telegramAiBotAllowedUsers.push({ username, permissions });
+        usernameInput.value = '';
+        renderAiBotUsers();
+      });
+
+      // Save AI Bot Settings listener
+      document.getElementById('btn-save-ai-settings-master').addEventListener('click', () => {
+        if (!guardAction('edit')) return;
+        
+        state.companySettings.telegramAiBotEnabled = document.getElementById('ai-settings-enabled-master').checked;
+        state.companySettings.telegramAiBotToken = document.getElementById('ai-settings-token-master').value.trim();
+        state.companySettings.telegramAiBotUsername = document.getElementById('ai-settings-username-master').value.trim();
+        state.companySettings.telegramAiBotApiKey = document.getElementById('ai-settings-api-key-master').value.trim();
+        state.companySettings.telegramAiBotInstructions = document.getElementById('ai-settings-instructions-master').value.trim();
+        
+        // Save config
+        saveStateToLocalStorage();
+        
+        // Update Webhook input value in case Token changed
+        const webhookUrlInput = document.getElementById('ai-settings-webhook-url-master');
+        if (webhookUrlInput) {
+          webhookUrlInput.value = window.location.origin + '/api/ai-bot?token=' + state.companySettings.telegramAiBotToken;
+        }
+        
+        alert("AI Bot configurations saved successfully!");
+      });
+
+      // Copy AI Bot Webhook listener
+      document.getElementById('btn-copy-ai-webhook-master').addEventListener('click', () => {
+        const urlInput = document.getElementById('ai-settings-webhook-url-master');
+        if (urlInput) {
+          urlInput.select();
+          document.execCommand('copy');
+          alert('AI Webhook URL copied to clipboard!');
+        }
+      });
+
+      // Set AI Webhook listener
+      document.getElementById('btn-register-ai-webhook-master').addEventListener('click', () => {
+        const token = document.getElementById('ai-settings-token-master').value.trim();
+        const webhookUrl = document.getElementById('ai-settings-webhook-url-master').value.trim();
+        if (!token) {
+          alert('Please enter the Telegram Bot Token first!');
+          return;
+        }
+        
+        const registerUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
+        window.open(registerUrl, '_blank');
+      });
+
+      // Initial render of AI Bot users
+      renderAiBotUsers();
 
       translateApp();
 
