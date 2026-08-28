@@ -405,7 +405,7 @@ export default async function handler(req, res) {
     // 4. Trigger Check: Only respond to DMs, replies to the bot, or if name is mentioned
     const isPrivateChat = message.chat.type === "private";
     const cleanText = text.toLowerCase();
-    const mentionsName = cleanText.includes("ceaca") || cleanText.includes("ស៊ីការ");
+    const mentionsName = cleanText.includes("ceaca") || cleanText.includes("sika") || cleanText.includes("ស៊ីការ");
 
     let isReplyToBot = false;
     if (message.reply_to_message) {
