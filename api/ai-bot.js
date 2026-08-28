@@ -479,6 +479,7 @@ export default async function handler(req, res) {
       const call = parts[0].functionCall;
       const functionName = call.name;
       const functionArgs = call.args;
+      const callId = call.id;
       const thoughtSignature = parts[0].thoughtSignature || parts[0].thought_signature;
 
       // Add the model's functionCall turn to the content history
@@ -488,6 +489,9 @@ export default async function handler(req, res) {
           args: functionArgs
         }
       };
+      if (callId) {
+        modelPart.functionCall.id = callId;
+      }
       if (thoughtSignature) {
         modelPart.thoughtSignature = thoughtSignature;
         modelPart.thought_signature = thoughtSignature;
@@ -513,6 +517,9 @@ export default async function handler(req, res) {
           response: { name: functionName, content: result }
         }
       };
+      if (callId) {
+        clientPart.functionResponse.id = callId;
+      }
       if (thoughtSignature) {
         clientPart.thoughtSignature = thoughtSignature;
         clientPart.thought_signature = thoughtSignature;
