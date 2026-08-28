@@ -402,12 +402,31 @@ export default async function handler(req, res) {
       return res.status(200).send("Message has no text");
     }
 
+    // 4. Trigger Check: Only respond to DMs, replies to the bot, or if name is mentioned
+    const isPrivateChat = message.chat.type === "private";
+    const cleanText = text.toLowerCase();
+    const mentionsName = cleanText.includes("ceaca") || cleanText.includes("ស៊ីការ");
+
+    let isReplyToBot = false;
+    if (message.reply_to_message) {
+      const replyFrom = message.reply_to_message.from || {};
+      const botUsername = (settings.telegramAiBotUsername || "").replace('@', '').toLowerCase();
+      const botTokenId = settings.telegramAiBotToken ? settings.telegramAiBotToken.split(':')[0] : '';
+      if (replyFrom.is_bot && (replyFrom.username?.toLowerCase() === botUsername || String(replyFrom.id) === botTokenId)) {
+        isReplyToBot = true;
+      }
+    }
+
+    if (!isPrivateChat && !mentionsName && !isReplyToBot) {
+      return res.status(200).send("Ignored: name not called in group");
+    }
+
     // Extract user info
     const senderUser = message.from || {};
     const senderUsername = senderUser.username || "";
     const senderId = String(senderUser.id);
 
-    // 4. Authenticate sender username or Telegram ID in allowed users list
+    // 5. Authenticate sender username or Telegram ID in allowed users list
     const allowedUsers = settings.telegramAiBotAllowedUsers || [];
     const normalizedSenderUsername = senderUsername.replace('@', '').toLowerCase();
     
@@ -429,9 +448,9 @@ export default async function handler(req, res) {
 
     const userPermissions = authUser.permissions || [];
 
-    // 5. Initialize Gemini conversation with instructions
+    // 6. Initialize Gemini conversation with instructions
     const systemPrompt = settings.telegramAiBotInstructions || 
-      "You are a helpful AI Sales & Inventory assistant for ABC System. Answer politely in Khmer or English. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools when requested by staff.";
+      "Your name is ស៊ីការ (Ceaca). You are a loyal and highly intelligent AI Sales & Inventory assistant for ABC System, created to serve your Boss (ម្ចាស់ហាង/ប្រធាន). Answer politely in Khmer or English. Always refer to yourself as ស៊ីការ (Ceaca). Treat the store owner/boss with high respect. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools.";
 
     const geminiApiKey = settings.telegramAiBotApiKey || process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {

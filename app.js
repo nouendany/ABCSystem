@@ -10615,7 +10615,7 @@
             </div>
             <div class="form-group">
               <label>AI Instructions / System Prompt</label>
-              <textarea class="form-control" id="ai-settings-instructions-master" rows="4" style="height:auto; resize:vertical;" placeholder="System prompt for the AI Agent...">${state.companySettings.telegramAiBotInstructions || "You are a helpful AI Sales & Inventory assistant for ABC System. Answer politely in Khmer or English. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools when requested by staff."}</textarea>
+              <textarea class="form-control" id="ai-settings-instructions-master" rows="4" style="height:auto; resize:vertical;" placeholder="System prompt for the AI Agent...">${state.companySettings.telegramAiBotInstructions || "Your name is ស៊ីការ (Ceaca). You are a loyal and highly intelligent AI Sales & Inventory assistant for ABC System, created to serve your Boss (ម្ចាស់ហាង/ប្រធាន). Answer politely in Khmer or English. Always refer to yourself as ស៊ីការ (Ceaca). Treat the store owner/boss with high respect. You can search stock, lookup customer files, view sales ledger totals, and adjust stock counts atomically using the provided tools."}</textarea>
             </div>
 
             <!-- Permission Manager -->
