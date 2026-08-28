@@ -569,9 +569,18 @@ export default async function handler(req, res) {
     if (geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text) {
       textReply = geminiResponse.candidates[0].content.parts[0].text;
     } else if (geminiResponse.error) {
-      textReply = `🛑 Error from Gemini API: ${geminiResponse.error.message} (Code: ${geminiResponse.error.code})\n\nសូមពិនិត្យមើលថាតើ Gemini API Key របស់បងត្រឹមត្រូវ និងទើបបង្កើតថ្មីដែរឬទេបាទ!`;
+      const errCode = geminiResponse.error.code;
+      const errMsg = String(geminiResponse.error.message || "").toLowerCase();
+      
+      if (errCode === 429 || errMsg.includes("quota") || errMsg.includes("rate limit") || errMsg.includes("limit")) {
+        textReply = `🛑 ចាសបងដានី! សុំទោសផងចាស ដោយសារតែសំណួរត្រូវបានផ្ញើមកលឿនពេក ម៉ាស៊ីន AI របស់នាងខ្ញុំជាប់កំណត់ចំនួនដង (Rate Limit) ហើយចាស។ សូមបងរង់ចាំប្រហែល ២០-៣០ វិនាទី រួចសាកល្បងសួរម្តងទៀតណា៎ចាស! 🌸`;
+      } else if (errCode === 503 || errCode === 500 || errMsg.includes("unavailable") || errMsg.includes("overloaded")) {
+        textReply = `🛑 ចាសបងដានី! ម៉ាស៊ីនមេរបស់ Google Gemini កំពុងតែជាប់រវល់ខ្លាំង ឬលើសចំណុះជាបណ្តោះអាសន្នចាស។ សូមបងរង់ចាំបន្តិច រួចសាកល្បងសួរម្តងទៀតណា៎ចាស!`;
+      } else {
+        textReply = `🛑 ចាសបងដានី! មានបញ្ហាបន្តិចបន្តួចចេញពី Google API ៖\n**${geminiResponse.error.message}** (កូដកំហុស៖ ${errCode})។`;
+      }
     } else {
-      textReply = `បាទបង! ខ្ញុំបានទទួលសារហើយ ប៉ុន្តែមិនអាចឆ្លើយតបបានទេនៅពេលនេះ។\n(Debug: ${JSON.stringify(geminiResponse)})`;
+      textReply = `ចាសបងដានី! នាងខ្ញុំបានទទួលសារហើយ ប៉ុន្តែមិនអាចបង្កើតចម្លើយតបបានទេនៅពេលនេះចាស។ (Debug: ${JSON.stringify(geminiResponse)})`;
     }
 
     // 6. Reply to user in Telegram Group
