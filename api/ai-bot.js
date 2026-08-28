@@ -479,18 +479,23 @@ export default async function handler(req, res) {
       const call = parts[0].functionCall;
       const functionName = call.name;
       const functionArgs = call.args;
+      const thoughtSignature = parts[0].thoughtSignature || parts[0].thought_signature;
 
       // Add the model's functionCall turn to the content history
+      const modelPart = {
+        functionCall: {
+          name: functionName,
+          args: functionArgs
+        }
+      };
+      if (thoughtSignature) {
+        modelPart.thoughtSignature = thoughtSignature;
+        modelPart.thought_signature = thoughtSignature;
+      }
+
       currentContents.push({
         role: "model",
-        parts: [
-          {
-            functionCall: {
-              name: functionName,
-              args: functionArgs
-            }
-          }
-        ]
+        parts: [modelPart]
       });
 
       // Execute the database query
@@ -502,16 +507,20 @@ export default async function handler(req, res) {
       }
 
       // Add the function execution output turn to the history
+      const clientPart = {
+        functionResponse: {
+          name: functionName,
+          response: { name: functionName, content: result }
+        }
+      };
+      if (thoughtSignature) {
+        clientPart.thoughtSignature = thoughtSignature;
+        clientPart.thought_signature = thoughtSignature;
+      }
+
       currentContents.push({
         role: "user",
-        parts: [
-          {
-            functionResponse: {
-              name: functionName,
-              response: { name: functionName, content: result }
-            }
-          }
-        ]
+        parts: [clientPart]
       });
 
       // Call Gemini again to format the final friendly text response
