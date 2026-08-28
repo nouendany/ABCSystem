@@ -41,12 +41,32 @@ async function callGemini(apiKey, systemInstruction, contents, tools) {
     payload.tools = tools;
   }
   
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  return response.json();
+  let retries = 3;
+  let delay = 1000;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (response.status === 503 || response.status === 500) {
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2;
+          continue;
+        }
+      }
+      return await response.json();
+    } catch (err) {
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2;
+        continue;
+      }
+      throw err;
+    }
+  }
 }
 
 // Tool definitions for Gemini
@@ -157,13 +177,14 @@ async function executeTool(name, args, permissions, senderUsername, db) {
     const branches = [];
     branchesSnap.forEach(d => branches.push(d.data()));
 
-    // Match products
-    const matchedProducts = products.filter(p => 
-      p.sku.toLowerCase() === prodQuery ||
-      p.barcode?.toLowerCase() === prodQuery ||
-      p.nameEn.toLowerCase().includes(prodQuery) ||
-      p.nameKh?.toLowerCase().includes(prodQuery)
-    );
+    const isAll = prodQuery === "all" || prodQuery === "all products" || prodQuery === "គ្រប់មុខទំនិញ" || prodQuery === "គ្រប់មុខ" || prodQuery === "គ្រប់មុខទំនិញទាំងអស់";
+    const matchedProducts = products.filter(p => {
+      if (isAll) return true;
+      return p.sku.toLowerCase() === prodQuery ||
+        p.barcode?.toLowerCase() === prodQuery ||
+        p.nameEn.toLowerCase().includes(prodQuery) ||
+        p.nameKh?.toLowerCase().includes(prodQuery);
+    });
 
     if (matchedProducts.length === 0) {
       return { success: false, message: `រកមិនឃើញផលិតផលដែលមានឈ្មោះ ឬ SKU '${productNameOrSku}' ទេ` };
