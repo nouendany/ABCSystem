@@ -518,9 +518,15 @@ export default async function handler(req, res) {
       geminiResponse = await callGemini(geminiApiKey, systemPrompt, currentContents, aiTools);
     }
 
-    // Extract text reply
-    const textReply = geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text || 
-      "បាទបង! ខ្ញុំបានទទួលសារហើយ ប៉ុន្តែមិនអាចឆ្លើយតបបានទេនៅពេលនេះ។";
+    // Extract text reply or output detailed error for debugging
+    let textReply = "";
+    if (geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text) {
+      textReply = geminiResponse.candidates[0].content.parts[0].text;
+    } else if (geminiResponse.error) {
+      textReply = `🛑 Error from Gemini API: ${geminiResponse.error.message} (Code: ${geminiResponse.error.code})\n\nសូមពិនិត្យមើលថាតើ Gemini API Key របស់បងត្រឹមត្រូវ និងទើបបង្កើតថ្មីដែរឬទេបាទ!`;
+    } else {
+      textReply = `បាទបង! ខ្ញុំបានទទួលសារហើយ ប៉ុន្តែមិនអាចឆ្លើយតបបានទេនៅពេលនេះ។\n(Debug: ${JSON.stringify(geminiResponse)})`;
+    }
 
     // 6. Reply to user in Telegram Group
     await sendTelegram(settings.telegramAiBotToken, "sendMessage", {
