@@ -1875,6 +1875,11 @@
       if (sidebarCustomLogo) {
         sidebarCustomLogo.src = logoBase64;
         sidebarCustomLogo.style.display = 'block';
+        sidebarCustomLogo.style.objectFit = 'cover';
+        sidebarCustomLogo.style.aspectRatio = '1 / 1';
+        sidebarCustomLogo.style.background = 'transparent';
+        sidebarCustomLogo.style.padding = '0';
+        sidebarCustomLogo.style.borderRadius = '9px';
       }
     } else {
       if (sidebarDefaultLogo) sidebarDefaultLogo.style.display = 'block';
