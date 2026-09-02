@@ -1875,11 +1875,22 @@
       if (sidebarCustomLogo) {
         sidebarCustomLogo.src = logoBase64;
         sidebarCustomLogo.style.display = 'block';
-        sidebarCustomLogo.style.objectFit = 'cover';
+        sidebarCustomLogo.style.objectFit = 'contain';
         sidebarCustomLogo.style.aspectRatio = '1 / 1';
-        sidebarCustomLogo.style.background = 'transparent';
-        sidebarCustomLogo.style.padding = '0';
-        sidebarCustomLogo.style.borderRadius = '9px';
+        sidebarCustomLogo.style.width = '100%';
+        sidebarCustomLogo.style.height = '100%';
+        sidebarCustomLogo.style.borderRadius = '8px';
+      }
+      const sidebarLogoWrapper = document.querySelector('.sidebar-logo-wrapper');
+      if (sidebarLogoWrapper) {
+        sidebarLogoWrapper.style.flex = '0 0 44px';
+        sidebarLogoWrapper.style.width = '44px';
+        sidebarLogoWrapper.style.height = '44px';
+        sidebarLogoWrapper.style.maxWidth = '44px';
+        sidebarLogoWrapper.style.maxHeight = '44px';
+        sidebarLogoWrapper.style.aspectRatio = '1 / 1';
+        sidebarLogoWrapper.style.alignSelf = 'center';
+        sidebarLogoWrapper.style.background = '#ffffff';
       }
     } else {
       if (sidebarDefaultLogo) sidebarDefaultLogo.style.display = 'block';
