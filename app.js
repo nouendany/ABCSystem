@@ -1871,32 +1871,44 @@
     }
 
     if (logoBase64) {
-      if (sidebarDefaultLogo) sidebarDefaultLogo.style.display = 'none';
+      if (sidebarDefaultLogo) {
+        sidebarDefaultLogo.style.setProperty('display', 'none', 'important');
+      }
       if (sidebarCustomLogo) {
         sidebarCustomLogo.src = logoBase64;
-        sidebarCustomLogo.style.display = 'block';
-        sidebarCustomLogo.style.objectFit = 'contain';
+        sidebarCustomLogo.style.setProperty('display', 'block', 'important');
+        sidebarCustomLogo.style.objectFit = 'cover';
         sidebarCustomLogo.style.aspectRatio = '1 / 1';
         sidebarCustomLogo.style.width = '100%';
         sidebarCustomLogo.style.height = '100%';
-        sidebarCustomLogo.style.borderRadius = '8px';
+        sidebarCustomLogo.style.borderRadius = '10px';
       }
       const sidebarLogoWrapper = document.querySelector('.sidebar-logo-wrapper');
       if (sidebarLogoWrapper) {
+        sidebarLogoWrapper.classList.add('has-custom-logo');
         sidebarLogoWrapper.style.flex = '0 0 44px';
         sidebarLogoWrapper.style.width = '44px';
         sidebarLogoWrapper.style.height = '44px';
+        sidebarLogoWrapper.style.minWidth = '44px';
         sidebarLogoWrapper.style.maxWidth = '44px';
+        sidebarLogoWrapper.style.minHeight = '44px';
         sidebarLogoWrapper.style.maxHeight = '44px';
         sidebarLogoWrapper.style.aspectRatio = '1 / 1';
         sidebarLogoWrapper.style.alignSelf = 'center';
-        sidebarLogoWrapper.style.background = '#ffffff';
+        sidebarLogoWrapper.style.padding = '0';
+        sidebarLogoWrapper.style.overflow = 'hidden';
       }
     } else {
-      if (sidebarDefaultLogo) sidebarDefaultLogo.style.display = 'block';
+      if (sidebarDefaultLogo) {
+        sidebarDefaultLogo.style.setProperty('display', 'flex', 'important');
+      }
       if (sidebarCustomLogo) {
         sidebarCustomLogo.src = '';
-        sidebarCustomLogo.style.display = 'none';
+        sidebarCustomLogo.style.setProperty('display', 'none', 'important');
+      }
+      const sidebarLogoWrapper = document.querySelector('.sidebar-logo-wrapper');
+      if (sidebarLogoWrapper) {
+        sidebarLogoWrapper.classList.remove('has-custom-logo');
       }
     }
   }
