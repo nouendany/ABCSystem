@@ -1370,7 +1370,10 @@
   <div class="cart-drawer-backdrop" id="cart-backdrop"></div>
   <div class="cart-drawer" id="cart-drawer">
     <div class="cart-drawer-header">
-      <div class="cart-drawer-title">🛒 សម្រង់ទំនិញកម្មង់ (Order Cart)</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="cart-drawer-title">🛒 សម្រង់ទំនិញ (Order Cart)</div>
+        <button id="btn-change-dest" style="background:rgba(59,130,246,0.15); border:1px solid var(--primary); border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; color:var(--primary); cursor:pointer; outline:none;">📍 ប្តូរទីតាំង</button>
+      </div>
       <button class="close-drawer-btn" id="btn-close-drawer">✕</button>
     </div>
     
@@ -1417,6 +1420,17 @@
           <option value="Website">Website Link</option>
           <option value="Referral">Agent Referral</option>
         </select>
+      </div>
+
+      <!-- Sales Facebook Page -->
+      <div class="form-group" style="border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 10px 12px; background: rgba(59, 130, 246, 0.06); margin-top: 4px; margin-bottom: 12px;">
+        <label for="order-facebook-page" style="color: #60a5fa; font-weight: 750; font-size: 13px; display:flex; align-items:center; gap:6px;">
+          <span>📱</span> លក់ចេញពីផេក Facebook (Sales Facebook Page) *
+        </label>
+        <select id="order-facebook-page" style="margin-top: 6px; font-weight: 700; width: 100%;">
+          <option value="">-- ជ្រើសរើសផេកហ្វេសប៊ុកដែលលក់បាន --</option>
+        </select>
+        <input type="text" id="order-custom-fb-page" placeholder="វាយបញ្ចូលឈ្មោះផេកថ្មី..." style="margin-top: 6px; font-size: 12px; display: none;">
       </div>
 
       <div class="form-group">
@@ -2176,27 +2190,21 @@
             }
           }
 
-          // Show Destination Selector Popup if staff has multi-stock access (Chhouk Meas BR-001 or Admin/Accountant)
-          const userBranchVal = employeeData ? employeeData.branchId : null;
-          const userRoleVal = employeeData ? employeeData.role : null;
-          const hasMultiStockAccess = (userBranchVal === 'BR-001' || userRoleVal === 'super_admin' || userRoleVal === 'accountant');
-          
-          if (hasMultiStockAccess) {
-            const destModal = document.getElementById('modal-destination-selector');
-            if (destModal) {
-              destModal.style.display = 'flex';
-              
-              // Speak Khmer welcoming notice
-              setTimeout(() => {
-                playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
-              }, 600);
-              
-              destModal.addEventListener('click', function playOnInteraction() {
-                playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
-                destModal.removeEventListener('click', playOnInteraction);
-              });
-            }
+          // Show Destination Selector Popup on Mini App load
+          const destModal = document.getElementById('modal-destination-selector');
+          if (destModal) {
+            destModal.style.display = 'flex';
+            setTimeout(() => {
+              playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
+            }, 600);
+            destModal.addEventListener('click', function playOnInteraction() {
+              playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
+              destModal.removeEventListener('click', playOnInteraction);
+            });
           }
+
+          // Populate Sales Facebook Pages dropdown
+          populateFacebookPages();
 
           // Trigger header update once loaded
           updateHeaderProfile();
@@ -2571,10 +2579,69 @@
       }
     });
 
+    // Helper to populate Sales Facebook Pages
+    function populateFacebookPages() {
+      const fbSelect = document.getElementById('order-facebook-page');
+      if (!fbSelect) return;
+
+      let pages = [];
+      // 1. Employee's assigned Facebook Pages
+      if (employeeData && Array.isArray(employeeData.facebookPages) && employeeData.facebookPages.length > 0) {
+        employeeData.facebookPages.forEach(p => {
+          if (p && !pages.includes(p)) pages.push(p);
+        });
+      }
+      // 2. Company-wide settings Facebook Pages
+      if (companySettings && Array.isArray(companySettings.facebookPages) && companySettings.facebookPages.length > 0) {
+        companySettings.facebookPages.forEach(p => {
+          if (p && !pages.includes(p)) pages.push(p);
+        });
+      }
+      // 3. Fallback defaults for ABC System
+      if (pages.length === 0) {
+        pages = ["ABC Cosmetics", "ABC Beauty & Skincare", "AROMA Skincare"];
+      }
+
+      const isLight = document.body.classList.contains('light-theme');
+      const optBg = isLight ? '#ffffff' : '#151f32';
+      const optColor = isLight ? '#0f172a' : '#f8fafc';
+
+      let html = `<option value="" style="background-color:${optBg} !important; color:#94a3b8 !important;">-- ជ្រើសរើសផេកហ្វេសប៊ុក (Select Facebook Page) --</option>`;
+      pages.forEach(p => {
+        html += `<option value="${p}" style="background-color:${optBg} !important; color:${optColor} !important;">${p}</option>`;
+      });
+      html += `<option value="__custom__" style="background-color:${optBg} !important; color:#f59e0b !important;">➕ វាយឈ្មោះផេកផ្សេងទៀត (Other...)</option>`;
+      fbSelect.innerHTML = html;
+
+      // Auto-select first page if employee has only 1 page assigned
+      if (pages.length === 1) {
+        fbSelect.value = pages[0];
+      }
+
+      fbSelect.addEventListener('change', () => {
+        const customInp = document.getElementById('order-custom-fb-page');
+        if (customInp) {
+          if (fbSelect.value === '__custom__') {
+            customInp.style.display = 'block';
+            customInp.focus();
+          } else {
+            customInp.style.display = 'none';
+          }
+        }
+      });
+    }
+
     // Bind click events for the Destination Selector Popup
     const btnDestPP = document.getElementById('btn-dest-pp');
     const btnDestProvince = document.getElementById('btn-dest-province');
+    const btnChangeDest = document.getElementById('btn-change-dest');
     const destModal = document.getElementById('modal-destination-selector');
+    
+    if (btnChangeDest && destModal) {
+      btnChangeDest.addEventListener('click', () => {
+        destModal.style.display = 'flex';
+      });
+    }
     
     if (btnDestPP && btnDestProvince && destModal) {
       btnDestPP.addEventListener('click', () => {
@@ -2707,6 +2774,11 @@
       const discAmount = Math.min(subtotal, parseFloat(discountFixed.value) || 0);
       const calculatedPercent = subtotal > 0 ? (discAmount / subtotal) * 100 : 0;
 
+      let selectedFbPage = document.getElementById('order-facebook-page')?.value || '';
+      if (selectedFbPage === '__custom__') {
+        selectedFbPage = document.getElementById('order-custom-fb-page')?.value.trim() || '';
+      }
+
       const payload = {
         webAppOrder: true,
         bot: botType,
@@ -2719,6 +2791,8 @@
         customerAddress: cAddress,
         customerFacebook: cFacebook,
         customerSource: cSource,
+        facebookPage: selectedFbPage,
+        pageName: selectedFbPage || "Telegram Store",
         customerNotes: cNotes,
         paymentMethod: document.getElementById('payment-method').value,
         discountPercent: calculatedPercent,

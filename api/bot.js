@@ -457,7 +457,8 @@ async function handleWebAppOrder(req, res, body) {
       date: new Date().toISOString(),
       staffId: employee.id,
       staffName: employee.fullName,
-      pageName: "Telegram Store",
+      pageName: req.body.facebookPage || req.body.pageName || "Telegram Store",
+      facebookPage: req.body.facebookPage || req.body.pageName || "",
       pageId: "TG-STORE",
       customerId: customerId,
       customerName: customerNameStr,
@@ -667,12 +668,14 @@ async function handleWebAppOrder(req, res, body) {
         ? `🛍️ <b>ការកម្មង់ថ្មី លើកទី ${purchaseCountKh} (New Order #1)</b>`
         : `🛍️ <b>ការកម្មង់ឡើងវិញ លើកទី ${purchaseCountKh} (Repeat Order #${purchaseCountVal})</b>`;
 
+      const escapedFacebookPage = esc(req.body.facebookPage || req.body.pageName || "");
       let orderNotifyText = `${purchaseHeader}\n` +
                             `----------------------------------------\n` +
                             (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
                             `🧾 វិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
                             `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
                             `👤 អ្នកលក់៖ <b>${escapedEmployeeName}</b> | <code>${escapedEmployeeId}</code>\n` +
+                            (escapedFacebookPage ? `📱 ផេកលក់ (FB Page)៖ <b>${escapedFacebookPage}</b>\n` : '') +
                             `🏢 សាខា៖ <b>${escapedBranchName}</b>\n` +
                             `----------------------------------------\n` +
                             `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +

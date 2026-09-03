@@ -2964,6 +2964,56 @@
       brSelect.disabled = false;
     }
 
+    // Helper to populate Facebook Pages dropdown for Cart and Checkout
+    window.updateCartFacebookPages = function(staffId) {
+      const cartFbSelect = document.getElementById('cart-fb-page-select');
+      const modalFbSelect = document.getElementById('checkout-fb-page');
+      if (!cartFbSelect && !modalFbSelect) return;
+
+      let pages = [];
+      const staffObj = state.staff.find(s => s.id === staffId || s.employeeId === staffId);
+      const empId = staffObj ? (staffObj.employeeId || staffObj.id) : staffId;
+      const empObj = state.employees.find(e => e.id === empId || e.fullName === staffObj?.name);
+      
+      // 1. Employee's assigned Facebook Pages
+      if (empObj && Array.isArray(empObj.facebookPages) && empObj.facebookPages.length > 0) {
+        empObj.facebookPages.forEach(p => {
+          if (p && !pages.includes(p)) pages.push(p);
+        });
+      }
+      // 2. Company-wide settings Facebook Pages
+      if (state.companySettings && Array.isArray(state.companySettings.facebookPages)) {
+        state.companySettings.facebookPages.forEach(p => {
+          if (p && !pages.includes(p)) pages.push(p);
+        });
+      }
+      // 3. Fallback defaults
+      if (pages.length === 0) {
+        pages = ["Sam Phaleap Skincare", "Sam Phaleap Beauty", "AROMA Official", "ABC Cosmetics"];
+      }
+
+      let optionsHtml = `<option value="">-- មិនកំណត់ / គ្មាន (None) --</option>`;
+      pages.forEach(p => {
+        optionsHtml += `<option value="${p}">${p}</option>`;
+      });
+
+      if (cartFbSelect) {
+        const prev = cartFbSelect.value;
+        cartFbSelect.innerHTML = optionsHtml;
+        if (prev && pages.includes(prev)) {
+          cartFbSelect.value = prev;
+        } else if (pages.length === 1) {
+          cartFbSelect.value = pages[0];
+        }
+      }
+      if (modalFbSelect) {
+        modalFbSelect.innerHTML = optionsHtml;
+        if (cartFbSelect && cartFbSelect.value) {
+          modalFbSelect.value = cartFbSelect.value;
+        }
+      }
+    };
+
     // Staff POS select
     const staffSelect = document.getElementById('cart-staff-select');
     staffSelect.innerHTML = '';
@@ -3004,6 +3054,18 @@
       state.currentPOSStaffId = state.staff[0].id;
       staffSelect.value = state.currentPOSStaffId;
       staffSelect.disabled = false;
+    }
+
+    // Initialize Facebook Pages dropdown for the active staff
+    updateCartFacebookPages(staffSelect.value);
+    staffSelect.onchange = (e) => updateCartFacebookPages(e.target.value);
+
+    // Sync between cart and modal FB Page selectors
+    const cartFbEl = document.getElementById('cart-fb-page-select');
+    const modalFbEl = document.getElementById('checkout-fb-page');
+    if (cartFbEl && modalFbEl) {
+      cartFbEl.onchange = (e) => { modalFbEl.value = e.target.value; };
+      modalFbEl.onchange = (e) => { cartFbEl.value = e.target.value; };
     }
 
     // Customers POS select
@@ -3735,6 +3797,11 @@
     const dateInput = document.getElementById('checkout-date-input');
     if (dateInput) dateInput.value = '';
 
+    // Sync Facebook Page selection to checkout modal
+    const cartFbVal = document.getElementById('cart-fb-page-select')?.value || '';
+    const modalFbEl = document.getElementById('checkout-fb-page');
+    if (modalFbEl && cartFbVal) modalFbEl.value = cartFbVal;
+
     document.getElementById('modal-checkout').classList.add('active-modal');
   }
 
@@ -4213,7 +4280,8 @@
     
     // Find the user matched with staff to extract Facebook Page assignment (Requirement 10)
     const staffUser = state.users.find(u => u.name === staff.name || u.id === staff.id || u.username === staff.id);
-    const pageName = staffUser ? (staffUser.pageName || "Direct Sales") : "Direct Sales";
+    const selectedFbPage = document.getElementById('checkout-fb-page')?.value || document.getElementById('cart-fb-page-select')?.value || '';
+    const resolvedPageName = selectedFbPage || (staffUser ? (staffUser.pageName || "Direct Sales") : "Direct Sales");
     const pageId = staffUser ? (staffUser.pageId || null) : null;
 
     const newTX = {
@@ -4222,7 +4290,8 @@
       date: txDate,
       staffId: staff.id,
       staffName: staff.name,
-      pageName: pageName,
+      pageName: resolvedPageName,
+      facebookPage: selectedFbPage || (resolvedPageName !== 'Direct Sales' ? resolvedPageName : ''),
       pageId: pageId,
       customerId: customerId,
       customerType: customerType,
@@ -4419,6 +4488,12 @@
         <span>អ្នកលក់ (Staff):</span>
         <span>${tx.staffName || 'System'}</span>
       </div>
+      ${(tx.facebookPage || (tx.pageName && tx.pageName !== 'Direct Sales' && tx.pageName !== 'Telegram Store' ? tx.pageName : '')) ? `
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:#1877f2; font-weight:700; margin-bottom: 2px;">
+        <span>ផេក Facebook (Page):</span>
+        <span>📱 ${tx.facebookPage || tx.pageName}</span>
+      </div>
+      ` : ''}
       <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
         <span>ការទូទាត់ (Payment):</span>
         <span style="text-transform:uppercase;">${methodTranslate}</span>
@@ -8526,6 +8601,7 @@
     const fStaff = state.reportFilterStaff || 'all';
     const fCategory = state.reportFilterCategory || 'all';
     const fPayStatus = state.reportFilterPayStatus || 'all';
+    const fFbPage = state.reportFilterFbPage || 'all';
 
     let branchOpts = '<option value="all">All Branches</option>';
     state.branches.forEach(b => {
@@ -8535,6 +8611,20 @@
     let staffOpts = '<option value="all">All Employees</option>';
     state.staff.forEach(s => {
       staffOpts += `<option value="${s.id}" ${fStaff === s.id ? 'selected' : ''}>${s.name}</option>`;
+    });
+
+    // Extract all distinct Facebook Pages
+    const fbPagesSet = new Set();
+    state.transactions.forEach(t => {
+      const p = t.facebookPage || (t.pageName && t.pageName !== 'Direct Sales' && t.pageName !== 'Telegram Store' ? t.pageName : '');
+      if (p) fbPagesSet.add(p);
+    });
+    if (state.companySettings && Array.isArray(state.companySettings.facebookPages)) {
+      state.companySettings.facebookPages.forEach(p => fbPagesSet.add(p));
+    }
+    let fbPageOpts = `<option value="all">${state.lang === 'km' ? 'គ្រប់ផេក Facebook ទាំងអស់' : 'All FB Pages'}</option>`;
+    fbPagesSet.forEach(p => {
+      fbPageOpts += `<option value="${p}" ${fFbPage === p ? 'selected' : ''}>📱 ${p}</option>`;
     });
 
     let catOpts = '<option value="all">All Categories</option>';
@@ -8553,6 +8643,7 @@
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">Filter Report:</span>
         <select id="rep-filter-branch" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${branchOpts}</select>
         <select id="rep-filter-staff" class="form-control" style="width:130px; padding:4px 8px; font-size:11px; height:auto;">${staffOpts}</select>
+        <select id="rep-filter-fbpage" class="form-control" style="width:150px; padding:4px 8px; font-size:11px; height:auto; color:#3b82f6; font-weight:600;">${fbPageOpts}</select>
         <button id="btn-view-filtered-staff-items" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px; height: 26px; display: ${fStaff !== 'all' ? 'inline-flex' : 'none'}; align-items: center; justify-content: center; gap: 4px;">
           👁️ ${state.lang === 'km' ? 'មើលទំនិញលក់បាន' : 'View Sold Items'}
         </button>
@@ -8587,6 +8678,9 @@
     } else if (fPayStatus === 'debt') {
       transactions = transactions.filter(t => (t.outstandingDebt || 0) > 0);
     }
+    if (fFbPage !== 'all') {
+      transactions = transactions.filter(t => (t.facebookPage === fFbPage || t.pageName === fFbPage));
+    }
 
     const searchQuery = (state.reportSearchQuery || '').trim().toLowerCase();
     if (searchQuery) {
@@ -8596,8 +8690,9 @@
         const custName = (custObj && custObj.id !== 'CST-001') ? custObj.name.toLowerCase() : (t.customerName || '').toLowerCase();
         const custPhone = (custObj && custObj.phone) ? custObj.phone.toString().toLowerCase() : (t.customerPhone || '').toLowerCase();
         const staffName = (t.staffName || '').toLowerCase();
+        const fbPageText = (t.facebookPage || t.pageName || '').toLowerCase();
         const itemsText = t.items.map(it => `${it.nameKh || ''} ${it.nameEn || ''}`).join(' ').toLowerCase();
-        return invNo.includes(searchQuery) || custName.includes(searchQuery) || custPhone.includes(searchQuery) || staffName.includes(searchQuery) || itemsText.includes(searchQuery);
+        return invNo.includes(searchQuery) || custName.includes(searchQuery) || custPhone.includes(searchQuery) || staffName.includes(searchQuery) || itemsText.includes(searchQuery) || fbPageText.includes(searchQuery);
       });
     }
 
@@ -8638,6 +8733,8 @@
       const displayCustName = (custObj && custObj.id !== 'CST-001') ? custObj.name : (tx.customerName || 'General Customer');
 
       const repDisplay = `<span style="font-size: 11px; padding: 4px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: var(--text-primary); font-weight: 600; display: inline-block; margin-top: 4px;">${tx.staffName || 'System'}</span>`;
+      const fbPageName = tx.facebookPage || (tx.pageName && tx.pageName !== 'Direct Sales' && tx.pageName !== 'Telegram Store' ? tx.pageName : '');
+      const fbPageBadge = fbPageName ? `<br><span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: #1877f2; color: #fff; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px;">📱 ${fbPageName}</span>` : '';
 
       let statusBadge = '';
       if (txDebt === 0) {
@@ -8654,7 +8751,7 @@
         <tr>
           <td><strong style="color:var(--secondary); font-family:monospace;">${tx.invoiceNo || tx.id}</strong><br><span style="font-size:9px;color:var(--text-muted);">${brText}</span>${carrierBadge}</td>
           <td style="font-size:10px;">${window.POS_HELPERS.formatDate(tx.date, state.lang)}</td>
-          <td><strong>${displayCustName}</strong><br>${repDisplay}</td>
+          <td><strong>${displayCustName}</strong><br>${repDisplay}${fbPageBadge}</td>
           <td style="font-size:10px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${itemsHtmlEntities(itemsText)}">${itemsText}</td>
           <td style="text-align:center; font-weight:700; color:var(--text-primary);">${txQty}</td>
           <td style="text-align:right; font-weight:600; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(txCost)}</td>
@@ -8721,6 +8818,13 @@
       state.reportFilterCategory = e.target.value;
       triggerReportRender();
     });
+    const repFbEl = document.getElementById('rep-filter-fbpage');
+    if (repFbEl) {
+      repFbEl.addEventListener('change', (e) => {
+        state.reportFilterFbPage = e.target.value;
+        triggerReportRender();
+      });
+    }
     document.getElementById('rep-filter-paystatus').addEventListener('change', (e) => {
       state.reportFilterPayStatus = e.target.value;
       triggerReportRender();
@@ -15770,6 +15874,10 @@ CREATE TABLE sale_items (
         document.getElementById('employee-emergency-name').value = emp.emergencyContact?.name || emp.emergencyName || '';
         document.getElementById('employee-emergency-relation').value = emp.emergencyContact?.relation || emp.emergencyRelation || '';
         document.getElementById('employee-emergency-phone').value = emp.emergencyContact?.phone || emp.emergencyPhone || '';
+        const empFbInp = document.getElementById('employee-facebook-pages');
+        if (empFbInp) {
+          empFbInp.value = Array.isArray(emp.facebookPages) ? emp.facebookPages.join(', ') : (emp.facebookPages || '');
+        }
       }
     } else {
       titleEl.innerText = state.lang === 'km' ? 'បន្ថែមបុគ្គលិកថ្មី' : 'Add New Employee';
@@ -15778,6 +15886,8 @@ CREATE TABLE sale_items (
       
       document.getElementById('employee-work-start').value = '';
       document.getElementById('employee-work-end').value = '';
+      const empFbInp = document.getElementById('employee-facebook-pages');
+      if (empFbInp) empFbInp.value = '';
       
       const nextIdNum = state.employees.length + 1;
       idInput.value = 'EMP' + String(nextIdNum).padStart(3, '0');
@@ -15804,6 +15914,9 @@ CREATE TABLE sale_items (
     const status = document.getElementById('employee-status').value;
     const workStart = document.getElementById('employee-work-start').value;
     const workEnd = document.getElementById('employee-work-end').value;
+
+    const fbPagesRaw = document.getElementById('employee-facebook-pages')?.value || '';
+    const facebookPages = fbPagesRaw ? fbPagesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     const contractType = document.getElementById('employee-contract-type').value;
     const allowancePosition = parseFloat(document.getElementById('employee-allowance-position').value) || 0;
@@ -15835,6 +15948,7 @@ CREATE TABLE sale_items (
       workStart, workEnd,
       contractType,
       photoBase64,
+      facebookPages,
 
       allowances: {
         position: allowancePosition,
