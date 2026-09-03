@@ -67,124 +67,12 @@ window.POS_HELPERS = {
     return html;
   },
 
-  // Renders a beautiful high-fidelity KHQR ABA simulated QR onto a Canvas element
+  // Renders KHQR ABA simulated QR (Disabled per user request)
   drawKHQR: function(canvasId, amount) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
+    canvas.style.display = 'none';
     const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, w, h);
-
-    // 1. Draw KHQR / ABA Outer Frame Style (Cambodia Red/Crimson gradient boundary, rounded edges)
-    ctx.fillStyle = '#0e1d35'; // Deep blue background
-    ctx.fillRect(0, 0, w, h);
-
-    // Inner white card for the QR code
-    const cardMargin = 12;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(cardMargin, cardMargin, w - cardMargin*2, h - cardMargin*2, 12);
-    ctx.fill();
-
-    // 2. Draw ABA style header text inside card
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillStyle = '#d22730'; // Red accent
-    ctx.textAlign = 'center';
-    ctx.fillText('ABA PAY', w/2, cardMargin + 20);
-
-    ctx.font = '9px sans-serif';
-    ctx.fillStyle = '#374151';
-    ctx.fillText('ANTIGRAVITY POS', w/2, cardMargin + 32);
-
-    // 3. Draw a stylized simulated QR pattern (blocks of pixels, with standard corner squares)
-    const qrX = cardMargin + 25;
-    const qrY = cardMargin + 48;
-    const qrW = w - (cardMargin + 25)*2;
-    const qrH = qrW;
-
-    ctx.fillStyle = '#09152b'; // Dark color for QR
-    
-    // Draw 3 Position Detection Squares (Top-Left, Top-Right, Bottom-Left)
-    const drawAnchor = (x, y, size) => {
-      ctx.fillRect(x, y, size, size);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
-      ctx.fillStyle = '#09152b';
-      ctx.fillRect(x + 4, y + 4, size - 8, size - 8);
-    };
-
-    const anchorSize = 18;
-    // Top Left
-    drawAnchor(qrX, qrY, anchorSize);
-    // Top Right
-    drawAnchor(qrX + qrW - anchorSize, qrY, anchorSize);
-    // Bottom Left
-    drawAnchor(qrX, qrY + qrH - anchorSize, anchorSize);
-
-    // Small alignment pattern bottom right
-    ctx.fillRect(qrX + qrW - 10, qrY + qrH - 10, 4, 4);
-
-    // Simulated QR dots (highly organic look, random fill but reproducible)
-    let seed = Math.round(amount * 100);
-    const random = () => {
-      let x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x);
-    };
-
-    const dotSize = 2.5;
-    for (let x = qrX + 2; x < qrX + qrW - 2; x += dotSize) {
-      for (let y = qrY + 2; y < qrY + qrH - 2; y += dotSize) {
-        // Skip anchors
-        const inTopLeft = (x < qrX + anchorSize + 2 && y < qrY + anchorSize + 2);
-        const inTopRight = (x > qrX + qrW - anchorSize - 2 && y < qrY + anchorSize + 2);
-        const inBottomLeft = (x < qrX + anchorSize + 2 && y > qrY + qrH - anchorSize - 2);
-        
-        if (!inTopLeft && !inTopRight && !inBottomLeft) {
-          if (random() > 0.45) {
-            ctx.fillStyle = '#09152b';
-            ctx.fillRect(x, y, dotSize, dotSize);
-          }
-        }
-      }
-    }
-
-    // 4. Center Logo badge (Simulated KHQR logo - stylized Cambodian emblem in red and blue)
-    const logoSize = 16;
-    const logoX = qrX + qrW/2 - logoSize/2;
-    const logoY = qrY + qrH/2 - logoSize/2;
-    
-    // Logo background circle
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(qrX + qrW/2, qrY + qrH/2, logoSize/2 + 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Emblem drawing (Red and Blue halves)
-    ctx.fillStyle = '#d22730';
-    ctx.beginPath();
-    ctx.arc(qrX + qrW/2, qrY + qrH/2, logoSize/2, Math.PI * 1.5, Math.PI * 0.5);
-    ctx.fill();
-
-    ctx.fillStyle = '#005a9c';
-    ctx.beginPath();
-    ctx.arc(qrX + qrW/2, qrY + qrH/2, logoSize/2, Math.PI * 0.5, Math.PI * 1.5);
-    ctx.fill();
-
-    // Center star/symbol in white
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 8px sans-serif';
-    ctx.fillText('QR', qrX + qrW/2, qrY + qrH/2 + 3);
-
-    // 5. Draw Amount footer inside card
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = '#09152b';
-    ctx.fillText(this.formatUSD(amount), w/2, qrY + qrH + 20);
-
-    ctx.font = '9px sans-serif';
-    ctx.fillStyle = '#059669'; // Emerald Green
-    ctx.fillText(this.formatKHR(amount), w/2, qrY + qrH + 32);
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 };

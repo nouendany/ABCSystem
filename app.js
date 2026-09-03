@@ -3773,30 +3773,25 @@
 
     // Toggle KHQR scan drawer
     if (method === 'khqr') {
-      if (khqrDrawer) khqrDrawer.style.display = 'flex';
-
       const canvas = document.getElementById('khqr-canvas');
       const img = document.getElementById('checkout-custom-khqr');
       const caption = document.getElementById('khqr-drawer-caption');
 
       if (state.companySettings && state.companySettings.khqrBase64) {
+        if (khqrDrawer) khqrDrawer.style.display = 'flex';
         if (canvas) canvas.style.display = 'none';
         if (img) {
           img.style.display = 'block';
           img.src = state.companySettings.khqrBase64;
         }
         if (caption) {
-          caption.innerText = state.lang === 'km' ? 'ស្កេនបាកូដដើម្បីទូទាត់ប្រាក់ (ABA Pay / KHQR របស់អ្នក)' : 'Scan code to complete transaction (Your ABA Pay / KHQR)';
+          caption.innerText = state.lang === 'km' ? 'ស្កេនបាកូដដើម្បីទូទាត់ប្រាក់ (ABA Pay / KHQR)' : 'Scan code to complete transaction (ABA Pay / KHQR)';
         }
       } else {
-        if (canvas) {
-          canvas.style.display = 'block';
-          window.POS_HELPERS.drawKHQR('khqr-canvas', totalDue);
-        }
+        // No custom Bank QR uploaded: hide the drawer completely and do not show any simulated QR
+        if (canvas) canvas.style.display = 'none';
         if (img) img.style.display = 'none';
-        if (caption) {
-          caption.innerText = state.lang === 'km' ? 'ស្កេនបាកូដដើម្បីទូទាត់ប្រាក់ (Dynamic ABA Pay QR)' : 'Scan code to complete transaction (Simulated ABA Pay QR)';
-        }
+        if (khqrDrawer) khqrDrawer.style.display = 'none';
       }
     } else {
       if (khqrDrawer) khqrDrawer.style.display = 'none';
