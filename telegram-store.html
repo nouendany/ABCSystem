@@ -184,6 +184,52 @@
       pointer-events: none;
     }
 
+    /* Universal Select & Option Dropdown Theme Compatibility */
+    select,
+    .branch-select-wrapper select,
+    #branch-select,
+    #shipping-carrier,
+    #payment-method,
+    .form-group select {
+      color-scheme: dark !important;
+      background-color: var(--card-bg) !important;
+      color: var(--text-main) !important;
+    }
+
+    select option,
+    .branch-select-wrapper select option,
+    #branch-select option,
+    #shipping-carrier option,
+    #payment-method option,
+    .form-group select option {
+      background-color: #151f32 !important;
+      color: #f8fafc !important;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 10px 14px;
+    }
+
+    body.light-theme select,
+    body.light-theme .branch-select-wrapper select,
+    body.light-theme #branch-select,
+    body.light-theme #shipping-carrier,
+    body.light-theme #payment-method,
+    body.light-theme .form-group select {
+      color-scheme: light !important;
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+    }
+
+    body.light-theme select option,
+    body.light-theme .branch-select-wrapper select option,
+    body.light-theme #branch-select option,
+    body.light-theme #shipping-carrier option,
+    body.light-theme #payment-method option,
+    body.light-theme .form-group select option {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+    }
+
     /* Controls (Search & Filter Bar) */
     .controls-container {
       padding: 16px 16px 8px 16px;
@@ -1418,7 +1464,7 @@
         <label for="shipping-carrier">ក្រុមហ៊ុនដឹកជញ្ជូន (Carrier / Shipping Carrier)</label>
         <div class="input-icon-wrapper">
           <span class="input-icon-prefix" style="color: var(--secondary); padding-left: 6px;">🚚</span>
-          <select id="shipping-carrier" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--secondary) !important; background-color: rgba(245, 158, 11, 0.05) !important; border-color: rgba(245, 158, 11, 0.2) !important;">
+          <select id="shipping-carrier" style="padding-left: 28px !important; font-weight: 750 !important; color: var(--secondary) !important; background-color: rgba(245, 158, 11, 0.08) !important; border-color: rgba(245, 158, 11, 0.3) !important; color-scheme: dark;">
           </select>
         </div>
       </div>
@@ -2003,9 +2049,12 @@
         // Populate Shipping Carrier select dropdown
         const carrierSelect = document.getElementById('shipping-carrier');
         if (carrierSelect) {
-          carrierSelect.innerHTML = `<option value="">-- ជ្រើសរើសក្រុមហ៊ុនដឹកជញ្ជូន (Select Carrier) --</option>`;
+          const isLight = document.body.classList.contains('light-theme');
+          const optBg = isLight ? '#ffffff' : '#151f32';
+          const optColor = isLight ? '#0f172a' : '#f8fafc';
+          carrierSelect.innerHTML = `<option value="" style="background-color:${optBg} !important; color:#94a3b8 !important;">-- ជ្រើសរើសក្រុមហ៊ុនដឹកជញ្ជូន (Select Carrier) --</option>`;
           getShippingCarriers(companySettings).forEach(carrier => {
-            carrierSelect.innerHTML += `<option value="${carrier}">${carrier}</option>`;
+            carrierSelect.innerHTML += `<option value="${carrier}" style="background-color:${optBg} !important; color:${optColor} !important;">${carrier}</option>`;
           });
         }
 
@@ -2023,11 +2072,14 @@
         }
 
         // Render Branch select
+        const isLight = document.body.classList.contains('light-theme');
+        const optBg = isLight ? '#ffffff' : '#151f32';
+        const optColor = isLight ? '#0f172a' : '#f8fafc';
         branchSelect.innerHTML = branchesList.map(b => {
           let label = b.nameKh || b.name;
           if (b.id === 'BR-001') label += ' (ខេត្ត - Province)';
           if (b.id === 'BR-004') label += ' (ភ្នំពេញ - Phnom Penh)';
-          return `<option value="${b.id}" ${b.id === activeBranchId ? 'selected' : ''}>${label} (${b.code})</option>`;
+          return `<option value="${b.id}" ${b.id === activeBranchId ? 'selected' : ''} style="background-color:${optBg} !important; color:${optColor} !important;">${label} (${b.code})</option>`;
         }).join('');
 
         // 2. Fetch Categories

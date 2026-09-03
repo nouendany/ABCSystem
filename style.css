@@ -1501,9 +1501,24 @@ body.light-theme input[type="date"] {
 }
 
 /* Form Select Options Theme Compatibility */
+select {
+  color-scheme: dark;
+}
+
+[data-theme="light"] select,
+body.light-theme select {
+  color-scheme: light;
+}
+
 select option {
-  background-color: var(--bg-sidebar);
-  color: var(--text-primary);
+  background-color: var(--bg-sidebar, #1e293b) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+
+[data-theme="light"] select option,
+body.light-theme select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 /* Custom Scrollbars */
