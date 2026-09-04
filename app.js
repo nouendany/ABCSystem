@@ -7910,24 +7910,28 @@
     if (!reportArea) return;
 
     const btn = document.getElementById('btn-pdf-active-report');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Generating PDF...';
-    btn.disabled = true;
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.innerHTML = '⏳ Generating PDF...';
+      btn.disabled = true;
+    }
 
     // Create a temporary header for the PDF report
     const isKhmer = state.lang === 'km';
-    const compName = state.companySettings.name || 'ABC POS System';
+    const compName = state.companySettings?.companyName || state.companySettings?.name || 'ABC System';
     const activeTab = state.activeReportTab || 'Summary';
-    const reportTitle = window.POS_TRANSLATIONS[state.lang][activeTab] || activeTab;
+    const reportTitle = window.POS_TRANSLATIONS[state.lang]?.[activeTab] || activeTab;
 
     const pdfHeader = document.createElement('div');
     pdfHeader.className = 'pdf-header-only';
-    pdfHeader.style.cssText = 'text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 12px;';
+    pdfHeader.style.cssText = 'text-align: center; margin-bottom: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 12px; background: #ffffff;';
     pdfHeader.innerHTML = `
-      <h2 style="margin: 0; color: #3b82f6; font-size: 22px; font-weight:800;">${compName}</h2>
-      <h3 style="margin: 6px 0 0 0; font-size: 16px; color: #1f2937; font-weight:700;">${reportTitle}</h3>
-      <p style="margin: 6px 0 0 0; font-size: 11px; color: #4b5563; font-weight:600;">
-        ${isKhmer ? 'កាលបរិច្ឆេទសាកសួរ៖' : 'Reporting Date Range:'} ${state.reportStartDate} ${isKhmer ? 'ដល់' : 'to'} ${state.reportEndDate}
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:4px;">
+        <h2 style="margin: 0; color: #1e3a8a; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">${compName}</h2>
+      </div>
+      <h3 style="margin: 4px 0 0 0; font-size: 15px; color: #0f172a; font-weight: 700;">${reportTitle}</h3>
+      <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b; font-weight: 600;">
+        ${isKhmer ? 'កាលបរិច្ឆេទសាកសួរ៖' : 'Reporting Date Range:'} <strong style="color:#0f172a;">${state.reportStartDate}</strong> ${isKhmer ? 'ដល់' : 'to'} <strong style="color:#0f172a;">${state.reportEndDate}</strong> | ${isKhmer ? 'ទាញយកនៅថ្ងៃ៖' : 'Generated on:'} ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
       </p>
     `;
     reportArea.insertBefore(pdfHeader, reportArea.firstChild);
@@ -7935,34 +7939,68 @@
     // Apply PDF styling override class
     reportArea.classList.add('pdf-generation-active');
 
+    // Force CSS variables on reportArea to light mode values
+    const prevBgMain = reportArea.style.getPropertyValue('--bg-main');
+    const prevBgCard = reportArea.style.getPropertyValue('--bg-card');
+    const prevCardGrad = reportArea.style.getPropertyValue('--card-gradient');
+    const prevTxtPrimary = reportArea.style.getPropertyValue('--text-primary');
+    const prevTxtSecondary = reportArea.style.getPropertyValue('--text-secondary');
+    const prevTxtMuted = reportArea.style.getPropertyValue('--text-muted');
+    const prevBorderColor = reportArea.style.getPropertyValue('--border-color');
+
+    reportArea.style.setProperty('--bg-main', '#ffffff');
+    reportArea.style.setProperty('--bg-card', '#ffffff');
+    reportArea.style.setProperty('--card-gradient', '#ffffff');
+    reportArea.style.setProperty('--text-primary', '#0f172a');
+    reportArea.style.setProperty('--text-secondary', '#475569');
+    reportArea.style.setProperty('--text-muted', '#64748b');
+    reportArea.style.setProperty('--border-color', '#e2e8f0');
+
+    // Determine orientation based on active report tab
+    const isWideReport = ['prodReport', 'stockLogReport', 'salesDetailsReport', 'profitLossReport', 'prodSalesReport'].includes(activeTab);
+
     // Setup options for html2pdf
     const opt = {
-      margin:       10,
+      margin:       [8, 8, 8, 8],
       filename:     `${activeTab}_Report_${state.reportStartDate}_to_${state.reportEndDate}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { 
         scale: 2, 
         useCORS: true, 
         letterRendering: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false
       },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF:        { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: isWideReport ? 'landscape' : 'portrait' 
+      },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    const cleanup = () => {
+      reportArea.classList.remove('pdf-generation-active');
+      if (pdfHeader.parentNode) pdfHeader.remove();
+      reportArea.style.setProperty('--bg-main', prevBgMain);
+      reportArea.style.setProperty('--bg-card', prevBgCard);
+      reportArea.style.setProperty('--card-gradient', prevCardGrad);
+      reportArea.style.setProperty('--text-primary', prevTxtPrimary);
+      reportArea.style.setProperty('--text-secondary', prevTxtSecondary);
+      reportArea.style.setProperty('--text-muted', prevTxtMuted);
+      reportArea.style.setProperty('--border-color', prevBorderColor);
+      if (btn) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
     };
 
     // Trigger PDF generation
     html2pdf().from(reportArea).set(opt).save().then(() => {
-      // Cleanup
-      reportArea.classList.remove('pdf-generation-active');
-      pdfHeader.remove();
-      btn.innerHTML = originalText;
-      btn.disabled = false;
+      cleanup();
     }).catch(err => {
       console.error('PDF generation error:', err);
-      // Cleanup on error
-      reportArea.classList.remove('pdf-generation-active');
-      pdfHeader.remove();
-      btn.innerHTML = originalText;
-      btn.disabled = false;
+      cleanup();
       alert(isKhmer ? 'ការបង្កើត PDF បានបរាជ័យ។ សូមព្យាយាមបោះពុម្ពជំនួសវិញ។' : 'PDF generation failed. Please try printing instead.');
     });
   }
