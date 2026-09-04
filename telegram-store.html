@@ -2579,37 +2579,42 @@
       }
     });
 
-    // Helper to populate Sales Facebook Pages
+    // Helper to populate Sales Facebook Pages (Show ONLY pages assigned to this employee)
     function populateFacebookPages() {
       const fbSelect = document.getElementById('order-facebook-page');
       if (!fbSelect) return;
 
       let pages = [];
-      // 1. Employee's assigned Facebook Pages
-      if (employeeData && Array.isArray(employeeData.facebookPages) && employeeData.facebookPages.length > 0) {
-        employeeData.facebookPages.forEach(p => {
-          if (p && !pages.includes(p)) pages.push(p);
-        });
-      }
-      // 2. Company-wide settings Facebook Pages
-      if (companySettings && Array.isArray(companySettings.facebookPages) && companySettings.facebookPages.length > 0) {
-        companySettings.facebookPages.forEach(p => {
-          if (p && !pages.includes(p)) pages.push(p);
-        });
-      }
-      // 3. Fallback defaults for ABC System
-      if (pages.length === 0) {
-        pages = ["ABC Cosmetics", "ABC Beauty & Skincare", "AROMA Skincare"];
+      // ONLY Employee's assigned Facebook Pages
+      if (employeeData && employeeData.facebookPages) {
+        if (Array.isArray(employeeData.facebookPages)) {
+          employeeData.facebookPages.forEach(p => {
+            const trimmed = typeof p === 'string' ? p.trim() : '';
+            if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
+          });
+        } else if (typeof employeeData.facebookPages === 'string') {
+          employeeData.facebookPages.split(',').forEach(p => {
+            const trimmed = p.trim();
+            if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
+          });
+        }
       }
 
       const isLight = document.body.classList.contains('light-theme');
       const optBg = isLight ? '#ffffff' : '#151f32';
       const optColor = isLight ? '#0f172a' : '#f8fafc';
 
-      let html = `<option value="" style="background-color:${optBg} !important; color:#94a3b8 !important;">-- ជ្រើសរើសផេកហ្វេសប៊ុក (Select Facebook Page) --</option>`;
-      pages.forEach(p => {
-        html += `<option value="${p}" style="background-color:${optBg} !important; color:${optColor} !important;">${p}</option>`;
-      });
+      let html = '';
+      if (pages.length === 0) {
+        html = `<option value="" style="background-color:${optBg} !important; color:#94a3b8 !important;">-- មិនទាន់មានផេកកំណត់សម្រាប់បុគ្គលិកនេះ --</option>`;
+      } else {
+        if (pages.length > 1) {
+          html = `<option value="" style="background-color:${optBg} !important; color:#94a3b8 !important;">-- ជ្រើសរើសផេកហ្វេសប៊ុក (Select Facebook Page) --</option>`;
+        }
+        pages.forEach(p => {
+          html += `<option value="${p}" style="background-color:${optBg} !important; color:${optColor} !important;">${p}</option>`;
+        });
+      }
       html += `<option value="__custom__" style="background-color:${optBg} !important; color:#f59e0b !important;">➕ វាយឈ្មោះផេកផ្សេងទៀត (Other...)</option>`;
       fbSelect.innerHTML = html;
 

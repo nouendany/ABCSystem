@@ -2964,7 +2964,7 @@
       brSelect.disabled = false;
     }
 
-    // Helper to populate Facebook Pages dropdown for Cart and Checkout
+    // Helper to populate Facebook Pages dropdown for Cart and Checkout (Show ONLY pages assigned to this employee)
     window.updateCartFacebookPages = function(staffId) {
       const cartFbSelect = document.getElementById('cart-fb-page-select');
       const modalFbSelect = document.getElementById('checkout-fb-page');
@@ -2973,29 +2973,34 @@
       let pages = [];
       const staffObj = state.staff.find(s => s.id === staffId || s.employeeId === staffId);
       const empId = staffObj ? (staffObj.employeeId || staffObj.id) : staffId;
-      const empObj = state.employees.find(e => e.id === empId || e.fullName === staffObj?.name);
+      const empObj = state.employees.find(e => e.id === empId || e.fullName === staffObj?.name || e.id === staffId);
       
-      // 1. Employee's assigned Facebook Pages
-      if (empObj && Array.isArray(empObj.facebookPages) && empObj.facebookPages.length > 0) {
-        empObj.facebookPages.forEach(p => {
-          if (p && !pages.includes(p)) pages.push(p);
-        });
-      }
-      // 2. Company-wide settings Facebook Pages
-      if (state.companySettings && Array.isArray(state.companySettings.facebookPages)) {
-        state.companySettings.facebookPages.forEach(p => {
-          if (p && !pages.includes(p)) pages.push(p);
-        });
-      }
-      // 3. Fallback defaults
-      if (pages.length === 0) {
-        pages = ["Sam Phaleap Skincare", "Sam Phaleap Beauty", "AROMA Official", "ABC Cosmetics"];
+      // ONLY Employee's assigned Facebook Pages
+      if (empObj && empObj.facebookPages) {
+        if (Array.isArray(empObj.facebookPages)) {
+          empObj.facebookPages.forEach(p => {
+            const trimmed = typeof p === 'string' ? p.trim() : '';
+            if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
+          });
+        } else if (typeof empObj.facebookPages === 'string') {
+          empObj.facebookPages.split(',').forEach(p => {
+            const trimmed = p.trim();
+            if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
+          });
+        }
       }
 
-      let optionsHtml = `<option value="">-- មិនកំណត់ / គ្មាន (None) --</option>`;
-      pages.forEach(p => {
-        optionsHtml += `<option value="${p}">${p}</option>`;
-      });
+      let optionsHtml = '';
+      if (pages.length === 0) {
+        optionsHtml = `<option value="">-- គ្មានផេកកំណត់សម្រាប់បុគ្គលិកនេះ --</option>`;
+      } else {
+        if (pages.length > 1) {
+          optionsHtml = `<option value="">-- ជ្រើសរើសផេកហ្វេសប៊ុក --</option>`;
+        }
+        pages.forEach(p => {
+          optionsHtml += `<option value="${p}">📱 ${p}</option>`;
+        });
+      }
 
       if (cartFbSelect) {
         const prev = cartFbSelect.value;
@@ -3010,6 +3015,8 @@
         modalFbSelect.innerHTML = optionsHtml;
         if (cartFbSelect && cartFbSelect.value) {
           modalFbSelect.value = cartFbSelect.value;
+        } else if (pages.length === 1) {
+          modalFbSelect.value = pages[0];
         }
       }
     };
@@ -8619,8 +8626,16 @@
       const p = t.facebookPage || (t.pageName && t.pageName !== 'Direct Sales' && t.pageName !== 'Telegram Store' ? t.pageName : '');
       if (p) fbPagesSet.add(p);
     });
-    if (state.companySettings && Array.isArray(state.companySettings.facebookPages)) {
-      state.companySettings.facebookPages.forEach(p => fbPagesSet.add(p));
+    if (state.employees && Array.isArray(state.employees)) {
+      state.employees.forEach(emp => {
+        if (emp.facebookPages) {
+          if (Array.isArray(emp.facebookPages)) {
+            emp.facebookPages.forEach(p => p && fbPagesSet.add(p.trim()));
+          } else if (typeof emp.facebookPages === 'string') {
+            emp.facebookPages.split(',').forEach(p => p.trim() && fbPagesSet.add(p.trim()));
+          }
+        }
+      });
     }
     let fbPageOpts = `<option value="all">${state.lang === 'km' ? 'គ្រប់ផេក Facebook ទាំងអស់' : 'All FB Pages'}</option>`;
     fbPagesSet.forEach(p => {
