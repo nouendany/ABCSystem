@@ -107,12 +107,47 @@ async function handleWebAppOrder(req, res, body) {
 
     // Load employee details
     const employeesRef = collection(db, "employees");
-    const empQuery = query(employeesRef, where("id", "==", employeeId));
-    const empSnap = await getDocs(empQuery);
     let employee = null;
-    empSnap.forEach(d => {
-      employee = { docId: d.id, ...d.data() };
-    });
+    if (employeeId) {
+      const empQuery = query(employeesRef, where("id", "==", employeeId));
+      const empSnap = await getDocs(empQuery);
+      empSnap.forEach(d => {
+        employee = { docId: d.id, ...d.data() };
+      });
+      if (!employee) {
+        const directSnap = await getDoc(doc(db, "employees", employeeId));
+        if (directSnap.exists()) {
+          employee = { docId: directSnap.id, ...directSnap.data() };
+        }
+      }
+      if (!employee) {
+        const stSnap = await getDoc(doc(db, "staff", employeeId));
+        if (stSnap.exists()) {
+          const sData = stSnap.data();
+          if (sData.employeeId) {
+            const linkedSnap = await getDoc(doc(db, "employees", sData.employeeId));
+            if (linkedSnap.exists()) employee = { docId: linkedSnap.id, ...linkedSnap.data() };
+          }
+          if (!employee) {
+            employee = { docId: stSnap.id, id: sData.employeeId || stSnap.id, fullName: sData.name, ...sData };
+          }
+        }
+      }
+    }
+    if (!employee && chatId) {
+      const tgQuery = query(employeesRef, where("telegramId", "==", String(chatId)));
+      const tgSnap = await getDocs(tgQuery);
+      tgSnap.forEach(d => {
+        employee = { docId: d.id, ...d.data() };
+      });
+      if (!employee) {
+        const tgNumQuery = query(employeesRef, where("telegramId", "==", Number(chatId)));
+        const tgNumSnap = await getDocs(tgNumQuery);
+        tgNumSnap.forEach(d => {
+          employee = { docId: d.id, ...d.data() };
+        });
+      }
+    }
 
     if (!employee) {
       return res.status(400).json({ error: "Employee profile not found in system." });
@@ -788,17 +823,39 @@ export default async function handler(req, res) {
 
     // Check Employee Registration
     const employeesRef = collection(db, "employees");
+    let employee = null;
+
     const empQuery = query(employeesRef, where("telegramId", "==", String(chatId)));
     const empSnap = await getDocs(empQuery);
-    
-    let employee = null;
     empSnap.forEach(doc => {
       employee = { docId: doc.id, ...doc.data() };
     });
+    if (!employee) {
+      const empNumQuery = query(employeesRef, where("telegramId", "==", Number(chatId)));
+      const empNumSnap = await getDocs(empNumQuery);
+      empNumSnap.forEach(doc => {
+        employee = { docId: doc.id, ...doc.data() };
+      });
+    }
+    if (!employee) {
+      const staffRef = collection(db, "staff");
+      const stQuery = query(staffRef, where("telegramId", "==", String(chatId)));
+      const stSnap = await getDocs(stQuery);
+      if (!stSnap.empty) {
+        const sData = stSnap.docs[0].data();
+        if (sData.employeeId) {
+          const linkedSnap = await getDoc(doc(db, "employees", sData.employeeId));
+          if (linkedSnap.exists()) employee = { docId: linkedSnap.id, ...linkedSnap.data() };
+        }
+        if (!employee) {
+          employee = { docId: stSnap.docs[0].id, id: sData.employeeId || stSnap.docs[0].id, fullName: sData.name, ...sData };
+        }
+      }
+    }
 
     const menuMarkup = isSalesBot
-      ? getSalesMenuMarkup(req, employee ? employee.id : '', chatId)
-      : getMenuMarkup(req, employee ? employee.id : '', chatId);
+      ? getSalesMenuMarkup(req, employee ? (employee.id || employee.docId) : '', chatId)
+      : getMenuMarkup(req, employee ? (employee.id || employee.docId) : '', chatId);
 
     // Sales Bot Custom Routing
     if (isSalesBot) {
@@ -806,23 +863,50 @@ export default async function handler(req, res) {
         const isCommand = text && (text.startsWith("/") || text.toLowerCase() === "start" || text.toLowerCase() === "cancel");
         if (text && !isCommand) {
           const empIdInput = text.trim().toUpperCase();
-          const checkRef = query(employeesRef, where("id", "==", empIdInput));
-          const checkSnap = await getDocs(checkRef);
-          
           let foundEmp = null;
-          checkSnap.forEach(doc => {
-            foundEmp = { docId: doc.id, ...doc.data() };
-          });
+          
+          const directEmp = await getDoc(doc(db, "employees", empIdInput));
+          if (directEmp.exists()) {
+            foundEmp = { docId: directEmp.id, ...directEmp.data() };
+          } else {
+            const checkRef = query(employeesRef, where("id", "==", empIdInput));
+            const checkSnap = await getDocs(checkRef);
+            checkSnap.forEach(doc => {
+              foundEmp = { docId: doc.id, ...doc.data() };
+            });
+          }
+          if (!foundEmp) {
+            const stDoc = await getDoc(doc(db, "staff", empIdInput));
+            if (stDoc.exists()) {
+              const sData = stDoc.data();
+              if (sData.employeeId) {
+                const linkedSnap = await getDoc(doc(db, "employees", sData.employeeId));
+                if (linkedSnap.exists()) foundEmp = { docId: linkedSnap.id, ...linkedSnap.data() };
+              }
+              if (!foundEmp) foundEmp = { docId: stDoc.id, id: sData.employeeId || stDoc.id, fullName: sData.name, ...sData };
+            }
+          }
 
           if (foundEmp) {
-            await updateDoc(doc(db, "employees", foundEmp.docId), {
+            await setDoc(doc(db, "employees", foundEmp.docId), {
               telegramId: String(chatId)
-            });
+            }, { merge: true });
+
+            try {
+              const stfQ = await getDocs(query(collection(db, "staff"), where("employeeId", "==", foundEmp.id || foundEmp.docId)));
+              if (!stfQ.empty) {
+                await setDoc(doc(db, "staff", stfQ.docs[0].id), {
+                  telegramId: String(chatId)
+                }, { merge: true });
+              }
+            } catch (err) {
+              console.error("Error linking staff doc with telegramId:", err);
+            }
 
             await sendTelegram(token, "sendMessage", {
               chat_id: chatId,
-              text: `🎉 ការចុះឈ្មោះជោគជ័យ!\n\nគណនី Telegram របស់អ្នកត្រូវបានភ្ជាប់ជាមួយ៖\n👤 ឈ្មោះ៖ ${foundEmp.fullName}\n🆔 អត្តលេខ៖ ${foundEmp.id}\n\nសូមចុចប៊ូតុង "🛍️ ដាក់ការបញ្ជាទិញ (Order)" ខាងក្រោមដើម្បីដាក់ការកម្មង់៖`,
-              reply_markup: getSalesMenuMarkup(req, foundEmp.id, chatId)
+              text: `🎉 ការចុះឈ្មោះជោគជ័យ!\n\nគណនី Telegram របស់អ្នកត្រូវបានភ្ជាប់ជាមួយ៖\n👤 ឈ្មោះ៖ ${foundEmp.fullName || foundEmp.name}\n🆔 អត្តលេខ៖ ${foundEmp.id || foundEmp.docId}\n\nសូមចុចប៊ូតុង "🛍️ ដាក់ការបញ្ជាទិញ (Order)" ខាងក្រោមដើម្បីដាក់ការកម្មង់៖`,
+              reply_markup: getSalesMenuMarkup(req, foundEmp.id || foundEmp.docId, chatId)
             });
           } else {
             await sendTelegram(token, "sendMessage", {

@@ -1622,27 +1622,40 @@
       let username = "@guest_seller";
       let photoUrl = "";
 
-      // 1. Get info from Firebase employee if available
+      const tgUser = tg?.initDataUnsafe?.user;
+
+      // 1. Employee or Staff profile
       if (employeeData) {
         fullName = employeeData.fullName || employeeData.name || fullName;
         if (employeeData.username) {
           username = `@${employeeData.username}`;
+        } else if (employeeData.position) {
+          username = `@${employeeData.position}`;
+        } else if (employeeData.id) {
+          username = `@${employeeData.id}`;
         }
         if (employeeData.photoBase64) {
           photoUrl = employeeData.photoBase64;
         }
+      } else if (staffData) {
+        fullName = staffData.name || staffData.fullName || fullName;
+        if (staffData.username) {
+          username = `@${staffData.username}`;
+        } else if (staffData.position) {
+          username = `@${staffData.position}`;
+        } else if (staffData.id) {
+          username = `@${staffData.id}`;
+        }
+      } else if (tgUser && tgUser.first_name) {
+        fullName = (tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '')).trim();
       }
 
-      // 2. Override with Telegram WebApp profile info if available
-      const tgUser = tg?.initDataUnsafe?.user;
+      // 2. Overlay Telegram username / photo if available
       if (tgUser) {
-        if (tgUser.first_name) {
-          fullName = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
-        }
         if (tgUser.username) {
           username = `@${tgUser.username}`;
         }
-        if (tgUser.photo_url) {
+        if (tgUser.photo_url && !photoUrl) {
           photoUrl = tgUser.photo_url;
         }
       }
@@ -1661,7 +1674,7 @@
         if (avatarImg) avatarImg.style.display = 'none';
         if (avatarInitial) {
           avatarInitial.style.display = 'flex';
-          avatarInitial.innerText = fullName.charAt(0).toUpperCase();
+          avatarInitial.innerText = (fullName || 'U').charAt(0).toUpperCase();
         }
       }
     }
@@ -1689,6 +1702,7 @@
 
     // Application state
     let employeeData = null;
+    let staffData = null;
     let companySettings = {};
     let productsList = [];
     let categoriesList = [];
@@ -2138,96 +2152,186 @@
         const companiesList = [];
         compCollSnap.forEach(doc => companiesList.push({ id: doc.id, ...doc.data() }));
 
-        // 6. Fetch Employee Details
-        if (employeeId) {
-          const empSnap = await db.collection('employees').doc(employeeId).get();
+        // 6. Fetch Employee & Staff Details
+        const tgUser = tg?.initDataUnsafe?.user;
+        let resolvedEmpId = employeeId;
+
+        if (resolvedEmpId) {
+          const empSnap = await db.collection('employees').doc(resolvedEmpId).get();
           if (empSnap.exists) {
-            employeeData = empSnap.data();
-            employeeDisplay.innerText = `👤 ${employeeData.fullName}`;
+            employeeData = { id: empSnap.id, ...empSnap.data() };
           } else {
             // Check by id property
-            const empQ = await db.collection('employees').where('id', '==', employeeId).get();
+            const empQ = await db.collection('employees').where('id', '==', resolvedEmpId).get();
             if (!empQ.empty) {
-              employeeData = empQ.docs[0].data();
-              employeeDisplay.innerText = `👤 ${employeeData.fullName}`;
+              employeeData = { id: empQ.docs[0].id, ...empQ.docs[0].data() };
             } else {
-              employeeDisplay.innerText = `👤 ID: ${employeeId}`;
+              // Maybe resolvedEmpId is a staff ID (like STF-001)
+              const stfSnap = await db.collection('staff').doc(resolvedEmpId).get();
+              if (stfSnap.exists) {
+                const sData = stfSnap.data();
+                staffData = { id: stfSnap.id, ...sData };
+                if (sData.employeeId) {
+                  const linkedEmp = await db.collection('employees').doc(sData.employeeId).get();
+                  if (linkedEmp.exists) employeeData = { id: linkedEmp.id, ...linkedEmp.data() };
+                }
+                if (!employeeData) employeeData = { id: stfSnap.id, fullName: sData.name, ...sData };
+              }
             }
           }
+        }
 
-          // Enforce branch ordering restriction if enabled
-          if (employeeData && companySettings.restrictBranchOrders) {
-            const userRole = employeeData.role;
-            const userBranch = employeeData.branchId;
-
-            if (userRole !== 'super_admin' && userRole !== 'accountant' && userBranch && userBranch !== 'all') {
-              if (userBranch === 'BR-001') {
-                // If Chhouk Meas, they can access both BR-001 (Provinces) and BR-004 (Phnom Penh)
-                const b1 = branchesList.find(x => x.id === 'BR-001');
-                const b4 = branchesList.find(x => x.id === 'BR-004');
-                let optionsHtml = '';
-                if (b1) optionsHtml += `<option value="${b1.id}">${b1.nameKh || b1.name} (ខេត្ត - Province)</option>`;
-                if (b4) optionsHtml += `<option value="${b4.id}">${b4.nameKh || b4.name} (ភ្នំពេញ - Phnom Penh)</option>`;
-                branchSelect.innerHTML = optionsHtml;
-                branchSelect.disabled = false; // Allow manual switching in dropdown
-                
-                // Keep active branch valid
-                if (activeBranchId !== 'BR-001' && activeBranchId !== 'BR-004') {
-                  activeBranchId = 'BR-001';
-                }
-                branchSelect.value = activeBranchId;
-                localStorage.setItem('abc_active_branch', activeBranchId);
+        // Fallback: If employeeData still not found, search by Telegram User Info in both employees and staff
+        if (!employeeData && tgUser) {
+          if (tgUser.id) {
+            const tgIdStr = String(tgUser.id).trim();
+            // Check employees by telegramId string or number
+            const tq1 = await db.collection('employees').where('telegramId', '==', tgIdStr).get();
+            if (!tq1.empty) {
+              employeeData = { id: tq1.docs[0].id, ...tq1.docs[0].data() };
+            } else {
+              const tq2 = await db.collection('employees').where('telegramId', '==', Number(tgIdStr)).get();
+              if (!tq2.empty) {
+                employeeData = { id: tq2.docs[0].id, ...tq2.docs[0].data() };
               } else {
-                activeBranchId = userBranch;
-                localStorage.setItem('abc_active_branch', userBranch);
-                const b = branchesList.find(x => x.id === userBranch);
-                if (b) {
-                  branchSelect.innerHTML = `<option value="${b.id}" selected>${b.nameKh || b.name} (${b.code})</option>`;
-                  branchSelect.disabled = true;
+                // Check staff by telegramId string or number
+                const sq1 = await db.collection('staff').where('telegramId', '==', tgIdStr).get();
+                if (!sq1.empty) {
+                  staffData = { id: sq1.docs[0].id, ...sq1.docs[0].data() };
+                } else {
+                  const sq2 = await db.collection('staff').where('telegramId', '==', Number(tgIdStr)).get();
+                  if (!sq2.empty) {
+                    staffData = { id: sq2.docs[0].id, ...sq2.docs[0].data() };
+                  }
                 }
               }
-              renderProducts(); // Refresh product stock displaying for the branch
             }
           }
 
-          // Show Destination Selector Popup on Mini App load
-          const destModal = document.getElementById('modal-destination-selector');
-          if (destModal) {
-            destModal.style.display = 'flex';
-            setTimeout(() => {
-              playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
-            }, 600);
-            destModal.addEventListener('click', function playOnInteraction() {
-              playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
-              destModal.removeEventListener('click', playOnInteraction);
+          if (!employeeData && !staffData && (tgUser.first_name || tgUser.last_name)) {
+            const tgFullName = (tgUser.first_name + ' ' + (tgUser.last_name || '')).trim().toLowerCase();
+            const allEmps = await db.collection('employees').get();
+            allEmps.forEach(doc => {
+              const d = doc.data();
+              if (d.fullName && d.fullName.toLowerCase().trim() === tgFullName) {
+                employeeData = { id: doc.id, ...d };
+              }
             });
+
+            if (!employeeData) {
+              const allStaff = await db.collection('staff').get();
+              allStaff.forEach(doc => {
+                const d = doc.data();
+                if (d.name && d.name.toLowerCase().trim() === tgFullName) {
+                  staffData = { id: doc.id, ...d };
+                }
+              });
+            }
           }
 
-          // Populate Sales Facebook Pages dropdown
-          populateFacebookPages();
-
-          // Trigger header update once loaded
-          updateHeaderProfile();
-
-          // Check if employee is inactive
-          if (employeeData && (employeeData.status === 'Inactive' || employeeData.status === 'inactive')) {
-            document.body.innerHTML = `
-              <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f8fafc; color:#0f172a; font-family:'Kantumruy Pro', sans-serif; padding:20px; text-align:center;">
-                <div style="font-size:64px; margin-bottom:20px;">🔒</div>
-                <h2 style="font-size:22px; font-weight:700; margin-bottom:10px; color:#ef4444;">គណនីត្រូវបានផ្អាកដំណើរការ</h2>
-                <p style="font-size:14px; color:#64748b; margin-bottom:20px; max-width:320px; line-height: 1.6;">
-                  គណនីបុគ្គលិករបស់អ្នកត្រូវបានផ្អាកដំណើរការនៅក្នុងប្រព័ន្ធ។ សូមទាក់ទងអ្នកគ្រប់គ្រងដើម្បីសាកសួរព័ត៌មានបន្ថែម។
-                </p>
-                <p style="font-size:12px; color:#94a3b8; font-style:italic;">
-                  (Your account is suspended. Please contact admin for more info.)
-                </p>
-              </div>
-            `;
-            return;
+          // If staff was found but employeeData not yet loaded
+          if (!employeeData && staffData) {
+            if (staffData.employeeId) {
+              const linkedEmp = await db.collection('employees').doc(staffData.employeeId).get();
+              if (linkedEmp.exists) {
+                employeeData = { id: linkedEmp.id, ...linkedEmp.data() };
+              }
+            }
+            if (!employeeData) {
+              employeeData = { id: staffData.employeeId || staffData.id, fullName: staffData.name, ...staffData };
+            }
           }
+        }
+
+        // Fetch corresponding staff document to merge any fbPage or role info
+        if (employeeData && !staffData) {
+          const sQ = await db.collection('staff').where('employeeId', '==', employeeData.id).get();
+          if (!sQ.empty) {
+            staffData = { id: sQ.docs[0].id, ...sQ.docs[0].data() };
+          } else {
+            const sQ2 = await db.collection('staff').where('name', '==', employeeData.fullName).get();
+            if (!sQ2.empty) {
+              staffData = { id: sQ2.docs[0].id, ...sQ2.docs[0].data() };
+            }
+          }
+        }
+
+        if (employeeData) {
+          employeeDisplay.innerText = `👤 ${employeeData.fullName || employeeData.name}`;
+        } else if (resolvedEmpId) {
+          employeeDisplay.innerText = `👤 ID: ${resolvedEmpId}`;
         } else {
           employeeDisplay.innerText = `👤 Guest Seller`;
-          updateHeaderProfile();
+        }
+
+        // Enforce branch ordering restriction if enabled
+        if (employeeData && companySettings.restrictBranchOrders) {
+          const userRole = employeeData.role;
+          const userBranch = employeeData.branchId;
+
+          if (userRole !== 'super_admin' && userRole !== 'accountant' && userBranch && userBranch !== 'all') {
+            if (userBranch === 'BR-001') {
+              // If Chhouk Meas, they can access both BR-001 (Provinces) and BR-004 (Phnom Penh)
+              const b1 = branchesList.find(x => x.id === 'BR-001');
+              const b4 = branchesList.find(x => x.id === 'BR-004');
+              let optionsHtml = '';
+              if (b1) optionsHtml += `<option value="${b1.id}">${b1.nameKh || b1.name} (ខេត្ត - Province)</option>`;
+              if (b4) optionsHtml += `<option value="${b4.id}">${b4.nameKh || b4.name} (ភ្នំពេញ - Phnom Penh)</option>`;
+              branchSelect.innerHTML = optionsHtml;
+              branchSelect.disabled = false;
+              
+              if (activeBranchId !== 'BR-001' && activeBranchId !== 'BR-004') {
+                activeBranchId = 'BR-001';
+              }
+              branchSelect.value = activeBranchId;
+              localStorage.setItem('abc_active_branch', activeBranchId);
+            } else {
+              activeBranchId = userBranch;
+              localStorage.setItem('abc_active_branch', userBranch);
+              const b = branchesList.find(x => x.id === userBranch);
+              if (b) {
+                branchSelect.innerHTML = `<option value="${b.id}" selected>${b.nameKh || b.name} (${b.code})</option>`;
+                branchSelect.disabled = true;
+              }
+            }
+            renderProducts();
+          }
+        }
+
+        // Show Destination Selector Popup on Mini App load
+        const destModal = document.getElementById('modal-destination-selector');
+        if (destModal) {
+          destModal.style.display = 'flex';
+          setTimeout(() => {
+            playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
+          }, 600);
+          destModal.addEventListener('click', function playOnInteraction() {
+            playVoiceNotice("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន ភ្នំពេញ ឬតាមខេត្ត");
+            destModal.removeEventListener('click', playOnInteraction);
+          });
+        }
+
+        // Populate Sales Facebook Pages dropdown
+        populateFacebookPages();
+
+        // Trigger header update once loaded
+        updateHeaderProfile();
+
+        // Check if employee is inactive
+        if (employeeData && (employeeData.status === 'Inactive' || employeeData.status === 'inactive')) {
+          document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f8fafc; color:#0f172a; font-family:'Kantumruy Pro', sans-serif; padding:20px; text-align:center;">
+              <div style="font-size:64px; margin-bottom:20px;">🔒</div>
+              <h2 style="font-size:22px; font-weight:700; margin-bottom:10px; color:#ef4444;">គណនីត្រូវបានផ្អាកដំណើរការ</h2>
+              <p style="font-size:14px; color:#64748b; margin-bottom:20px; max-width:320px; line-height: 1.6;">
+                គណនីបុគ្គលិករបស់អ្នកត្រូវបានផ្អាកដំណើរការនៅក្នុងប្រព័ន្ធ។ សូមទាក់ទងអ្នកគ្រប់គ្រងដើម្បីសាកសួរព័ត៌មានបន្ថែម។
+              </p>
+              <p style="font-size:12px; color:#94a3b8; font-style:italic;">
+                (Your account is suspended. Please contact admin for more info.)
+              </p>
+            </div>
+          `;
+          return;
         }
 
         // Determine company branding (Requirement 10)
@@ -2579,25 +2683,37 @@
       }
     });
 
-    // Helper to populate Sales Facebook Pages (Show ONLY pages assigned to this employee)
+    // Helper to populate Sales Facebook Pages (Show ONLY pages assigned to this employee / staff)
     function populateFacebookPages() {
       const fbSelect = document.getElementById('order-facebook-page');
       if (!fbSelect) return;
 
       let pages = [];
-      // ONLY Employee's assigned Facebook Pages
-      if (employeeData && employeeData.facebookPages) {
-        if (Array.isArray(employeeData.facebookPages)) {
-          employeeData.facebookPages.forEach(p => {
-            const trimmed = typeof p === 'string' ? p.trim() : '';
-            if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
-          });
-        } else if (typeof employeeData.facebookPages === 'string') {
-          employeeData.facebookPages.split(',').forEach(p => {
-            const trimmed = p.trim();
+      const addPage = (p) => {
+        if (!p) return;
+        if (Array.isArray(p)) {
+          p.forEach(addPage);
+        } else if (typeof p === 'string') {
+          p.split(/[,;\n]+/).forEach(item => {
+            const trimmed = item.trim();
             if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
           });
         }
+      };
+
+      if (employeeData) {
+        addPage(employeeData.facebookPages);
+        addPage(employeeData.fbPage);
+        addPage(employeeData.facebook_pages);
+        addPage(employeeData.pageName);
+        addPage(employeeData.page);
+      }
+      if (staffData) {
+        addPage(staffData.facebookPages);
+        addPage(staffData.fbPage);
+        addPage(staffData.facebook_pages);
+        addPage(staffData.pageName);
+        addPage(staffData.page);
       }
 
       const isLight = document.body.classList.contains('light-theme');
@@ -2784,11 +2900,14 @@
         selectedFbPage = document.getElementById('order-custom-fb-page')?.value.trim() || '';
       }
 
+      const actualEmpId = employeeData?.id || employeeData?.docId || employeeId || staffData?.employeeId || staffData?.id || '';
+      const actualChatId = chatId || (tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : '');
+
       const payload = {
         webAppOrder: true,
         bot: botType,
-        employeeId: employeeId,
-        chatId: chatId,
+        employeeId: actualEmpId,
+        chatId: actualChatId,
         branchId: activeBranchId,
         cart: cart.map(item => ({ sku: item.sku, qty: item.qty })),
         customerName: cName,

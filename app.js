@@ -890,19 +890,59 @@
     if (!state.staff || !state.employees) return;
     let changed = false;
     state.staff.forEach(s => {
-      if (s.employeeId) {
-        const emp = state.employees.find(e => e.id === s.employeeId);
-        if (emp) {
-          if (emp.branchId !== s.branchId || emp.role !== s.role) {
-            emp.branchId = s.branchId;
-            emp.role = s.role;
-            changed = true;
-            if (state.firebaseDb) {
-              state.firebaseDb.collection('employees').doc(emp.id).update({
-                branchId: s.branchId,
-                role: s.role
-              }).catch(e => console.error("Error syncing employee branch/role:", e));
-            }
+      const emp = state.employees.find(e => (s.employeeId && e.id === s.employeeId) || (e.fullName && s.name && e.fullName.trim().toLowerCase() === s.name.trim().toLowerCase()));
+      if (emp) {
+        let empUpdated = false;
+        let staffUpdated = false;
+        const updatePayload = {};
+
+        if (s.branchId && emp.branchId !== s.branchId) {
+          emp.branchId = s.branchId;
+          updatePayload.branchId = s.branchId;
+          empUpdated = true;
+        }
+        if (s.role && emp.role !== s.role) {
+          emp.role = s.role;
+          updatePayload.role = s.role;
+          empUpdated = true;
+        }
+
+        // Sync Facebook pages
+        if (s.fbPage) {
+          if (!emp.facebookPages) emp.facebookPages = [];
+          if (typeof emp.facebookPages === 'string') {
+            emp.facebookPages = emp.facebookPages.split(',').map(x => x.trim()).filter(Boolean);
+          }
+          if (!emp.facebookPages.includes(s.fbPage)) {
+            emp.facebookPages.push(s.fbPage);
+            empUpdated = true;
+          }
+          if (emp.fbPage !== s.fbPage) {
+            emp.fbPage = s.fbPage;
+            empUpdated = true;
+          }
+          updatePayload.facebookPages = emp.facebookPages;
+          updatePayload.fbPage = emp.fbPage;
+        } else if (emp.facebookPages && (Array.isArray(emp.facebookPages) ? emp.facebookPages.length > 0 : String(emp.facebookPages).trim())) {
+          const firstPg = Array.isArray(emp.facebookPages) ? emp.facebookPages[0] : String(emp.facebookPages).split(',')[0].trim();
+          if (firstPg && !s.fbPage) {
+            s.fbPage = firstPg;
+            staffUpdated = true;
+          }
+        }
+
+        if (empUpdated) {
+          changed = true;
+          if (state.firebaseDb) {
+            state.firebaseDb.collection('employees').doc(emp.id).set(updatePayload, { merge: true })
+              .catch(e => console.error("Error syncing employee data:", e));
+          }
+        }
+        if (staffUpdated) {
+          changed = true;
+          if (state.firebaseDb) {
+            state.firebaseDb.collection('staff').doc(s.id).set({ fbPage: s.fbPage }, { merge: true })
+              .catch(e => console.error("Error syncing staff fbPage:", e));
           }
         }
       }
@@ -2973,21 +3013,29 @@
       let pages = [];
       const staffObj = state.staff.find(s => s.id === staffId || s.employeeId === staffId);
       const empId = staffObj ? (staffObj.employeeId || staffObj.id) : staffId;
-      const empObj = state.employees.find(e => e.id === empId || e.fullName === staffObj?.name || e.id === staffId);
-      
-      // ONLY Employee's assigned Facebook Pages
-      if (empObj && empObj.facebookPages) {
-        if (Array.isArray(empObj.facebookPages)) {
-          empObj.facebookPages.forEach(p => {
-            const trimmed = typeof p === 'string' ? p.trim() : '';
-            if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
-          });
-        } else if (typeof empObj.facebookPages === 'string') {
-          empObj.facebookPages.split(',').forEach(p => {
-            const trimmed = p.trim();
+      const empObj = state.employees.find(e => e.id === empId || (staffObj && e.fullName === staffObj.name) || e.id === staffId);
+
+      const addPage = (p) => {
+        if (!p) return;
+        if (Array.isArray(p)) {
+          p.forEach(addPage);
+        } else if (typeof p === 'string') {
+          p.split(/[,;\n]+/).forEach(item => {
+            const trimmed = item.trim();
             if (trimmed && !pages.includes(trimmed)) pages.push(trimmed);
           });
         }
+      };
+
+      if (empObj) {
+        addPage(empObj.facebookPages);
+        addPage(empObj.fbPage);
+        addPage(empObj.pageName);
+      }
+      if (staffObj) {
+        addPage(staffObj.facebookPages);
+        addPage(staffObj.fbPage);
+        addPage(staffObj.pageName);
       }
 
       let optionsHtml = '';
@@ -6897,6 +6945,10 @@
   function deleteStaff(idx) {
     if (!guardAction('delete')) return;
     if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
+      const s = state.staff[idx];
+      if (s && state.firebaseDb) {
+        state.firebaseDb.collection('staff').doc(s.id).delete().catch(err => console.error("Error deleting staff doc:", err));
+      }
       state.staff.splice(idx, 1);
       saveStateToLocalStorage();
       renderStaff();
@@ -13955,18 +14007,37 @@ CREATE TABLE sale_items (
         });
       }
 
-      // Sync branchId and role to the linked employee document
+      // Sync branchId, role, and fbPage to the linked employee document
       if (employeeId && state.employees) {
         const emp = state.employees.find(e => e.id === employeeId);
         if (emp) {
           emp.branchId = branchId;
           emp.role = role;
-          if (state.firebaseDb) {
-            state.firebaseDb.collection('employees').doc(emp.id).update({
-              branchId: branchId,
-              role: role
-            }).catch(e => console.error("Firebase sync employee branch/role error:", e));
+          if (fbPage) {
+            if (!emp.facebookPages) emp.facebookPages = [];
+            if (typeof emp.facebookPages === 'string') {
+              emp.facebookPages = emp.facebookPages.split(',').map(x => x.trim()).filter(Boolean);
+            }
+            if (!emp.facebookPages.includes(fbPage)) emp.facebookPages.push(fbPage);
+            emp.fbPage = fbPage;
           }
+          if (state.firebaseDb) {
+            state.firebaseDb.collection('employees').doc(emp.id).set({
+              branchId: branchId,
+              role: role,
+              facebookPages: emp.facebookPages || (fbPage ? [fbPage] : []),
+              fbPage: fbPage || emp.fbPage || ''
+            }, { merge: true }).catch(e => console.error("Firebase sync employee branch/role error:", e));
+          }
+        }
+      }
+
+      // Persist staff document to Firestore
+      if (state.firebaseDb) {
+        const targetStaff = (id !== '') ? state.staff.find(st => st.id === id) : state.staff[state.staff.length - 1];
+        if (targetStaff) {
+          state.firebaseDb.collection('staff').doc(targetStaff.id).set(targetStaff, { merge: true })
+            .catch(err => console.error("Firebase sync staff error:", err));
         }
       }
 
@@ -15891,7 +15962,16 @@ CREATE TABLE sale_items (
         document.getElementById('employee-emergency-phone').value = emp.emergencyContact?.phone || emp.emergencyPhone || '';
         const empFbInp = document.getElementById('employee-facebook-pages');
         if (empFbInp) {
-          empFbInp.value = Array.isArray(emp.facebookPages) ? emp.facebookPages.join(', ') : (emp.facebookPages || '');
+          let prefillPages = '';
+          if (emp.facebookPages && (Array.isArray(emp.facebookPages) ? emp.facebookPages.length > 0 : String(emp.facebookPages).trim())) {
+            prefillPages = Array.isArray(emp.facebookPages) ? emp.facebookPages.join(', ') : emp.facebookPages;
+          } else if (emp.fbPage) {
+            prefillPages = emp.fbPage;
+          } else {
+            const matchedStaff = state.staff.find(s => s.employeeId === emp.id || (s.name && emp.fullName && s.name.toLowerCase().trim() === emp.fullName.toLowerCase().trim()));
+            if (matchedStaff && matchedStaff.fbPage) prefillPages = matchedStaff.fbPage;
+          }
+          empFbInp.value = prefillPages;
         }
       }
     } else {
@@ -16006,6 +16086,28 @@ CREATE TABLE sale_items (
       state.employees.push(employeeData);
     }
 
+    employeeData.fbPage = (employeeData.facebookPages && employeeData.facebookPages.length > 0) ? employeeData.facebookPages[0] : '';
+
+    // Persist to Firestore
+    if (state.firebaseDb) {
+      state.firebaseDb.collection('employees').doc(employeeData.id).set(employeeData, { merge: true })
+        .catch(err => console.error("Error saving employee to Firestore:", err));
+      
+      // Also update linked staff document in state and Firestore
+      const matchedStaff = state.staff.find(s => s.employeeId === employeeData.id || s.id === employeeData.id || (s.name && employeeData.fullName && s.name.trim().toLowerCase() === employeeData.fullName.trim().toLowerCase()));
+      if (matchedStaff) {
+        matchedStaff.name = employeeData.fullName;
+        matchedStaff.facebookPages = employeeData.facebookPages;
+        if (employeeData.fbPage) matchedStaff.fbPage = employeeData.fbPage;
+        state.firebaseDb.collection('staff').doc(matchedStaff.id).set({
+          name: matchedStaff.name,
+          facebookPages: matchedStaff.facebookPages,
+          fbPage: matchedStaff.fbPage,
+          employeeId: employeeData.id
+        }, { merge: true }).catch(err => console.error("Error syncing staff doc:", err));
+      }
+    }
+
     saveStateToLocalStorage();
     document.getElementById('modal-employee').classList.remove('active-modal');
     renderEmployeeList();
@@ -16018,6 +16120,9 @@ CREATE TABLE sale_items (
     if (confirm(window.POS_TRANSLATIONS[state.lang].confirmDelete)) {
       const idx = state.employees.findIndex(e => e.id === empId);
       if (idx !== -1) {
+        if (state.firebaseDb) {
+          state.firebaseDb.collection('employees').doc(empId).delete().catch(err => console.error("Error deleting employee from Firestore:", err));
+        }
         state.employees.splice(idx, 1);
         saveStateToLocalStorage();
         renderEmployeeList();
