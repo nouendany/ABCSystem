@@ -121,6 +121,7 @@
 
     // POS State
     cart: [],
+    isDistributorOrder: false,
     checkoutMethod: 'cash',
     activePOSCategory: 'all',
     currentPOSStaffId: '',
@@ -3482,23 +3483,35 @@
       const isOutOfStock = branchQty <= 0;
       const displayImg = getProductImageHtml(p);
 
-      const card = document.createElement('div');
-      card.className = 'product-card' + (isOutOfStock ? ' out-of-stock' : '');
-      card.innerHTML = `
-        ${isOutOfStock 
-          ? `<span class="product-card-badge badge-out-of-stock">${state.lang === 'km' ? 'អស់ស្តុក' : 'Out of Stock'}</span>`
-          : (branchQty <= p.minStock 
-            ? `<span class="product-card-badge">${window.POS_TRANSLATIONS[state.lang].lowStockAlert}</span>`
-            : '')}
-        <div class="product-image-container">
-          ${displayImg}
-        </div>
-        <h4 title="${state.lang === 'km' ? p.nameKh : p.nameEn}">${state.lang === 'km' ? p.nameKh : p.nameEn}</h4>
-        <div class="product-card-footer">
-          <span class="product-price">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span>
-          <span class="product-stock-badge ${isOutOfStock ? 'out-of-stock' : ''}">Qty: <strong>${branchQty}</strong></span>
-        </div>
-      `;
+        let priceDisplay = `<span class="product-price">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span>`;
+        if (state.isDistributorOrder) {
+          const cost = (p.costPrice !== undefined && p.costPrice !== null) ? Number(p.costPrice) : 0;
+          const distPrice = cost + 1.00;
+          priceDisplay = `
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+              <span class="product-price" style="color:#3b82f6; font-weight:800;">${window.POS_HELPERS.formatUSD(distPrice)}</span>
+              <span style="font-size:9px; color:#60a5fa; font-weight:700;">🤝 ដើម+$1 <span style="text-decoration:line-through; color:var(--text-muted); font-size:8.5px;">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span></span>
+            </div>
+          `;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'product-card' + (isOutOfStock ? ' out-of-stock' : '');
+        card.innerHTML = `
+          ${isOutOfStock 
+            ? `<span class="product-card-badge badge-out-of-stock">${state.lang === 'km' ? 'អស់ស្តុក' : 'Out of Stock'}</span>`
+            : (branchQty <= p.minStock 
+              ? `<span class="product-card-badge">${window.POS_TRANSLATIONS[state.lang].lowStockAlert}</span>`
+              : '')}
+          <div class="product-image-container">
+            ${displayImg}
+          </div>
+          <h4 title="${state.lang === 'km' ? p.nameKh : p.nameEn}">${state.lang === 'km' ? p.nameKh : p.nameEn}</h4>
+          <div class="product-card-footer">
+            ${priceDisplay}
+            <span class="product-stock-badge ${isOutOfStock ? 'out-of-stock' : ''}">Qty: <strong>${branchQty}</strong></span>
+          </div>
+        `;
 
       card.addEventListener('click', () => {
         if (isOutOfStock) {
@@ -3620,6 +3633,52 @@
     return true;
   }
 
+  // Distributor / Wholesale Mode Pricing (Cost + $1.00)
+  function setDistributorPricing(enable) {
+    state.isDistributorOrder = !!enable;
+
+    // Sync switch toggle
+    const toggleEl = document.getElementById('cart-distributor-price');
+    if (toggleEl && toggleEl.checked !== state.isDistributorOrder) {
+      toggleEl.checked = state.isDistributorOrder;
+    }
+
+    // Sync top button
+    const btnTop = document.getElementById('btn-toggle-distributor');
+    const btnTopTxt = document.getElementById('btn-distributor-text');
+    if (btnTop) {
+      if (state.isDistributorOrder) {
+        btnTop.style.background = '#2563eb';
+        btnTop.style.color = '#ffffff';
+        btnTop.style.borderColor = '#2563eb';
+        btnTop.style.boxShadow = '0 0 10px rgba(37,99,235,0.45)';
+        if (btnTopTxt) btnTopTxt.innerText = state.lang === 'km' ? '✓ តម្លៃតំណាង (ដើម+$1)' : '✓ Distributor Price';
+      } else {
+        btnTop.style.background = 'rgba(59,130,246,0.06)';
+        btnTop.style.color = '#3b82f6';
+        btnTop.style.borderColor = '#3b82f6';
+        btnTop.style.boxShadow = 'none';
+        if (btnTopTxt) btnTopTxt.innerText = state.lang === 'km' ? 'លក់ទៅតំណាង' : 'Sell to Distributor';
+      }
+    }
+
+    // Recalculate price of all items currently in cart
+    state.cart.forEach(item => {
+      const p = state.products.find(prod => prod.sku === item.sku);
+      if (p) {
+        if (state.isDistributorOrder) {
+          const cost = (p.costPrice !== undefined && p.costPrice !== null) ? Number(p.costPrice) : 0;
+          item.price = parseFloat((cost + 1.00).toFixed(2));
+        } else {
+          item.price = p.sellingPrice;
+        }
+      }
+    });
+
+    renderCart();
+    renderPOSProductGrid();
+  }
+
   // Shopping Cart Operations
   function addToCart(sku) {
     const product = state.products.find(p => p.sku === sku);
@@ -3647,7 +3706,12 @@
     if (cartItem) {
       cartItem.qty++;
     } else {
-      state.cart.push({ sku: sku, qty: 1, price: product.sellingPrice });
+      let itemPrice = product.sellingPrice;
+      if (state.isDistributorOrder) {
+        const cost = (product.costPrice !== undefined && product.costPrice !== null) ? Number(product.costPrice) : 0;
+        itemPrice = parseFloat((cost + 1.00).toFixed(2));
+      }
+      state.cart.push({ sku: sku, qty: 1, price: itemPrice });
     }
 
     renderCart();
@@ -3710,9 +3774,10 @@
           itemEl.innerHTML = `
             <div>
               <h5 title="${state.lang === 'km' ? p.nameKh : p.nameEn}">${state.lang === 'km' ? p.nameKh : p.nameEn}</h5>
-              <div class="cart-item-price-edit" style="display:flex; align-items:center; gap:2px; margin-top:2px;">
+              <div class="cart-item-price-edit" style="display:flex; align-items:center; gap:3px; margin-top:2px;">
                 <span style="font-size:10px; color:var(--text-secondary);">$</span>
                 <input type="number" class="item-price-input" min="0" step="0.01" value="${price.toFixed(2)}" style="width:55px; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-primary); border-radius:4px; font-size:11px; padding:1px 3px; text-align:right; font-weight:700;">
+                ${state.isDistributorOrder ? `<span style="font-size:8px; background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); border-radius:3px; padding:1px 3px; font-weight:700; white-space:nowrap;">🤝 ដើម+$1</span>` : ''}
               </div>
             </div>
             <div class="qty-controls">
@@ -4018,6 +4083,9 @@
       message += `📅 <b>Date:</b> <b>${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), 'km')}</b> (${window.POS_HELPERS.formatDate(tx.date || new Date().toISOString(), 'en')})\n`;
       message += `🏢 <b>Branch:</b> <b>${branchName}</b>\n`;
       message += `👤 <b>Staff:</b> <b>${staffName}</b> | <code>${pageName}</code>\n`;
+      if (tx.isDistributorOrder) {
+        message += `🤝 <b>Order Type:</b> <b>លក់ទៅតំណាងចែកចាយ (Distributor Price: ថ្លៃដើម + $1)</b>\n`;
+      }
       message += `----------------------------------------\n`;
       message += `🛒 <b>Ordered Items:</b>\n${itemsText}`;
       message += `----------------------------------------\n`;
@@ -4075,6 +4143,7 @@
     const staffId = document.getElementById('cart-staff-select').value;
     const customerId = document.getElementById('cart-customer-select').value;
     const isOwnerPrivate = document.getElementById('cart-owner-private')?.checked || false;
+    const isDistributorOrder = state.isDistributorOrder || document.getElementById('cart-distributor-price')?.checked || false;
 
     const customDateVal = document.getElementById('checkout-date-input')?.value;
     let txDate = new Date().toISOString();
@@ -4380,6 +4449,8 @@
       notes: document.getElementById('checkout-notes')?.value.trim() || '',
       status: "completed",
       isOwnerPrivate: isOwnerPrivate,
+      isDistributorOrder: isDistributorOrder,
+      orderType: isDistributorOrder ? 'distributor' : (isOwnerPrivate ? 'owner' : 'standard'),
       createdBy: state.currentUser ? state.currentUser.username : 'system',
       updatedBy: state.currentUser ? state.currentUser.username : 'system',
       timestamp: new Date().toISOString()
@@ -4445,10 +4516,11 @@
     // Trigger Print Receipt preview
     openReceiptModal(newTX);
 
-    // Reset shopping cart & owner private toggle
+    // Reset shopping cart & toggles
     state.cart = [];
     const ownerPrivEl = document.getElementById('cart-owner-private');
     if (ownerPrivEl) ownerPrivEl.checked = false;
+    setDistributorPricing(false);
     document.getElementById('cart-discount-percent').value = 0;
     document.getElementById('cart-discount-fixed').value = 0;
     document.getElementById('cart-shipping-fee').value = 0;
@@ -4530,6 +4602,11 @@
       
       <div class="receipt-divider"></div>
       <div style="font-size:12px; font-weight:700; margin:4px 0; text-align:center; text-transform:uppercase; letter-spacing:0.5px;">វិក្កយបត្រ / Invoice</div>
+      ${tx.isDistributorOrder ? `
+      <div style="font-size:10.5px; font-weight:800; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:4px; padding:3px 6px; margin:4px auto; text-align:center; max-width:240px;">
+        🤝 លក់ជូនតំណាងចែកចាយ (Distributor Order)
+      </div>
+      ` : ''}
       
       <div style="display:flex; justify-content:space-between; font-size:10px; color:#555; margin-bottom: 2px;">
         <span>លេខវិក្កយបត្រ (Inv No):</span>
@@ -13419,6 +13496,21 @@ CREATE TABLE sale_items (
         document.getElementById('cart-discount-percent').value = 0;
         document.getElementById('cart-discount-fixed').value = 0;
         renderCart();
+      });
+    }
+
+    // Wire up distributor pricing toggle & button
+    const distPriceToggle = document.getElementById('cart-distributor-price');
+    if (distPriceToggle) {
+      distPriceToggle.addEventListener('change', (e) => {
+        setDistributorPricing(e.target.checked);
+      });
+    }
+
+    const btnToggleDist = document.getElementById('btn-toggle-distributor');
+    if (btnToggleDist) {
+      btnToggleDist.addEventListener('click', () => {
+        setDistributorPricing(!state.isDistributorOrder);
       });
     }
 
