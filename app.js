@@ -5241,6 +5241,7 @@
       if (cId === customerId) {
         totalSpent += t.total;
         orderDates.push({
+          id: t.id,
           date: t.date,
           total: t.total,
           invoiceNo: t.invoiceNo || t.id,
@@ -5391,9 +5392,14 @@
         const methodBadge = `<span class="badge" style="text-transform:none; font-weight:700; ${methodStyle}">${methodTranslate}</span>`;
 
         const showPayAction = o.outstandingDebt > 0;
-        const actionHtml = showPayAction
-          ? `<button class="btn btn-primary btn-sm btn-pay-tx" data-id="${o.invoiceNo}" data-debt="${o.outstandingDebt}" style="padding:2px 6px; font-size:10px; font-weight:700;">💰 ${state.lang === 'km' ? 'បង់ប្រាក់' : 'Pay'}</button>`
-          : `<span style="color:var(--text-muted); font-size:10px;">${state.lang === 'km' ? 'រួចរាល់' : 'Paid'}</span>`;
+        let actionHtml = `<div style="display:flex; align-items:center; gap:6px; justify-content:flex-end;">`;
+        if (showPayAction) {
+          actionHtml += `<button class="btn btn-primary btn-sm btn-pay-tx" data-id="${o.invoiceNo}" data-debt="${o.outstandingDebt}" style="padding:2px 6px; font-size:10px; font-weight:700;">💰 ${state.lang === 'km' ? 'បង់ប្រាក់' : 'Pay'}</button>`;
+        } else {
+          actionHtml += `<span style="color:var(--text-muted); font-size:10px;">${state.lang === 'km' ? 'រួចរាល់' : 'Paid'}</span>`;
+        }
+        actionHtml += `<button class="btn btn-danger btn-sm btn-void-cust-tx" data-id="${o.id || o.invoiceNo}" data-invoice="${o.invoiceNo}" style="padding:2px 6px; font-size:10px; font-weight:700;" title="${state.lang === 'km' ? 'លុប/មោឃៈការកម្មង់' : 'Void Order'}">🗑️ ${state.lang === 'km' ? 'លុប' : 'Void'}</button>`;
+        actionHtml += `</div>`;
 
         tbody.innerHTML += `
           <tr>
@@ -5508,6 +5514,24 @@
             renderCustomers();
             renderFinance();
             checkCRMNotifications();
+          }
+        });
+      });
+
+      // Bind click listeners for Void / Delete button inside modal
+      tbody.querySelectorAll('.btn-void-cust-tx').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const txId = btn.getAttribute('data-id');
+          const invoiceNo = btn.getAttribute('data-invoice');
+          const isKh = state.lang === 'km';
+          const confirmPrompt = isKh
+            ? `តើអ្នកពិតជាចង់លុប/មោឃៈការកម្មង់ ${invoiceNo} មែនទេ?\nសូមបញ្ចូលមូលហេតុនៃការលុប៖`
+            : `Are you sure you want to void/delete order ${invoiceNo}?\nPlease enter void reason:`;
+          const defaultReason = isKh ? 'លុបការកម្មង់តាមការស្នើសុំ' : 'Order cancelled by customer';
+          const reason = prompt(confirmPrompt, defaultReason);
+          if (reason !== null && reason.trim() !== '') {
+            voidTransaction(txId, reason.trim());
+            openCustomerHistoryModal(customerId);
           }
         });
       });
