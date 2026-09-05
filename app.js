@@ -3497,6 +3497,7 @@
 
         const card = document.createElement('div');
         card.className = 'product-card' + (isOutOfStock ? ' out-of-stock' : '');
+        card.title = state.lang === 'km' ? p.nameKh : p.nameEn;
         card.innerHTML = `
           ${isOutOfStock 
             ? `<span class="product-card-badge badge-out-of-stock">${state.lang === 'km' ? 'អស់ស្តុក' : 'Out of Stock'}</span>`
