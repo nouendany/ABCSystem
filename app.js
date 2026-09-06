@@ -3485,12 +3485,13 @@
 
         let priceDisplay = `<span class="product-price">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span>`;
         if (state.isDistributorOrder) {
-          const cost = (p.costPrice !== undefined && p.costPrice !== null) ? Number(p.costPrice) : 0;
-          const distPrice = cost + 1.00;
+          const distPrice = getProductDistributorPrice(p);
+          const isCustom = isCustomDistributorPrice(p);
+          const badgeText = isCustom ? '🤝 តម្លៃកំណត់' : '🤝 ដើម+$1';
           priceDisplay = `
             <div style="display:flex; flex-direction:column; align-items:flex-start;">
               <span class="product-price" style="color:#3b82f6; font-weight:800;">${window.POS_HELPERS.formatUSD(distPrice)}</span>
-              <span style="font-size:9px; color:#60a5fa; font-weight:700;">🤝 ដើម+$1 <span style="text-decoration:line-through; color:var(--text-muted); font-size:8.5px;">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span></span>
+              <span style="font-size:9px; color:#60a5fa; font-weight:700;">${badgeText} <span style="text-decoration:line-through; color:var(--text-muted); font-size:8.5px;">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</span></span>
             </div>
           `;
         }
@@ -3634,7 +3635,21 @@
     return true;
   }
 
-  // Distributor / Wholesale Mode Pricing (Cost + $1.00)
+  // Distributor / Wholesale Mode Pricing Helper
+  function getProductDistributorPrice(product) {
+    if (!product) return 1.00;
+    if (product.distributorPrice !== undefined && product.distributorPrice !== null && !isNaN(Number(product.distributorPrice)) && Number(product.distributorPrice) > 0) {
+      return Number(product.distributorPrice);
+    }
+    const cost = (product.costPrice !== undefined && product.costPrice !== null) ? Number(product.costPrice) : 0;
+    return parseFloat((cost + 1.00).toFixed(2));
+  }
+
+  function isCustomDistributorPrice(product) {
+    return !!(product && product.distributorPrice !== undefined && product.distributorPrice !== null && !isNaN(Number(product.distributorPrice)) && Number(product.distributorPrice) > 0);
+  }
+
+  // Distributor / Wholesale Mode Pricing
   function setDistributorPricing(enable) {
     state.isDistributorOrder = !!enable;
 
@@ -3653,7 +3668,7 @@
         btnTop.style.color = '#ffffff';
         btnTop.style.borderColor = '#2563eb';
         btnTop.style.boxShadow = '0 0 10px rgba(37,99,235,0.45)';
-        if (btnTopTxt) btnTopTxt.innerText = state.lang === 'km' ? '✓ តម្លៃតំណាង (ដើម+$1)' : '✓ Distributor Price';
+        if (btnTopTxt) btnTopTxt.innerText = state.lang === 'km' ? '✓ តម្លៃតំណាងចែកចាយ' : '✓ Distributor Price';
       } else {
         btnTop.style.background = 'rgba(59,130,246,0.06)';
         btnTop.style.color = '#3b82f6';
@@ -3668,10 +3683,13 @@
       const p = state.products.find(prod => prod.sku === item.sku);
       if (p) {
         if (state.isDistributorOrder) {
-          const cost = (p.costPrice !== undefined && p.costPrice !== null) ? Number(p.costPrice) : 0;
-          item.price = parseFloat((cost + 1.00).toFixed(2));
+          if (!item.customPrice) {
+            item.price = getProductDistributorPrice(p);
+          }
         } else {
-          item.price = p.sellingPrice;
+          if (!item.customPrice) {
+            item.price = p.sellingPrice;
+          }
         }
       }
     });
@@ -3709,8 +3727,7 @@
     } else {
       let itemPrice = product.sellingPrice;
       if (state.isDistributorOrder) {
-        const cost = (product.costPrice !== undefined && product.costPrice !== null) ? Number(product.costPrice) : 0;
-        itemPrice = parseFloat((cost + 1.00).toFixed(2));
+        itemPrice = getProductDistributorPrice(product);
       }
       state.cart.push({ sku: sku, qty: 1, price: itemPrice });
     }
@@ -3770,6 +3787,11 @@
           subtotal += itemTotal;
           itemCount += item.qty;
 
+          const isDistCustom = item.customPrice ? '🤝 បត់បែន' : (isCustomDistributorPrice(p) ? '🤝 តម្លៃកំណត់' : '🤝 ដើម+$1');
+          const distBadgeHtml = state.isDistributorOrder 
+            ? `<span style="font-size:8px; background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); border-radius:3px; padding:1px 3px; font-weight:700; white-space:nowrap;">${isDistCustom}</span>` 
+            : (item.customPrice ? `<span style="font-size:8px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:3px; padding:1px 3px; font-weight:700; white-space:nowrap;">✍️ តម្លៃកែប្រែ</span>` : '');
+
           const itemEl = document.createElement('div');
           itemEl.className = 'cart-item';
           itemEl.innerHTML = `
@@ -3778,7 +3800,7 @@
               <div class="cart-item-price-edit" style="display:flex; align-items:center; gap:3px; margin-top:2px;">
                 <span style="font-size:10px; color:var(--text-secondary);">$</span>
                 <input type="number" class="item-price-input" min="0" step="0.01" value="${price.toFixed(2)}" style="width:55px; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-primary); border-radius:4px; font-size:11px; padding:1px 3px; text-align:right; font-weight:700;">
-                ${state.isDistributorOrder ? `<span style="font-size:8px; background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); border-radius:3px; padding:1px 3px; font-weight:700; white-space:nowrap;">🤝 ដើម+$1</span>` : ''}
+                ${distBadgeHtml}
               </div>
             </div>
             <div class="qty-controls">
@@ -3799,6 +3821,7 @@
             const val = parseFloat(e.target.value);
             if (!isNaN(val) && val >= 0) {
               item.price = val;
+              item.customPrice = true;
               renderCart();
             }
           });
@@ -3869,7 +3892,10 @@
     let subtotal = 0;
     state.cart.forEach(item => {
       const p = state.products.find(prod => prod.sku === item.sku);
-      if (p) subtotal += p.sellingPrice * item.qty;
+      if (p) {
+        const price = item.price !== undefined ? item.price : p.sellingPrice;
+        subtotal += price * item.qty;
+      }
     });
 
     const discPercent = parseFloat(document.getElementById('cart-discount-percent').value) || 0;
@@ -3878,7 +3904,8 @@
     
     const totalDiscount = (subtotal * (discPercent / 100)) + discFixed;
     const taxable = Math.max(0, subtotal - totalDiscount);
-    const vatRate = state.companySettings.defaultVatRate !== undefined ? state.companySettings.defaultVatRate : 10;
+    const vatEnabled = state.companySettings.vatEnabled !== false;
+    const vatRate = vatEnabled ? (state.companySettings.defaultVatRate !== undefined ? state.companySettings.defaultVatRate : 10) : 0;
     const tax = taxable * (vatRate / 100);
     const total = taxable + tax + shipping;
 
@@ -4085,7 +4112,7 @@
       message += `🏢 <b>Branch:</b> <b>${branchName}</b>\n`;
       message += `👤 <b>Staff:</b> <b>${staffName}</b> | <code>${pageName}</code>\n`;
       if (tx.isDistributorOrder) {
-        message += `🤝 <b>Order Type:</b> <b>លក់ទៅតំណាងចែកចាយ (Distributor Price: ថ្លៃដើម + $1)</b>\n`;
+        message += `🤝 <b>Order Type:</b> <b>លក់ទៅតំណាងចែកចាយ (Distributor Order)</b>\n`;
       }
       message += `----------------------------------------\n`;
       message += `🛒 <b>Ordered Items:</b>\n${itemsText}`;
@@ -4758,7 +4785,10 @@
         <td>${p.nameKh}</td>
         <td><span class="badge badge-warning" style="text-transform:none;">${p.category}</span></td>
         <td style="font-weight:750; color:var(--text-secondary);">${window.POS_HELPERS.formatUSD(p.costPrice)}</td>
-        <td style="font-weight:750; color:var(--primary);">${window.POS_HELPERS.formatUSD(p.sellingPrice)}</td>
+        <td style="font-weight:750; color:var(--primary);">
+          ${window.POS_HELPERS.formatUSD(p.sellingPrice)}
+          ${(p.distributorPrice !== undefined && p.distributorPrice !== null && Number(p.distributorPrice) > 0) ? `<div style="font-size:9.5px; color:#3b82f6; font-weight:700;">🤝 $${Number(p.distributorPrice).toFixed(2)}</div>` : ''}
+        </td>
         <td style="text-align:center; font-weight:800; color:${branchQty <= p.minStock ? 'var(--danger)' : 'var(--text-primary)'};">${branchQty}</td>
         <td>${statusBadge}</td>
         <td>
@@ -4792,6 +4822,8 @@
     document.getElementById('prod-unit').value = p.unit;
     document.getElementById('prod-cost').value = p.costPrice;
     document.getElementById('prod-price').value = p.sellingPrice;
+    const distPriceEl = document.getElementById('prod-distributor-price');
+    if (distPriceEl) distPriceEl.value = (p.distributorPrice !== undefined && p.distributorPrice !== null) ? p.distributorPrice : '';
     document.getElementById('prod-min-stock').value = p.minStock;
     document.getElementById('prod-desc').value = p.description || '';
 
@@ -13627,11 +13659,14 @@ CREATE TABLE sale_items (
       const unit = document.getElementById('prod-unit').value;
       const costPrice = parseFloat(document.getElementById('prod-cost').value) || 0;
       const sellingPrice = parseFloat(document.getElementById('prod-price').value) || 0;
+      const distPriceInput = document.getElementById('prod-distributor-price');
+      const distPriceVal = distPriceInput ? distPriceInput.value.trim() : '';
+      const distributorPrice = (distPriceVal !== '' && !isNaN(parseFloat(distPriceVal))) ? parseFloat(distPriceVal) : null;
       const minStock = parseInt(document.getElementById('prod-min-stock').value) || 10;
       const description = document.getElementById('prod-desc').value.trim();
 
       const newProduct = {
-        sku, barcode, nameEn, nameKh, category, brand, unit, costPrice, sellingPrice, minStock, description,
+        sku, barcode, nameEn, nameKh, category, brand, unit, costPrice, sellingPrice, distributorPrice, minStock, description,
         image: state.selectedProductImageBase64,
         status: "active",
         warehouseStock: {}
@@ -15113,7 +15148,10 @@ CREATE TABLE sale_items (
     let subtotal = 0;
     state.cart.forEach(item => {
       const p = state.products.find(prod => prod.sku === item.sku);
-      if (p) subtotal += p.sellingPrice * item.qty;
+      if (p) {
+        const price = item.price !== undefined ? item.price : p.sellingPrice;
+        subtotal += price * item.qty;
+      }
     });
 
     const discPercent = parseFloat(document.getElementById('cart-discount-percent').value) || 0;

@@ -590,7 +590,7 @@
                   <h3 data-translate="cart" style="font-weight:750; margin:0;">Shopping Cart</h3>
                   <span id="cart-item-count" class="cart-badge">0</span>
                 </div>
-                <button type="button" id="btn-toggle-distributor" class="btn btn-outline btn-xs" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; border: 1px solid #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.06); transition: all 0.2s; cursor: pointer;" title="លក់ជូនតំណាងចែកចាយ (តម្លៃ = ថ្លៃដើម + $1.00)">
+                <button type="button" id="btn-toggle-distributor" class="btn btn-outline btn-xs" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; border: 1px solid #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.06); transition: all 0.2s; cursor: pointer;" title="លក់ជូនតំណាងចែកចាយ (តម្លៃតំណាងកំណត់ ឬ ដើម+$1)">
                   🤝 <span id="btn-distributor-text">លក់ទៅតំណាង</span>
                 </button>
               </div>
@@ -727,7 +727,7 @@
                     <span style="font-size: 11.5px; font-weight: 700; color: #3b82f6; display: flex; align-items: center; gap: 4px;">
                       🤝 <span data-translate="distributorOrder">លក់ទៅតំណាង (Distributor Order)</span>
                     </span>
-                    <span style="font-size: 9px; color: var(--text-secondary);" data-translate="distributorOrderDesc">តម្លៃលក់ = ថ្លៃដើម + $1.00 គ្រប់មុខ (Cost + $1.00)</span>
+                    <span style="font-size: 9px; color: var(--text-secondary);" data-translate="distributorOrderDesc">តម្លៃលក់តាមកំណត់ ឬ ថ្លៃដើម + $1.00 (អាចកែប្រែបាន)</span>
                   </div>
                   <label class="switch-toggle">
                     <input type="checkbox" id="cart-distributor-price">
@@ -2518,6 +2518,10 @@
             <div class="form-group">
               <label data-translate="sellingPrice">Selling Price ($)</label>
               <input type="number" class="form-control" id="prod-price" min="0" step="0.01" required value="0.00">
+            </div>
+            <div class="form-group">
+              <label style="color:#3b82f6; font-weight:700;">🤝 តម្លៃតំណាង ($)</label>
+              <input type="number" class="form-control" id="prod-distributor-price" min="0" step="0.01" placeholder="ដើម+$1 (ស្រេចចិត្ត)" style="border-color:rgba(59,130,246,0.4);">
             </div>
             <div class="form-group">
               <label data-translate="minStock">Alert Qty Level</label>
