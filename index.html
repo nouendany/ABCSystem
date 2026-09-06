@@ -2857,12 +2857,26 @@
           </div>
 
           <!-- Managed Facebook Pages -->
-          <div class="form-group" style="margin-top: 10px;">
-            <label style="color:#3b82f6; font-weight:700; font-size: 12px; display:flex; align-items:center; gap:4px;">
-              <span>📱</span> <span>ផេក Facebook ដែលបុគ្គលិកនេះគ្រប់គ្រង (Managed Facebook Pages)</span>
+          <div class="form-group" style="margin-top: 10px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.25); border-radius: 10px; padding: 12px;">
+            <label style="color:#3b82f6; font-weight:750; font-size: 12.5px; display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom: 8px;">
+              <span style="display:flex; align-items:center; gap:6px;">
+                <span>📱</span> <span>ផេក Facebook ដែលបុគ្គលិកនេះគ្រប់គ្រង (Managed Facebook Pages)</span>
+              </span>
+              <span style="font-size:10px; font-weight:700; background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); border-radius:4px; padding:2px 8px;">
+                ប្រើសញ្ញាក្បៀស ( , )
+              </span>
             </label>
-            <input type="text" class="form-control" id="employee-facebook-pages" placeholder="ឧ. Page 1, Page 2 (ខណ្ឌដោយសញ្ញាក្បៀស ,)">
-            <small style="font-size:10px; color:var(--text-secondary); display:block; margin-top:2px;">បុគ្គលិកម្នាក់អាចកាន់ផេក ២ ឬ ៣ ក្នុងពេលតែមួយ។ បញ្ចូលឈ្មោះផេកនៅទីនេះដើម្បីស្រួលជ្រើសរើសពេលលក់។</small>
+            <div style="display:flex; gap:8px;">
+              <input type="text" class="form-control" id="employee-facebook-pages" placeholder="ឧ. Phaleap Skincare, Page 2, Page 3 (ខណ្ឌដោយសញ្ញាក្បៀស ,)" style="flex:1;">
+              <button type="button" class="btn btn-primary" id="btn-add-fb-page-chip" style="white-space:nowrap; padding:6px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:4px;">
+                <span>+</span> <span>បន្ថែម</span>
+              </button>
+            </div>
+            <!-- Page Badges / Tags Preview Area -->
+            <div id="employee-fb-tags-container" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; min-height:24px;"></div>
+            <small style="font-size:11px; color:var(--text-secondary); display:block; margin-top:6px; line-height:1.5;">
+              💡 <strong>របៀបបន្ថែមឈ្មោះផេក៖</strong> លោកអ្នកអាចវាយឈ្មោះផេក រួចចុចសញ្ញា <strong>ក្បៀស ( , )</strong> ឬចុចប៊ូតុង <strong>[ + បន្ថែម ]</strong> ដើម្បីបន្ថែមផេកទី ២ ឬទី ៣ បន្តបន្ទាប់គ្នា (បុគ្គលិកម្នាក់អាចកាន់ច្រើនផេកក្នុងពេលតែមួយ)។
+            </small>
           </div>
 
           <h4 style="margin: 16px 0 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 4px; color: var(--primary);">Work Schedule (Optional)</h4>

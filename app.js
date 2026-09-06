@@ -15797,6 +15797,41 @@ CREATE TABLE sale_items (
       });
     }
 
+    // Employee Managed Facebook Pages tag chips & add button listener
+    const empFbInpEl = document.getElementById('employee-facebook-pages');
+    if (empFbInpEl) {
+      empFbInpEl.addEventListener('input', () => {
+        updateEmployeeFbPageChips();
+      });
+    }
+
+    const btnAddFbChip = document.getElementById('btn-add-fb-page-chip');
+    if (btnAddFbChip) {
+      btnAddFbChip.addEventListener('click', () => {
+        const input = document.getElementById('employee-facebook-pages');
+        if (!input) return;
+        const promptMsg = state.lang === 'km' 
+          ? 'សូមបញ្ចូលឈ្មោះផេក Facebook ថ្មីរបស់បុគ្គលិកនេះ៖\n(ឧទាហរណ៍៖ Phaleap Beauty Store)' 
+          : 'Enter new Facebook Page name for this employee:';
+        const newPage = prompt(promptMsg);
+        if (newPage && newPage.trim()) {
+          const clean = newPage.trim().replace(/,/g, '');
+          if (clean) {
+            const pages = input.value.split(',').map(s => s.trim()).filter(Boolean);
+            if (!pages.includes(clean)) {
+              pages.push(clean);
+              input.value = pages.join(', ');
+              updateEmployeeFbPageChips();
+            } else {
+              alert(state.lang === 'km' ? 'ឈ្មោះផេកនេះមានរួចហើយ!' : 'This page name is already added!');
+            }
+          }
+        } else {
+          input.focus();
+        }
+      });
+    }
+
     // 5. HR Settings Form Submission
     const hrSettingsForm = document.getElementById('hr-settings-form');
     if (hrSettingsForm) {
@@ -16053,6 +16088,38 @@ CREATE TABLE sale_items (
     }
   }
 
+  function updateEmployeeFbPageChips() {
+    const input = document.getElementById('employee-facebook-pages');
+    const container = document.getElementById('employee-fb-tags-container');
+    if (!input || !container) return;
+
+    const raw = input.value || '';
+    const pages = raw.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (pages.length === 0) {
+      container.innerHTML = `<span style="font-size:10.5px; color:var(--text-muted); font-style:italic;">មិនទាន់មានផេកត្រូវបានបញ្ចូលនៅឡើយ... (ចុចប៊ូតុង [ + បន្ថែម ] ឬវាយឈ្មោះផេកខណ្ឌដោយសញ្ញាក្បៀស ,)</span>`;
+      return;
+    }
+
+    container.innerHTML = pages.map((page, idx) => `
+      <span style="background:rgba(59,130,246,0.18); color:#93c5fd; border:1px solid rgba(59,130,246,0.35); border-radius:16px; padding:3px 10px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+        <span>📱 ${page.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+        <span onclick="window.removeEmployeeFbPageChip(${idx})" style="cursor:pointer; color:#f87171; font-weight:900; font-size:13px; line-height:1; margin-left:2px;" title="លុបផេកនេះ">✕</span>
+      </span>
+    `).join('');
+  }
+
+  window.removeEmployeeFbPageChip = function(index) {
+    const input = document.getElementById('employee-facebook-pages');
+    if (!input) return;
+    const pages = input.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (index >= 0 && index < pages.length) {
+      pages.splice(index, 1);
+      input.value = pages.join(', ');
+      updateEmployeeFbPageChips();
+    }
+  };
+
   function openEmployeeModal(empId) {
     if (!guardAction('edit')) return;
     populateEmployeeFormDropdowns();
@@ -16128,6 +16195,7 @@ CREATE TABLE sale_items (
           }
           empFbInp.value = prefillPages;
         }
+        updateEmployeeFbPageChips();
       }
     } else {
       titleEl.innerText = state.lang === 'km' ? 'បន្ថែមបុគ្គលិកថ្មី' : 'Add New Employee';
@@ -16138,6 +16206,7 @@ CREATE TABLE sale_items (
       document.getElementById('employee-work-end').value = '';
       const empFbInp = document.getElementById('employee-facebook-pages');
       if (empFbInp) empFbInp.value = '';
+      updateEmployeeFbPageChips();
       
       const nextIdNum = state.employees.length + 1;
       idInput.value = 'EMP' + String(nextIdNum).padStart(3, '0');
