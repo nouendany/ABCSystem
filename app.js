@@ -609,12 +609,19 @@
 
     const renderOptions = (el, includePlaceholder = false, placeholderText = "-- Select Account --") => {
       if (!el) return;
+      const prevVal = el.value;
       let html = includePlaceholder ? `<option value="">${placeholderText}</option>` : '';
       activeAccounts.forEach(a => {
         const khName = a.nameKh || a.name;
         html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency}) [Balance: ${a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance)}]</option>`;
       });
       el.innerHTML = html;
+      if (prevVal && activeAccounts.some(a => a.id === prevVal)) {
+        el.value = prevVal;
+      } else if (!includePlaceholder) {
+        const defAcc = activeAccounts.find(a => a.isDefault) || activeAccounts[0];
+        if (defAcc) el.value = defAcc.id;
+      }
     };
 
     renderOptions(checkoutSelect);
@@ -3956,11 +3963,11 @@
   function switchCheckoutMethod(method, totalDue) {
     state.checkoutMethod = method;
     
-    // Auto-select corresponding account in checkout dropdown
+    // Ensure an active account is selected in checkout dropdown
     const checkoutSelect = document.getElementById('checkout-deposit-account');
-    if (checkoutSelect) {
-      // Route all POS payments to ABC Team-018509821 (ACC-003) by default
-      checkoutSelect.value = 'ACC-003';
+    if (checkoutSelect && !checkoutSelect.value) {
+      const defAcc = state.accounts.find(a => a.isDefault && a.status === 'active') || state.accounts.find(a => a.status === 'active');
+      if (defAcc) checkoutSelect.value = defAcc.id;
     }
 
     document.querySelectorAll('.checkout-method-card').forEach(card => card.classList.remove('active'));
@@ -4471,6 +4478,7 @@
       taxAmount: tax,
       total: total,
       paymentMethod: finalMethod,
+      depositAccountId: (total - outstandingDebt > 0 && finalMethod !== 'COD (Cash on Delivery)') ? (document.getElementById('checkout-deposit-account')?.value || null) : null,
       cashReceived: cashReceived,
       changeDue: changeDue,
       outstandingDebt: outstandingDebt,
@@ -4487,10 +4495,11 @@
     // Credit selected checkout deposit account (only for the actually paid amount at checkout)
     const paidAmount = total - outstandingDebt;
     if (paidAmount > 0 && finalMethod !== 'COD (Cash on Delivery)') {
-      // Route POS paid amount directly to ABC Team account (ACC-003) as requested, falling back to selected account if not found
-      const targetAccId = 'ACC-003';
       const depositAccId = document.getElementById('checkout-deposit-account')?.value;
-      const depAcc = state.accounts.find(a => a.id === targetAccId) || state.accounts.find(a => a.id === depositAccId);
+      const depAcc = state.accounts.find(a => a.id === depositAccId) || 
+                     state.accounts.find(a => a.isDefault && a.status === 'active') || 
+                     state.accounts.find(a => a.status === 'active') || 
+                     state.accounts[0];
       if (depAcc) {
         let depositAmount = paidAmount;
         if (depAcc.currency === 'KHR') {
@@ -4499,6 +4508,9 @@
         }
         depAcc.balance = parseFloat((depAcc.balance + depositAmount).toFixed(2));
         
+        // Ensure newTX has the resolved account id
+        newTX.depositAccountId = depAcc.id;
+
         // Log to account transactions
         const newAccTx = {
           id: 'ACTX-' + (1000 + state.accountTransactions.length + 1) + '-' + randSuffix,
@@ -4508,7 +4520,7 @@
           toAccountId: depAcc.id,
           amount: depositAmount,
           currency: depAcc.currency,
-          description: `Sales income from invoice: ${invoiceNo} (Paid: ${window.POS_HELPERS.formatUSD(paidAmount)})`,
+          description: `Sales income from invoice: ${invoiceNo} (Account: ${depAcc.nameKh || depAcc.name}) (Paid: ${window.POS_HELPERS.formatUSD(paidAmount)})`,
           createdBy: state.currentUser ? state.currentUser.username : 'system',
           timestamp: new Date().toISOString()
         };
@@ -5823,10 +5835,11 @@
     document.getElementById('pay-debt-amount').value = debtVal.toFixed(2);
     document.getElementById('pay-debt-amount').max = debtVal;
 
-    // Default pay debt collection account to ABC Team-018509821 (ACC-003) per owner's request
+    // Default pay debt collection account to default account
     const payDebtSelect = document.getElementById('pay-debt-deposit-account');
     if (payDebtSelect) {
-      payDebtSelect.value = 'ACC-003';
+      const defAcc = state.accounts.find(a => a.isDefault && a.status === 'active') || state.accounts.find(a => a.status === 'active');
+      if (defAcc) payDebtSelect.value = defAcc.id;
     }
 
     document.getElementById('modal-pay-debt').classList.add('active-modal');
@@ -12792,6 +12805,167 @@ CREATE TABLE sale_items (
 
         </div>
       `;
+    } else if (tab === 'accounts') {
+      const activeAccounts = state.accounts.filter(a => a.status === 'active');
+      let totalUsd = 0;
+      let totalKhr = 0;
+      activeAccounts.forEach(a => {
+        if (a.currency === 'USD') totalUsd += a.balance;
+        if (a.currency === 'KHR') totalKhr += a.balance;
+      });
+
+      let rowsHtml = '';
+      activeAccounts.forEach(a => {
+        const typeDisplay = a.type.toUpperCase();
+        const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance);
+        const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
+        const adjustBtn = `<button class="qty-btn btn-adjust-account" data-id="${a.id}" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Deposit / Adjust Balance">💵</button>`;
+        const editBtn = `<button class="qty-btn btn-edit-account" data-id="${a.id}" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Edit / Rename Account">✏️</button>`;
+        const deleteBtn = `<button class="qty-btn btn-delete-account" data-id="${a.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;" type="button" title="Delete Account">×</button>`;
+        const actionDisplay = `<div style="display:flex; align-items:center; justify-content:center;">${adjustBtn}${editBtn}${deleteBtn}</div>`;
+
+        rowsHtml += `
+          <tr>
+            <td><strong>${state.lang === 'km' ? (a.nameKh || a.name) : a.name}</strong></td>
+            <td><span style="font-size:11px; padding:3px 6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px;">${typeDisplay}</span></td>
+            <td style="font-weight:600; color:var(--primary);">${a.currency}</td>
+            <td style="text-align:right; font-weight:750;">${balDisplay}</td>
+            <td style="text-align:center;">${isDefaultDisplay}</td>
+            <td style="display:flex; justify-content:center; align-items:center; height:100%; padding: 4px 0;">${actionDisplay}</td>
+          </tr>
+        `;
+      });
+
+      container.innerHTML = `
+        <div style="max-width: 900px; margin: 0 auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+            <div>
+              <h3 style="font-size: 18px; font-weight: 750; margin: 0;">គណនេយ្យទទួលប្រាក់ (Receiving Accounts)</h3>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">គ្រប់គ្រង បង្កើតថ្មី ឬប្តូរឈ្មោះគណនេយ្យធនាគារ និងសាច់ប្រាក់សម្រាប់ទទួលប្រាក់ពីការលក់</p>
+            </div>
+            <button class="btn btn-primary" id="btn-settings-add-account" type="button" style="display: flex; align-items: center; gap: 6px;">
+              ➕ បង្កើតគណនេយ្យថ្មី (Create Account)
+            </button>
+          </div>
+
+          <div class="kpi-grid finance-kpis" style="margin-bottom:20px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            <div class="kpi-card" style="border-left-color: var(--primary);">
+              <div class="kpi-details">
+                <h4>Total Balance (USD)</h4>
+                <div class="kpi-value">${window.POS_HELPERS.formatUSD(totalUsd)}</div>
+              </div>
+              <div class="kpi-icon-wrapper">💵</div>
+            </div>
+            <div class="kpi-card" style="border-left-color: #10b981;">
+              <div class="kpi-details">
+                <h4>Total Balance (KHR)</h4>
+                <div class="kpi-value">${window.POS_HELPERS.formatRawKHR(totalKhr)}</div>
+              </div>
+              <div class="kpi-icon-wrapper">🇰🇭</div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="table-responsive" style="padding: 10px;">
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Account Name (ឈ្មោះគណនេយ្យ)</th>
+                    <th>Type (ប្រភេទ)</th>
+                    <th>Currency</th>
+                    <th style="text-align: right;">Balance (សមតុល្យ)</th>
+                    <th style="text-align: center;">Default</th>
+                    <th style="text-align: center;">Action (សកម្មភាព)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml || '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No accounts found</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Bind button events
+      const btnAdd = container.querySelector('#btn-settings-add-account');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+          document.getElementById('create-account-form').reset();
+          document.getElementById('modal-create-account').classList.add('active-modal');
+        });
+      }
+
+      container.querySelectorAll('.btn-make-default-acc').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const target = state.accounts.find(a => a.id === id);
+          if (target) {
+            state.accounts.forEach(a => {
+              if (a.currency === target.currency) {
+                a.isDefault = (a.id === id);
+              }
+            });
+            saveStateToLocalStorage();
+            renderSettings();
+            populateAccountDropdowns();
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-edit-account').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const target = state.accounts.find(a => a.id === id);
+          if (target) {
+            document.getElementById('edit-acc-id').value = target.id;
+            document.getElementById('edit-acc-name').value = target.nameKh || target.name;
+            document.getElementById('edit-acc-currency').value = target.currency;
+            document.getElementById('edit-acc-type').value = target.type;
+            document.getElementById('edit-acc-desc').value = target.description || '';
+            document.getElementById('modal-edit-account').classList.add('active-modal');
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-adjust-account').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const target = state.accounts.find(a => a.id === id);
+          if (target) {
+            document.getElementById('adjust-acc-id').value = target.id;
+            document.getElementById('adjust-acc-name').value = state.lang === 'km' ? (target.nameKh || target.name) : target.name;
+            document.getElementById('adjust-type').value = 'deposit';
+            document.getElementById('adjust-amount').value = '';
+            document.getElementById('adjust-date-input').value = '';
+            document.getElementById('adjust-desc').value = '';
+            document.getElementById('modal-adjust-balance').classList.add('active-modal');
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-delete-account').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const target = state.accounts.find(a => a.id === id);
+          if (target) {
+            if (target.isDefault) {
+              alert("Cannot delete a default account! Please set another account as default first.");
+              return;
+            }
+            if (target.balance !== 0) {
+              alert("Cannot delete an account with a non-zero balance! Please transfer all remaining funds to another account first.");
+              return;
+            }
+            if (confirm(`Are you sure you want to delete account: ${target.name}?`)) {
+              target.status = 'inactive';
+              saveStateToLocalStorage();
+              renderSettings();
+              populateAccountDropdowns();
+            }
+          }
+        });
+      });
     }
 
     translateApp();
@@ -13570,6 +13744,37 @@ CREATE TABLE sale_items (
     document.getElementById('pay-card-cod').addEventListener('click', () => {
       switchCheckoutMethod('cod', getCartTotal());
     });
+
+    // Quick rename / edit receiving account from POS checkout modal
+    const checkoutRenameAccBtn = document.getElementById('btn-checkout-rename-acc');
+    if (checkoutRenameAccBtn) {
+      checkoutRenameAccBtn.addEventListener('click', () => {
+        const checkoutSelect = document.getElementById('checkout-deposit-account');
+        const selectedId = checkoutSelect?.value;
+        const target = state.accounts.find(a => a.id === selectedId) || 
+                       state.accounts.find(a => a.isDefault && a.status === 'active') || 
+                       state.accounts.find(a => a.status === 'active');
+        if (!target) {
+          alert('សូមជ្រើសរើសគណនេយ្យដែលត្រូវប្តូរឈ្មោះ! (No account selected to rename!)');
+          return;
+        }
+        document.getElementById('edit-acc-id').value = target.id;
+        document.getElementById('edit-acc-name').value = target.nameKh || target.name;
+        document.getElementById('edit-acc-currency').value = target.currency;
+        document.getElementById('edit-acc-type').value = target.type;
+        document.getElementById('edit-acc-desc').value = target.description || '';
+        document.getElementById('modal-edit-account').classList.add('active-modal');
+      });
+    }
+
+    // Quick add receiving account from POS checkout modal
+    const checkoutAddAccBtn = document.getElementById('btn-checkout-add-acc');
+    if (checkoutAddAccBtn) {
+      checkoutAddAccBtn.addEventListener('click', () => {
+        document.getElementById('create-account-form').reset();
+        document.getElementById('modal-create-account').classList.add('active-modal');
+      });
+    }
 
     document.getElementById('checkout-cash-input').addEventListener('input', () => {
       updateCheckoutChange(getCartTotal());
@@ -14797,10 +15002,17 @@ CREATE TABLE sale_items (
           document.getElementById('modal-edit-account').classList.remove('active-modal');
           renderAccountsView();
           populateAccountDropdowns();
-          alert('Account updated successfully!');
+          if (state.activeSettingTab === 'accounts') {
+            renderSettings();
+          }
+          const chkSelect = document.getElementById('checkout-deposit-account');
+          if (chkSelect) chkSelect.value = target.id;
+          alert(state.lang === 'km' ? 'បានកែសម្រួល / ប្តូរឈ្មោះគណនេយ្យជោគជ័យ!' : 'Account updated successfully!');
         }
       });
-    }    // Create Account Form submit handler
+    }
+
+    // Create Account Form submit handler
     const createAccountForm = document.getElementById('create-account-form');
     if (createAccountForm) {
       createAccountForm.addEventListener('submit', (e) => {
@@ -14848,7 +15060,12 @@ CREATE TABLE sale_items (
         document.getElementById('modal-create-account').classList.remove('active-modal');
         renderAccountsView();
         populateAccountDropdowns();
-        alert('New account registered successfully!');
+        if (state.activeSettingTab === 'accounts') {
+          renderSettings();
+        }
+        const chkSelect = document.getElementById('checkout-deposit-account');
+        if (chkSelect) chkSelect.value = newId;
+        alert(state.lang === 'km' ? 'បានបង្កើតគណនេយ្យថ្មីជោគជ័យ!' : 'New account registered successfully!');
       });
     }
 

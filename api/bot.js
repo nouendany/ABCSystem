@@ -314,7 +314,10 @@ async function handleWebAppOrder(req, res, body) {
     const total = parseFloat((afterDiscount + tax + shipping).toFixed(2));
 
     const chosenPaymentMethod = body.paymentMethod || "COD (Cash on Delivery)";
-    const isDebt = chosenPaymentMethod === "On Account (Debt)" || chosenPaymentMethod === "COD (Cash on Delivery)";
+    const isDebt = chosenPaymentMethod === "On Account (Debt)" || 
+                   chosenPaymentMethod === "COD (Cash on Delivery)" ||
+                   chosenPaymentMethod.includes("(COD)") ||
+                   chosenPaymentMethod.includes("(Debt)");
 
     // Update Product Stocks and Log Movements
     const stockLogColl = collection(db, "stock_logs");
@@ -508,6 +511,7 @@ async function handleWebAppOrder(req, res, body) {
       taxAmount: tax,
       total: total,
       paymentMethod: chosenPaymentMethod,
+      depositAccountId: !isDebt ? (body.depositAccountId || null) : null,
       cashReceived: isDebt ? 0 : total,
       changeDue: 0,
       outstandingDebt: isDebt ? total : 0,
@@ -596,12 +600,47 @@ async function handleWebAppOrder(req, res, body) {
       console.error("Error creating/updating CRM follow-up for Telegram order:", flpErr);
     }
 
-    // Route paid amount to ABC Team account (ACC-003) if transaction is paid
+    // Route paid amount to the selected receiving account (or default account) if transaction is paid
     if (!isDebt && total > 0) {
       try {
-        const accRef = doc(db, "accounts", "ACC-003");
-        const accSnap = await getDoc(accRef);
-        if (accSnap.exists()) {
+        let targetAccId = body.depositAccountId || null;
+        let accRef = null;
+        let accSnap = null;
+
+        if (targetAccId) {
+          accRef = doc(db, "accounts", targetAccId);
+          accSnap = await getDoc(accRef);
+        }
+
+        // Fallback: If no account ID provided or doc doesn't exist, search for default account
+        if (!accSnap || !accSnap.exists()) {
+          const accsColl = collection(db, "accounts");
+          const defaultQuery = query(accsColl, where("isDefault", "==", true));
+          const defaultSnap = await getDocs(defaultQuery);
+
+          if (!defaultSnap.empty) {
+            accSnap = defaultSnap.docs[0];
+            targetAccId = accSnap.id;
+            accRef = doc(db, "accounts", targetAccId);
+          } else {
+            // Fallback to first active account
+            const allAccsSnap = await getDocs(accsColl);
+            let firstActive = null;
+            allAccsSnap.forEach(d => {
+              const data = d.data();
+              if (!firstActive && data.status !== 'inactive') {
+                firstActive = d;
+              }
+            });
+            if (firstActive) {
+              accSnap = firstActive;
+              targetAccId = accSnap.id;
+              accRef = doc(db, "accounts", targetAccId);
+            }
+          }
+        }
+
+        if (accSnap && accSnap.exists()) {
           const accData = accSnap.data();
           let depositAmount = total;
           if (accData.currency === 'KHR') {
@@ -614,6 +653,13 @@ async function handleWebAppOrder(req, res, body) {
             timestamp: new Date().toISOString()
           });
 
+          // Ensure transaction has depositAccountId recorded
+          if (targetAccId) {
+            await updateDoc(doc(db, "transactions", txId), {
+              depositAccountId: targetAccId
+            }).catch(e => console.error("Error updating tx depositAccountId:", e));
+          }
+
           // Log to account_transactions collection in Firestore
           const actxColl = collection(db, "account_transactions");
           const actxCountSnap = await getCountFromServer(actxColl);
@@ -625,16 +671,16 @@ async function handleWebAppOrder(req, res, body) {
             date: new Date().toISOString(),
             type: 'sale',
             fromAccountId: null,
-            toAccountId: "ACC-003",
+            toAccountId: targetAccId,
             amount: depositAmount,
             currency: accData.currency || "USD",
-            description: `Sales income from storefront invoice: ${invoiceNo} (Paid: $${total})`,
+            description: `Sales income from storefront invoice: ${invoiceNo} (Account: ${accData.nameKh || accData.name}) (Paid: $${total})`,
             createdBy: employee.fullName || "storefront",
             timestamp: new Date().toISOString()
           });
         }
       } catch (accErr) {
-        console.error("Error updating ACC-003 balance or logging account tx for TG order:", accErr);
+        console.error("Error updating account balance or logging account tx for TG order:", accErr);
       }
     }
 
@@ -691,11 +737,13 @@ async function handleWebAppOrder(req, res, body) {
     // Send Telegram Group Notification
     const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
     if (salesGroup) {
-      let paymentStatusText = `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
-      if (chosenPaymentMethod === "COD (Cash on Delivery)") {
+      let paymentStatusText = `✅ ${chosenPaymentMethod}`;
+      if (chosenPaymentMethod === "COD (Cash on Delivery)" || chosenPaymentMethod.includes("(COD)")) {
         paymentStatusText = "⚠️ មិនទាន់ទូទាត់ (COD)";
-      } else if (chosenPaymentMethod === "On Account (Debt)") {
+      } else if (chosenPaymentMethod === "On Account (Debt)" || chosenPaymentMethod.includes("(Debt)")) {
         paymentStatusText = "⚠️ ជំពាក់ (On Account)";
+      } else if (!chosenPaymentMethod.startsWith("✅") && !chosenPaymentMethod.startsWith("ទូទាត់រួច")) {
+        paymentStatusText = `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
       }
 
       const purchaseCountKh = toKhmerNum(purchaseCountVal);
@@ -753,7 +801,7 @@ async function handleWebAppOrder(req, res, body) {
                        `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
                        `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>\n` +
                        (shipping > 0 || shippingCarrier ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n` : '') +
-                       `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
+                       `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' || chosenPaymentMethod.includes('(COD)') ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' || chosenPaymentMethod.includes('(Debt)') ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
                        `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) | <code>${escapedCustomerPhone}</code>\n` +
                        `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>\n` +
                        `----------------------------------------\n` +

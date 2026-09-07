@@ -2225,6 +2225,7 @@
           <span class="category-tab" data-setting="backup" data-translate="backupRestore">Backup & Restore DB</span>
           <span class="category-tab" data-setting="firebase" data-translate="cloudSync">Cloud Database Sync</span>
           <span class="category-tab" data-setting="hr-bot" data-translate="hrSettings">HR & Bot Settings</span>
+          <span class="category-tab" data-setting="accounts">គណនេយ្យទទួលប្រាក់ (Accounts)</span>
           <span class="category-tab" data-setting="docs" data-translate="devDocs">Developer Documentation</span>
         </div>
 
@@ -2346,11 +2347,21 @@
           </div>
         </div>
         
-        <!-- Cash payments received drawer -->
+        <!-- Deposit To Account drawer -->
         <div class="form-group" style="margin-top: 12px; margin-bottom: 12px;">
-            <label>Deposit To Account (ដាក់ប្រាក់ចូលទៅគណនេយ្យ)</label>
-            <select class="form-control" id="checkout-deposit-account" required style="font-weight: 600; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary);"></select>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin-bottom: 0; font-weight: 600;">Deposit To Account (គណនេយ្យទទួលប្រាក់)</label>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="btn btn-outline" id="btn-checkout-rename-acc" style="padding: 2px 8px; font-size: 11px; height: 26px; border-radius: 6px; color: #38bdf8; border-color: rgba(56,189,248,0.4); display: flex; align-items: center; gap: 4px; cursor: pointer;" title="កែសម្រួល ឬប្តូរឈ្មោះគណនេយ្យដែលបានជ្រើសរើស (Rename Account)">
+                ✏️ ប្តូរឈ្មោះ (Rename)
+              </button>
+              <button type="button" class="btn btn-outline" id="btn-checkout-add-acc" style="padding: 2px 8px; font-size: 11px; height: 26px; border-radius: 6px; color: #34d399; border-color: rgba(52,211,153,0.4); display: flex; align-items: center; gap: 4px; cursor: pointer;" title="បង្កើតគណនេយ្យទទួលប្រាក់ថ្មី (Create New Account)">
+                ➕ បង្កើតថ្មី (Add)
+              </button>
+            </div>
           </div>
+          <select class="form-control" id="checkout-deposit-account" required style="font-weight: 600; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-primary);"></select>
+        </div>
 
           <div class="cash-container" id="checkout-cash-drawer">
           <div class="form-group">

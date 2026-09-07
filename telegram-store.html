@@ -1444,13 +1444,15 @@
       </div>
 
       <div class="form-group">
-        <label for="payment-method">វិធីសាស្ត្រទូទាត់ (Payment Method)</label>
+        <label for="payment-method">វិធីសាស្ត្រទូទាត់ (Payment Method) *</label>
         <select id="payment-method">
-          <option value="COD (Cash on Delivery)" selected>COD (សាច់ប្រាក់ពេលទំនិញដល់)</option>
-          <option value="On Account (Debt)">On Account (ជំពាក់ / Credit)</option>
-          <option value="ABA Pay / KHQR">ABA Pay / KHQR (ទូទាត់រួច)</option>
-          <option value="Bank Transfer">Bank Transfer (ទូទាត់រួច)</option>
-          <option value="Credit Card">Credit Card (ទូទាត់រួច)</option>
+          <optgroup label="🚚 មិនទាន់ទូទាត់ (Unpaid / Pay on Delivery)">
+            <option value="COD (Cash on Delivery)" data-type="cod" selected>COD (សាច់ប្រាក់ពេលទំនិញដល់)</option>
+            <option value="On Account (Debt)" data-type="debt">On Account (ជំពាក់ / Credit)</option>
+          </optgroup>
+          <optgroup label="💳 ទូទាត់រួច (Paid Immediately - គណនេយ្យទទួលប្រាក់)" id="optgroup-paid-accounts">
+            <option value="Paid (Other)" data-type="paid">ទូទាត់រួច (Paid)</option>
+          </optgroup>
         </select>
       </div>
 
@@ -1900,8 +1902,16 @@
       overlaySuccess.style.display = 'flex';
       overlayMsg.innerHTML = `<span style="color:var(--success); font-size:18px; font-weight:700;">Order Placed Successfully!</span>`;
       
-      const pmVal = document.getElementById('payment-method').value;
-      const isDebt = pmVal === 'On Account (Debt)' || pmVal === 'COD (Cash on Delivery)';
+      const pmSelect = document.getElementById('payment-method');
+      const selectedOpt = pmSelect?.options[pmSelect.selectedIndex];
+      const optType = selectedOpt ? selectedOpt.getAttribute('data-type') : '';
+      let pmVal = pmSelect ? pmSelect.value : '';
+      if (optType === 'paid') {
+        const accName = selectedOpt.getAttribute('data-name') || '';
+        const accCurr = selectedOpt.getAttribute('data-currency') || 'USD';
+        pmVal = `ទូទាត់រួច - ${accName} (${accCurr})`;
+      }
+      const isDebt = optType !== 'paid' && (pmVal === 'On Account (Debt)' || pmVal === 'COD (Cash on Delivery)');
       
       // Build items rows
       const itemsHtml = cart.map(item => {
@@ -2003,7 +2013,7 @@
         <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; align-items:center;">
           <span>ស្ថានភាព (Status):</span>
           <strong style="color:${isDebt ? 'var(--danger)' : 'var(--success)'};">
-            ${pmVal === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : pmVal === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : 'ទូទាត់រួច (Paid)'}
+            ${pmVal === 'COD (Cash on Delivery)' ? 'មិនទាន់ទូទាត់ (COD)' : pmVal === 'On Account (Debt)' ? 'ជំពាក់ (On Account)' : pmVal}
           </strong>
         </div>
         
@@ -2147,7 +2157,22 @@
           updateCartUI();
         });
 
-        // 5. Fetch Companies
+        // 5. Fetch Accounts for dynamic payment options
+        try {
+          const accSnap = await db.collection('accounts').get();
+          const accountsList = [];
+          accSnap.forEach(doc => {
+            const d = doc.data();
+            if (d.status !== 'inactive') {
+              accountsList.push({ id: doc.id, ...d });
+            }
+          });
+          renderPaymentOptionsTMA(accountsList);
+        } catch (accErr) {
+          console.error("Fetch accounts error for TMA:", accErr);
+        }
+
+        // 6. Fetch Companies
         const compCollSnap = await db.collection('companies').get();
         const companiesList = [];
         compCollSnap.forEach(doc => companiesList.push({ id: doc.id, ...doc.data() }));
@@ -2401,6 +2426,37 @@
         console.error("Fetch data error:", err);
         showOverlayError("Failed to fetch database records: " + err.message);
       }
+    }
+ 
+    function renderPaymentOptionsTMA(accountsList) {
+      const paidGroup = document.getElementById('optgroup-paid-accounts');
+      if (!paidGroup) return;
+      paidGroup.innerHTML = '';
+
+      if (!accountsList || accountsList.length === 0) {
+        paidGroup.innerHTML = `<option value="Paid (Default)" data-type="paid">ទូទាត់រួច (Paid)</option>`;
+        return;
+      }
+
+      const isLight = document.body.classList.contains('light-theme');
+      const optBg = isLight ? '#ffffff' : '#151f32';
+      const optColor = isLight ? '#0f172a' : '#f8fafc';
+
+      // Sort: default accounts first, then by name
+      const sorted = [...accountsList].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+
+      sorted.forEach(acc => {
+        const name = acc.nameKh || acc.name;
+        const opt = document.createElement('option');
+        opt.value = acc.id;
+        opt.setAttribute('data-type', 'paid');
+        opt.setAttribute('data-acc-id', acc.id);
+        opt.setAttribute('data-name', name);
+        opt.setAttribute('data-currency', acc.currency || 'USD');
+        opt.style.cssText = `background-color: ${optBg} !important; color: ${optColor} !important;`;
+        opt.textContent = `✅ ទូទាត់រួច - ${name} (${acc.currency || 'USD'})${acc.isDefault ? ' [Default]' : ''}`;
+        paidGroup.appendChild(opt);
+      });
     }
 
     // Render Products Grid
@@ -2918,7 +2974,24 @@
         facebookPage: selectedFbPage,
         pageName: selectedFbPage || "Telegram Store",
         customerNotes: cNotes,
-        paymentMethod: document.getElementById('payment-method').value,
+        paymentMethod: (() => {
+          const pmSel = document.getElementById('payment-method');
+          const opt = pmSel?.options[pmSel.selectedIndex];
+          if (opt && opt.getAttribute('data-type') === 'paid') {
+            const accName = opt.getAttribute('data-name') || '';
+            const accCurr = opt.getAttribute('data-currency') || 'USD';
+            return `ទូទាត់រួច - ${accName} (${accCurr})`;
+          }
+          return pmSel ? pmSel.value : 'COD (Cash on Delivery)';
+        })(),
+        depositAccountId: (() => {
+          const pmSel = document.getElementById('payment-method');
+          const opt = pmSel?.options[pmSel.selectedIndex];
+          if (opt && opt.getAttribute('data-type') === 'paid') {
+            return opt.getAttribute('data-acc-id') || pmSel.value;
+          }
+          return null;
+        })(),
         discountPercent: calculatedPercent,
         shippingFee: parseFloat(shippingFee.value) || 0,
         shippingCarrier: document.getElementById('shipping-carrier').value.trim() || ''
