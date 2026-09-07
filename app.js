@@ -598,29 +598,94 @@
   // ==================== ACCOUNTING SYSTEM FUNCTIONS ====================
   function getSalesAllowedAccounts() {
     const activeAccounts = state.accounts.filter(a => a.status === 'active');
+    if (activeAccounts.length === 0) return [];
+
     const staffAssignedAcc = state.currentUser?.assignedAccountId;
-    const salesDepositSetting = state.companySettings?.salesDepositAccountId;
-    const salesAllowedList = Array.isArray(state.companySettings?.salesAllowedAccountIds) ? state.companySettings.salesAllowedAccountIds : null;
-
-    let filtered = [];
     if (staffAssignedAcc) {
-      filtered = activeAccounts.filter(a => a.id === staffAssignedAcc);
-    } else if (salesDepositSetting && salesDepositSetting !== 'all' && salesDepositSetting !== 'default') {
-      filtered = activeAccounts.filter(a => a.id === salesDepositSetting);
-    } else if (salesAllowedList && salesAllowedList.length > 0) {
-      filtered = activeAccounts.filter(a => salesAllowedList.includes(a.id));
-    } else if (salesDepositSetting === 'all') {
-      filtered = activeAccounts;
-    } else {
-      // Default: only default accounts or accounts flagged isSalesAllowed
-      filtered = activeAccounts.filter(a => a.isDefault || a.isSalesAllowed === true);
+      const match = activeAccounts.filter(a => a.id === staffAssignedAcc);
+      if (match.length > 0) return match;
     }
 
-    if (filtered.length === 0 && activeAccounts.length > 0) {
-      const def = activeAccounts.find(a => a.isDefault) || activeAccounts[0];
-      if (def) filtered = [def];
+    const settings = state.companySettings || {};
+    if (settings.salesDepositAccountId === 'all') {
+      return activeAccounts;
     }
-    return filtered;
+
+    const allowedIds = new Set();
+
+    // 1. Explicit array of allowed account IDs
+    if (Array.isArray(settings.salesAllowedAccountIds)) {
+      settings.salesAllowedAccountIds.forEach(id => {
+        if (activeAccounts.some(a => a.id === id)) allowedIds.add(id);
+      });
+    }
+
+    // 2. Individual account flagged isSalesAllowed
+    activeAccounts.forEach(a => {
+      if (a.isSalesAllowed === true) allowedIds.add(a.id);
+    });
+
+    // 3. Designated USD receiving account
+    const usdAccId = settings.salesDepositAccountUsd || (settings.salesDepositAccountId && settings.salesDepositAccountId !== 'all' && settings.salesDepositAccountId !== 'default' && settings.salesDepositAccountId !== 'restricted' ? settings.salesDepositAccountId : null);
+    if (usdAccId && usdAccId !== 'default') {
+      if (activeAccounts.some(a => a.id === usdAccId)) allowedIds.add(usdAccId);
+    } else {
+      const defUsd = activeAccounts.find(a => a.currency === 'USD' && a.isDefault) || 
+                     activeAccounts.find(a => a.currency === 'USD');
+      if (defUsd) allowedIds.add(defUsd.id);
+    }
+
+    // 4. Designated KHR receiving account
+    const khrAccId = settings.salesDepositAccountKhr;
+    if (khrAccId && khrAccId !== 'default') {
+      if (activeAccounts.some(a => a.id === khrAccId)) allowedIds.add(khrAccId);
+    } else {
+      const defKhr = activeAccounts.find(a => a.currency === 'KHR' && a.isDefault) || 
+                     activeAccounts.find(a => a.currency === 'KHR');
+      if (defKhr) allowedIds.add(defKhr.id);
+    }
+
+    // Fallback if empty
+    if (allowedIds.size === 0) {
+      const def = activeAccounts.find(a => a.isDefault) || activeAccounts[0];
+      if (def) allowedIds.add(def.id);
+    }
+
+    return activeAccounts.filter(a => allowedIds.has(a.id));
+  }
+
+  function updateCheckoutAccountCurrencyHint(providedTotal) {
+    const chkSelect = document.getElementById('checkout-deposit-account');
+    const hintEl = document.getElementById('checkout-account-currency-hint');
+    if (!chkSelect || !hintEl) return;
+    const accId = chkSelect.value;
+    const acc = state.accounts.find(a => a.id === accId);
+    if (!acc) {
+      hintEl.style.display = 'none';
+      return;
+    }
+
+    let totalUsd = typeof providedTotal === 'number' ? providedTotal : null;
+    if (totalUsd === null) {
+      const totalUsdText = document.getElementById('checkout-total-usd')?.innerText || '$0.00';
+      totalUsd = parseFloat(totalUsdText.replace('$', '').replace(/,/g, '')) || 0;
+    }
+    const rate = window.POS_HELPERS?.EXCHANGE_RATE || (state.companySettings?.exchangeRate || 4100);
+
+    if (acc.currency === 'KHR') {
+      const khrAmount = Math.round(totalUsd * rate);
+      hintEl.style.display = 'block';
+      hintEl.style.background = 'rgba(16, 185, 129, 0.12)';
+      hintEl.style.color = '#10b981';
+      hintEl.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+      hintEl.innerHTML = `🇰🇭 <b>ទូទាត់ជាប្រាក់រៀល (KHR)៖</b> ទទួល <b>${window.POS_HELPERS.formatRawKHR(khrAmount)}</b> (អត្រាប្តូរប្រាក់ 1$ = ${rate.toLocaleString()} ៛)`;
+    } else {
+      hintEl.style.display = 'block';
+      hintEl.style.background = 'rgba(56, 189, 248, 0.1)';
+      hintEl.style.color = '#38bdf8';
+      hintEl.style.border = '1px solid rgba(56, 189, 248, 0.25)';
+      hintEl.innerHTML = `💵 <b>ទូទាត់ជាប្រាក់ដុល្លារ (USD)៖</b> ទទួល <b>$${totalUsd.toFixed(2)}</b>`;
+    }
   }
 
   function populateAccountDropdowns() {
@@ -663,8 +728,56 @@
       }
     };
 
+    const renderCheckoutOptions = (el, accountList) => {
+      if (!el) return;
+      const prevVal = el.value;
+      const usdAccs = accountList.filter(a => a.currency === 'USD');
+      const khrAccs = accountList.filter(a => a.currency === 'KHR');
+      const otherAccs = accountList.filter(a => a.currency !== 'USD' && a.currency !== 'KHR');
+
+      let html = '';
+      if (usdAccs.length > 0) {
+        html += `<optgroup label="💵 គណនេយ្យប្រាក់ដុល្លារ (USD Accounts)">`;
+        usdAccs.forEach(a => {
+          const khName = a.nameKh || a.name;
+          html += `<option value="${a.id}" data-currency="USD">${state.lang === 'km' ? khName : a.name} (USD) [Balance: ${window.POS_HELPERS.formatUSD(a.balance)}]</option>`;
+        });
+        html += `</optgroup>`;
+      }
+      if (khrAccs.length > 0) {
+        html += `<optgroup label="🇰🇭 គណនេយ្យប្រាក់រៀល (KHR Accounts)">`;
+        khrAccs.forEach(a => {
+          const khName = a.nameKh || a.name;
+          html += `<option value="${a.id}" data-currency="KHR">${state.lang === 'km' ? khName : a.name} (KHR) [Balance: ${window.POS_HELPERS.formatRawKHR(a.balance)}]</option>`;
+        });
+        html += `</optgroup>`;
+      }
+      if (otherAccs.length > 0) {
+        html += `<optgroup label="💳 Other Accounts">`;
+        otherAccs.forEach(a => {
+          const khName = a.nameKh || a.name;
+          html += `<option value="${a.id}" data-currency="${a.currency}">${state.lang === 'km' ? khName : a.name} (${a.currency})</option>`;
+        });
+        html += `</optgroup>`;
+      }
+      el.innerHTML = html;
+      if (prevVal && accountList.some(a => a.id === prevVal)) {
+        el.value = prevVal;
+      } else {
+        const defAcc = accountList.find(a => a.currency === 'USD' && a.isDefault) || accountList.find(a => a.isDefault) || accountList[0];
+        if (defAcc) el.value = defAcc.id;
+      }
+      updateCheckoutAccountCurrencyHint();
+    };
+
     const checkoutAccounts = isSalesStaff ? getSalesAllowedAccounts() : activeAccounts;
-    renderOptions(checkoutSelect, false, "-- Select Account --", checkoutAccounts);
+    renderCheckoutOptions(checkoutSelect, checkoutAccounts);
+
+    if (checkoutSelect && !checkoutSelect.dataset.hasCurrencyHintListener) {
+      checkoutSelect.dataset.hasCurrencyHintListener = 'true';
+      checkoutSelect.addEventListener('change', () => updateCheckoutAccountCurrencyHint());
+    }
+
     renderOptions(payDebtSelect, false, "-- Select Account --", activeAccounts);
     renderOptions(expSelect, false, "-- Select Account --", activeAccounts);
     renderOptions(adjExpSelect, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យ --" : "-- Select Account --", activeAccounts);
@@ -3997,6 +4110,8 @@
     const modalFbEl = document.getElementById('checkout-fb-page');
     if (modalFbEl && cartFbVal) modalFbEl.value = cartFbVal;
 
+    updateCheckoutAccountCurrencyHint(total);
+
     document.getElementById('modal-checkout').classList.add('active-modal');
   }
 
@@ -4009,6 +4124,7 @@
       const defAcc = state.accounts.find(a => a.isDefault && a.status === 'active') || state.accounts.find(a => a.status === 'active');
       if (defAcc) checkoutSelect.value = defAcc.id;
     }
+    updateCheckoutAccountCurrencyHint(totalDue);
 
     document.querySelectorAll('.checkout-method-card').forEach(card => card.classList.remove('active'));
     
@@ -12847,7 +12963,12 @@ CREATE TABLE sale_items (
       `;
     } else if (tab === 'accounts') {
       const activeAccounts = state.accounts.filter(a => a.status === 'active');
-      const currentSalesSetting = state.companySettings?.salesDepositAccountId || 'default';
+      const settings = state.companySettings || {};
+      const currentSalesSetting = settings.salesDepositAccountId || 'default';
+      const currentUsdSetting = settings.salesDepositAccountUsd || (currentSalesSetting !== 'all' && currentSalesSetting !== 'default' && currentSalesSetting !== 'restricted' ? currentSalesSetting : 'default');
+      const currentKhrSetting = settings.salesDepositAccountKhr || 'default';
+      const salesAllowedList = Array.isArray(settings.salesAllowedAccountIds) ? settings.salesAllowedAccountIds : [];
+
       let totalUsd = 0;
       let totalKhr = 0;
       activeAccounts.forEach(a => {
@@ -12855,14 +12976,25 @@ CREATE TABLE sale_items (
         if (a.currency === 'KHR') totalKhr += a.balance;
       });
 
-      let salesDropdownOptions = `
-        <option value="default" ${(currentSalesSetting === 'default' || !currentSalesSetting) ? 'selected' : ''}>⭐ គណនេយ្យលំនាំដើមតែមួយគត់ (Default Account Only)</option>
-        <option value="all" ${currentSalesSetting === 'all' ? 'selected' : ''}>🌐 បង្ហាញគ្រប់គណនេយ្យទាំងអស់ (Show All Accounts)</option>
+      const usdAccounts = activeAccounts.filter(a => a.currency === 'USD');
+      const khrAccounts = activeAccounts.filter(a => a.currency === 'KHR');
+
+      let salesUsdDropdownOptions = `
+        <option value="default" ${(currentUsdSetting === 'default' || !currentUsdSetting) ? 'selected' : ''}>⭐ គណនេយ្យលំនាំដើម USD (Default USD Account)</option>
       `;
-      activeAccounts.forEach(a => {
+      usdAccounts.forEach(a => {
         const aName = state.lang === 'km' ? (a.nameKh || a.name) : a.name;
-        const isSel = currentSalesSetting === a.id ? 'selected' : '';
-        salesDropdownOptions += `<option value="${a.id}" ${isSel}>💳 ${aName} (${a.currency}) [គណនេយ្យនេះតែមួយគត់]</option>`;
+        const isSel = currentUsdSetting === a.id ? 'selected' : '';
+        salesUsdDropdownOptions += `<option value="${a.id}" ${isSel}>💵 ${aName} (${window.POS_HELPERS.formatUSD(a.balance)})</option>`;
+      });
+
+      let salesKhrDropdownOptions = `
+        <option value="default" ${(currentKhrSetting === 'default' || !currentKhrSetting) ? 'selected' : ''}>⭐ គណនេយ្យលំនាំដើម KHR (Default KHR Account)</option>
+      `;
+      khrAccounts.forEach(a => {
+        const aName = state.lang === 'km' ? (a.nameKh || a.name) : a.name;
+        const isSel = currentKhrSetting === a.id ? 'selected' : '';
+        salesKhrDropdownOptions += `<option value="${a.id}" ${isSel}>🇰🇭 ${aName} (${window.POS_HELPERS.formatRawKHR(a.balance)})</option>`;
       });
 
       let rowsHtml = '';
@@ -12871,16 +13003,44 @@ CREATE TABLE sale_items (
         const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance);
         const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
         
-        const isAllowedForSales = (
-          currentSalesSetting === 'all' ||
-          currentSalesSetting === a.id ||
-          ((!currentSalesSetting || currentSalesSetting === 'default') && a.isDefault)
-        );
-        const salesBadge = isAllowedForSales 
-          ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;" title="បុគ្គលិកផ្នែកលក់មើលឃើញ">✅ បើកសិទ្ធិ</span>` 
-          : `<span class="badge" style="background:rgba(255,255,255,0.08); color:var(--text-muted); font-size:10px; padding:2px 6px; border-radius:4px;" title="លាក់ពីបុគ្គលិកផ្នែកលក់">❌ លាក់</span>`;
-        const setSalesBtn = `<button class="btn btn-outline btn-set-sales-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto; color:#38bdf8; border-color:rgba(56,189,248,0.4); margin-left:4px;" type="button" title="កំណត់តែគណនេយ្យនេះសម្រាប់ផ្នែកលក់">🎯 ផ្នែកលក់</button>`;
-        const salesDisplay = `<div style="display:flex; align-items:center; justify-content:center;">${salesBadge}${setSalesBtn}</div>`;
+        const isPrimaryUsd = (a.currency === 'USD') && (currentUsdSetting === a.id || (currentUsdSetting === 'default' && a.isDefault));
+        const isPrimaryKhr = (a.currency === 'KHR') && (currentKhrSetting === a.id || (currentKhrSetting === 'default' && a.isDefault));
+        const isExplicitlyAllowed = salesAllowedList.includes(a.id) || a.isSalesAllowed === true;
+        const isAllowedForSales = currentSalesSetting === 'all' || isPrimaryUsd || isPrimaryKhr || isExplicitlyAllowed;
+
+        let badgeLabel = '❌ លាក់';
+        let badgeBg = 'rgba(255,255,255,0.08)';
+        let badgeColor = 'var(--text-muted)';
+        if (currentSalesSetting === 'all') {
+          badgeLabel = '🌐 បើកទាំងអស់';
+          badgeBg = '#10b981';
+          badgeColor = '#ffffff';
+        } else if (isPrimaryUsd) {
+          badgeLabel = '💵 USD សំខាន់';
+          badgeBg = '#38bdf8';
+          badgeColor = '#0b1120';
+        } else if (isPrimaryKhr) {
+          badgeLabel = '🇰🇭 KHR សំខាន់';
+          badgeBg = '#10b981';
+          badgeColor = '#0b1120';
+        } else if (isExplicitlyAllowed) {
+          badgeLabel = '✅ បើកសិទ្ធិ';
+          badgeBg = 'rgba(16, 185, 129, 0.2)';
+          badgeColor = '#10b981';
+        }
+
+        const salesBadge = `<span class="badge" style="background:${badgeBg}; color:${badgeColor}; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700;">${badgeLabel}</span>`;
+        
+        let setPrimaryBtn = '';
+        if (a.currency === 'USD') {
+          setPrimaryBtn = `<button class="btn btn-outline btn-set-primary-usd" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto; color:#38bdf8; border-color:rgba(56,189,248,0.4); margin-left:4px;" type="button" title="កំណត់ជាគណនេយ្យទទួលប្រាក់ USD សម្រាប់ផ្នែកលក់">🎯 USD</button>`;
+        } else if (a.currency === 'KHR') {
+          setPrimaryBtn = `<button class="btn btn-outline btn-set-primary-khr" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto; color:#10b981; border-color:rgba(16,185,129,0.4); margin-left:4px;" type="button" title="កំណត់ជាគណនេយ្យទទួលប្រាក់ KHR សម្រាប់ផ្នែកលក់">🎯 KHR</button>`;
+        }
+
+        const toggleAccessBtn = `<button class="btn btn-outline btn-toggle-sales-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto; color:var(--text-secondary); border-color:var(--border-color); margin-left:4px;" type="button" title="បើក ឬបិទការមើលឃើញសម្រាប់ផ្នែកលក់">${isAllowedForSales ? 'បិទ' : 'បើក'}</button>`;
+
+        const salesDisplay = `<div style="display:flex; align-items:center; justify-content:center; gap:2px;">${salesBadge}${setPrimaryBtn}${toggleAccessBtn}</div>`;
 
         const adjustBtn = `<button class="qty-btn btn-adjust-account" data-id="${a.id}" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Deposit / Adjust Balance">💵</button>`;
         const editBtn = `<button class="qty-btn btn-edit-account" data-id="${a.id}" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Edit / Rename Account">✏️</button>`;
@@ -12901,7 +13061,7 @@ CREATE TABLE sale_items (
       });
 
       container.innerHTML = `
-        <div style="max-width: 960px; margin: 0 auto;">
+        <div style="max-width: 980px; margin: 0 auto;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <div>
               <h3 style="font-size: 18px; font-weight: 750; margin: 0;">គណនេយ្យទទួលប្រាក់ (Receiving Accounts)</h3>
@@ -12912,23 +13072,50 @@ CREATE TABLE sale_items (
             </button>
           </div>
 
-          <!-- Sales Staff Receiving Account Setting Box -->
-          <div class="glass-card" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.04);">
+          <!-- Sales Staff Dual-Currency Receiving Accounts Setting Box -->
+          <div class="glass-card" style="padding: 18px; margin-bottom: 20px; border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.04);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
               <h4 style="margin: 0; font-size: 15px; font-weight: 750; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
-                <span>🔒</span> <span>ការកំណត់គណនេយ្យសម្រាប់បុគ្គលិកផ្នែកលក់ (Sales Staff Receiving Account)</span>
+                <span>🔒</span> <span>ការកំណត់គណនេយ្យទទួលប្រាក់សម្រាប់ផ្នែកលក់ (Sales Receiving Accounts: USD & KHR)</span>
               </h4>
-              <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 4px 8px; border-radius: 6px;">Sales Restriction</span>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 4px 8px; border-radius: 6px;">Multi-Currency Access</span>
             </div>
-            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
-              កំណត់គណនេយ្យដែលបុគ្គលិកផ្នែកលក់ត្រូវបានអនុញ្ញាតឱ្យមើលឃើញ និងទូទាត់ចូល (ទាំងក្នុង Telegram Mini App និង POS Checkout)។ បុគ្គលិកផ្នែកលក់នឹងឃើញតែគណនេយ្យដែលបានកំណត់នេះប៉ុណ្ណោះ។
+            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+              កំណត់គណនេយ្យទទួលប្រាក់សម្រាប់ផ្នែកលក់ តាមជាក់ស្តែងដែលអតិថិជនទូទាត់មក (ប្រាក់ដុល្លារ USD ឬ ប្រាក់រៀល KHR)។ បុគ្គលិកផ្នែកលក់នឹងឃើញជម្រើសគណនេយ្យទាំងពីរនេះពេលគិតលុយក្នុង POS និង Telegram Mini App។
             </p>
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-              <select id="setting-sales-deposit-account" class="form-control" style="max-width: 440px; font-weight: 600; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary);">
-                ${salesDropdownOptions}
-              </select>
-              <button type="button" class="btn btn-primary" id="btn-save-sales-acc-setting" style="display: flex; align-items: center; gap: 6px; padding: 8px 18px; font-weight: 700;">
-                💾 រក្សាទុកការកំណត់ (Save)
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 14px;">
+              <!-- USD Receiving Account -->
+              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <label style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #38bdf8;">
+                  <span>💵</span> <span>គណនេយ្យទទួលប្រាក់ USD (USD Account)</span>
+                </label>
+                <select id="setting-sales-deposit-account-usd" class="form-control" style="width: 100%; font-weight: 600; padding: 8px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary);">
+                  ${salesUsdDropdownOptions}
+                </select>
+              </div>
+
+              <!-- KHR Receiving Account -->
+              <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <label style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #10b981;">
+                  <span>🇰🇭</span> <span>គណនេយ្យទទួលប្រាក់ KHR (KHR Account)</span>
+                </label>
+                <select id="setting-sales-deposit-account-khr" class="form-control" style="width: 100%; font-weight: 600; padding: 8px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary);">
+                  ${salesKhrDropdownOptions}
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 12px; color: var(--text-secondary); margin: 0;">វិសាលភាពបង្ហាញ (Scope):</label>
+                <select id="setting-sales-scope" class="form-control" style="font-size: 12px; padding: 4px 8px; width: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary);">
+                  <option value="restricted" ${currentSalesSetting !== 'all' ? 'selected' : ''}>🔒 កំណត់តែគណនេយ្យដែលបានជ្រើសរើស (Restricted)</option>
+                  <option value="all" ${currentSalesSetting === 'all' ? 'selected' : ''}>🌐 បង្ហាញគ្រប់គណនេយ្យទាំងអស់ (Show All Accounts)</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-save-sales-acc-setting" style="display: flex; align-items: center; gap: 6px; padding: 8px 20px; font-weight: 700;">
+                💾 រក្សាទុកការកំណត់ (Save Settings)
               </button>
             </div>
           </div>
@@ -12986,42 +13173,103 @@ CREATE TABLE sale_items (
       const btnSaveSalesAcc = container.querySelector('#btn-save-sales-acc-setting');
       if (btnSaveSalesAcc) {
         btnSaveSalesAcc.addEventListener('click', () => {
-          const selVal = container.querySelector('#setting-sales-deposit-account')?.value || 'default';
-          state.companySettings.salesDepositAccountId = selVal;
+          const selUsd = container.querySelector('#setting-sales-deposit-account-usd')?.value || 'default';
+          const selKhr = container.querySelector('#setting-sales-deposit-account-khr')?.value || 'default';
+          const selScope = container.querySelector('#setting-sales-scope')?.value || 'restricted';
+
+          state.companySettings.salesDepositAccountUsd = selUsd;
+          state.companySettings.salesDepositAccountKhr = selKhr;
+          state.companySettings.salesDepositAccountId = (selScope === 'all') ? 'all' : (selUsd !== 'default' ? selUsd : 'default');
+
           saveStateToLocalStorage();
           if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
               firebase.firestore().collection('company_settings').doc('global').set({
-                salesDepositAccountId: selVal
+                salesDepositAccountUsd: selUsd,
+                salesDepositAccountKhr: selKhr,
+                salesDepositAccountId: state.companySettings.salesDepositAccountId,
+                salesAllowedAccountIds: state.companySettings.salesAllowedAccountIds || []
               }, { merge: true });
             } catch(e) { console.error("Firebase sync error:", e); }
           }
           renderSettings();
           populateAccountDropdowns();
           alert(state.lang === 'km' 
-            ? 'បានរក្សាទុកការកំណត់គណនេយ្យសម្រាប់ផ្នែកលក់ជោគជ័យ!' 
-            : 'Sales staff receiving account configuration saved successfully!');
+            ? 'បានរក្សាទុកការកំណត់គណនេយ្យទទួលប្រាក់ USD និង KHR សម្រាប់ផ្នែកលក់ជោគជ័យ!' 
+            : 'Sales USD & KHR receiving accounts configuration saved successfully!');
         });
       }
 
-      // Quick set sales account from table
-      container.querySelectorAll('.btn-set-sales-acc').forEach(btn => {
+      // Quick set USD primary sales account from table
+      container.querySelectorAll('.btn-set-primary-usd').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
-          state.companySettings.salesDepositAccountId = id;
+          state.companySettings.salesDepositAccountUsd = id;
+          if (state.companySettings.salesDepositAccountId !== 'all') {
+            state.companySettings.salesDepositAccountId = id;
+          }
           saveStateToLocalStorage();
           if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
               firebase.firestore().collection('company_settings').doc('global').set({
-                salesDepositAccountId: id
+                salesDepositAccountUsd: id,
+                salesDepositAccountId: state.companySettings.salesDepositAccountId
               }, { merge: true });
             } catch(e) { console.error("Firebase sync error:", e); }
           }
           renderSettings();
           populateAccountDropdowns();
           alert(state.lang === 'km' 
-            ? 'បានកំណត់គណនេយ្យនេះសម្រាប់បុគ្គលិកផ្នែកលក់ជោគជ័យ!' 
-            : 'Assigned this account for sales staff successfully!');
+            ? 'បានកំណត់គណនេយ្យនេះជាគណនេយ្យ USD សម្រាប់ផ្នែកលក់ជោគជ័យ!' 
+            : 'Assigned this account as primary USD receiving account for sales staff!');
+        });
+      });
+
+      // Quick set KHR primary sales account from table
+      container.querySelectorAll('.btn-set-primary-khr').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          state.companySettings.salesDepositAccountKhr = id;
+          saveStateToLocalStorage();
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            try {
+              firebase.firestore().collection('company_settings').doc('global').set({
+                salesDepositAccountKhr: id
+              }, { merge: true });
+            } catch(e) { console.error("Firebase sync error:", e); }
+          }
+          renderSettings();
+          populateAccountDropdowns();
+          alert(state.lang === 'km' 
+            ? 'បានកំណត់គណនេយ្យនេះជាគណនេយ្យ KHR សម្រាប់ផ្នែកលក់ជោគជ័យ!' 
+            : 'Assigned this account as primary KHR receiving account for sales staff!');
+        });
+      });
+
+      // Toggle sales access for an account
+      container.querySelectorAll('.btn-toggle-sales-acc').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          if (!Array.isArray(state.companySettings.salesAllowedAccountIds)) {
+            state.companySettings.salesAllowedAccountIds = [];
+          }
+          const list = state.companySettings.salesAllowedAccountIds;
+          const idx = list.indexOf(id);
+          if (idx >= 0) {
+            list.splice(idx, 1);
+          } else {
+            list.push(id);
+          }
+          saveStateToLocalStorage();
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            try {
+              firebase.firestore().collection('company_settings').doc('global').set({
+                salesAllowedAccountIds: list
+              }, { merge: true });
+            } catch(e) { console.error("Firebase sync error:", e); }
+          }
+          renderSettings();
+          populateAccountDropdowns();
         });
       });
 

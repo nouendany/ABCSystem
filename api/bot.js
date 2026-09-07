@@ -613,7 +613,11 @@ async function handleWebAppOrder(req, res, body) {
         }
 
         // Check if company has designated sales deposit account
-        if ((!accSnap || !accSnap.exists()) && settings.salesDepositAccountId && settings.salesDepositAccountId !== 'all' && settings.salesDepositAccountId !== 'default') {
+        if ((!accSnap || !accSnap.exists()) && settings.salesDepositAccountUsd && settings.salesDepositAccountUsd !== 'all' && settings.salesDepositAccountUsd !== 'default') {
+          targetAccId = settings.salesDepositAccountUsd;
+          accRef = doc(db, "accounts", targetAccId);
+          accSnap = await getDoc(accRef);
+        } else if ((!accSnap || !accSnap.exists()) && settings.salesDepositAccountId && settings.salesDepositAccountId !== 'all' && settings.salesDepositAccountId !== 'default' && settings.salesDepositAccountId !== 'restricted') {
           targetAccId = settings.salesDepositAccountId;
           accRef = doc(db, "accounts", targetAccId);
           accSnap = await getDoc(accRef);
@@ -770,7 +774,7 @@ async function handleWebAppOrder(req, res, body) {
                             `----------------------------------------\n` +
                             `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +
                             `----------------------------------------\n` +
-                            `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + `\n`;
+                            `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + ((accSnap && accSnap.exists() && accSnap.data().currency === 'KHR') ? ` (<b>${Math.round(total * (settings.exchangeRate || 4100)).toLocaleString()} ៛</b>)` : '') + `\n`;
       
       if (shipping > 0 || shippingCarrier) {
         orderNotifyText += `🚚 ដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n`;

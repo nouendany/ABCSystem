@@ -1454,6 +1454,7 @@
             <option value="Paid (Other)" data-type="paid">ទូទាត់រួច (Paid)</option>
           </optgroup>
         </select>
+        <div id="tma-payment-currency-hint" style="display:none; margin-top:8px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; line-height: 1.4;"></div>
       </div>
 
       <!-- Pricing Adjustments -->
@@ -2433,8 +2434,9 @@
     }
  
     function renderPaymentOptionsTMA() {
+      const pmSelect = document.getElementById('payment-method');
       const paidGroup = document.getElementById('optgroup-paid-accounts');
-      if (!paidGroup) return;
+      if (!pmSelect || !paidGroup) return;
       paidGroup.innerHTML = '';
 
       if (!rawAccountsList || rawAccountsList.length === 0) {
@@ -2446,43 +2448,65 @@
       const optBg = isLight ? '#ffffff' : '#151f32';
       const optColor = isLight ? '#0f172a' : '#f8fafc';
 
-      // Determine which accounts this sales staff is allowed to see:
       // 1. Staff personal assigned account
       const staffAssignedAcc = employeeData?.assignedAccountId || staffData?.assignedAccountId;
       
-      // 2. Company global sales receiving account setting
+      // 2. Company global sales settings
       const salesDepositSetting = companySettings?.salesDepositAccountId;
-      const salesAllowedList = Array.isArray(companySettings?.salesAllowedAccountIds) ? companySettings.salesAllowedAccountIds : null;
+      const salesDepositUsd = companySettings?.salesDepositAccountUsd;
+      const salesDepositKhr = companySettings?.salesDepositAccountKhr;
+      const salesAllowedList = Array.isArray(companySettings?.salesAllowedAccountIds) ? companySettings.salesAllowedAccountIds : [];
 
       let filteredAccounts = [];
 
       if (staffAssignedAcc) {
-        // Specifically assigned to this staff member
         filteredAccounts = rawAccountsList.filter(a => a.id === staffAssignedAcc);
-      } else if (salesDepositSetting && salesDepositSetting !== 'all' && salesDepositSetting !== 'default') {
-        // Configured to a specific single account (e.g. ACC-001 or ACC-003)
-        filteredAccounts = rawAccountsList.filter(a => a.id === salesDepositSetting);
-      } else if (salesAllowedList && salesAllowedList.length > 0) {
-        // Configured to an explicit list of allowed accounts
-        filteredAccounts = rawAccountsList.filter(a => salesAllowedList.includes(a.id));
       } else if (salesDepositSetting === 'all') {
-        // Explicitly set to show all accounts
         filteredAccounts = rawAccountsList;
       } else {
-        // Default mode: Sales staff ONLY see Default Account(s) or accounts specifically allowed for sales
-        filteredAccounts = rawAccountsList.filter(a => a.isDefault || a.isSalesAllowed === true);
+        const allowedIds = new Set(salesAllowedList);
+        rawAccountsList.forEach(a => {
+          if (a.isSalesAllowed === true) allowedIds.add(a.id);
+        });
+
+        // Add designated USD account or default USD account
+        if (salesDepositUsd && salesDepositUsd !== 'default') {
+          if (rawAccountsList.some(a => a.id === salesDepositUsd)) allowedIds.add(salesDepositUsd);
+        } else {
+          const defUsd = rawAccountsList.find(a => a.currency === 'USD' && a.isDefault) || rawAccountsList.find(a => a.currency === 'USD');
+          if (defUsd) allowedIds.add(defUsd.id);
+        }
+
+        // Add designated KHR account or default KHR account
+        if (salesDepositKhr && salesDepositKhr !== 'default') {
+          if (rawAccountsList.some(a => a.id === salesDepositKhr)) allowedIds.add(salesDepositKhr);
+        } else {
+          const defKhr = rawAccountsList.find(a => a.currency === 'KHR' && a.isDefault) || rawAccountsList.find(a => a.currency === 'KHR');
+          if (defKhr) allowedIds.add(defKhr.id);
+        }
+
+        // Backwards compatibility if single account set in salesDepositAccountId
+        if (salesDepositSetting && salesDepositSetting !== 'all' && salesDepositSetting !== 'default' && salesDepositSetting !== 'restricted') {
+          allowedIds.add(salesDepositSetting);
+        }
+
+        filteredAccounts = rawAccountsList.filter(a => allowedIds.has(a.id));
       }
 
-      // If filtering produced no results, safely fallback to the default account or first active account
       if (filteredAccounts.length === 0) {
         const def = rawAccountsList.find(a => a.isDefault) || rawAccountsList[0];
         if (def) filteredAccounts = [def];
       }
 
-      // Sort: default accounts first, then by name
-      const sorted = [...filteredAccounts].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+      // Group accounts into USD and KHR for clean presentation
+      const usdAccs = filteredAccounts.filter(a => a.currency === 'USD');
+      const khrAccs = filteredAccounts.filter(a => a.currency === 'KHR');
+      const otherAccs = filteredAccounts.filter(a => a.currency !== 'USD' && a.currency !== 'KHR');
 
-      sorted.forEach(acc => {
+      usdAccs.sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+      khrAccs.sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+
+      const appendAccountOpt = (acc, prefix, currSymbol) => {
         const name = acc.nameKh || acc.name;
         const opt = document.createElement('option');
         opt.value = acc.id;
@@ -2491,9 +2515,60 @@
         opt.setAttribute('data-name', name);
         opt.setAttribute('data-currency', acc.currency || 'USD');
         opt.style.cssText = `background-color: ${optBg} !important; color: ${optColor} !important;`;
-        opt.textContent = `✅ ទូទាត់រួច - ${name} (${acc.currency || 'USD'})${acc.isDefault ? ' [Default]' : ''}`;
+        opt.textContent = `${prefix} ${name} (${currSymbol})${acc.isDefault ? ' [Default]' : ''}`;
         paidGroup.appendChild(opt);
-      });
+      };
+
+      usdAccs.forEach(acc => appendAccountOpt(acc, '💵 ទូទាត់រួច (USD) -', '$'));
+      khrAccs.forEach(acc => appendAccountOpt(acc, '🇰🇭 ទូទាត់រួច (KHR) -', '៛'));
+      otherAccs.forEach(acc => appendAccountOpt(acc, '💳 ទូទាត់រួច -', acc.currency));
+
+      updateTmaCurrencyHint();
+    }
+
+    function updateTmaCurrencyHint() {
+      const pmSel = document.getElementById('payment-method');
+      const hintEl = document.getElementById('tma-payment-currency-hint');
+      if (!pmSel || !hintEl) return;
+      const opt = pmSel.options[pmSel.selectedIndex];
+      if (!opt) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      const optType = opt.getAttribute('data-type');
+      const curr = opt.getAttribute('data-currency');
+      const totalText = document.getElementById('bill-grand-total')?.innerText || '$0.00';
+      const totalUsd = parseFloat(totalText.replace('$', '').replace(/,/g, '')) || 0;
+      const rate = companySettings?.exchangeRate || 4100;
+
+      if (optType === 'paid' && curr === 'KHR') {
+        const khrTotal = Math.round(totalUsd * rate);
+        hintEl.style.display = 'block';
+        hintEl.style.background = 'rgba(16, 185, 129, 0.12)';
+        hintEl.style.color = '#10b981';
+        hintEl.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+        hintEl.innerHTML = `🇰🇭 <b>ទូទាត់ជាប្រាក់រៀល (KHR)៖</b> ផ្ទេរប្រាក់ <b>${khrTotal.toLocaleString()} ៛</b> (អត្រាប្តូរប្រាក់ 1$ = ${rate.toLocaleString()} ៛)`;
+      } else if (optType === 'paid') {
+        hintEl.style.display = 'block';
+        hintEl.style.background = 'rgba(56, 189, 248, 0.1)';
+        hintEl.style.color = '#38bdf8';
+        hintEl.style.border = '1px solid rgba(56, 189, 248, 0.25)';
+        hintEl.innerHTML = `💵 <b>ទូទាត់ជាប្រាក់ដុល្លារ (USD)៖</b> ផ្ទេរប្រាក់ <b>$${totalUsd.toFixed(2)}</b>`;
+      } else if (optType === 'cod') {
+        hintEl.style.display = 'block';
+        hintEl.style.background = 'rgba(245, 158, 11, 0.1)';
+        hintEl.style.color = '#f59e0b';
+        hintEl.style.border = '1px solid rgba(245, 158, 11, 0.25)';
+        hintEl.innerHTML = `🚚 <b>ទូទាត់ពេលដឹកទំនិញដល់ (COD)៖</b> បុគ្គលិកដឹកជញ្ជូនប្រមូលប្រាក់ $${totalUsd.toFixed(2)}`;
+      } else if (optType === 'debt') {
+        hintEl.style.display = 'block';
+        hintEl.style.background = 'rgba(239, 68, 68, 0.1)';
+        hintEl.style.color = '#ef4444';
+        hintEl.style.border = '1px solid rgba(239, 68, 68, 0.25)';
+        hintEl.innerHTML = `📝 <b>ជំពាក់ (On Account / Debt)៖</b> កត់ត្រាចូលបញ្ជីជំពាក់ $${totalUsd.toFixed(2)}`;
+      } else {
+        hintEl.style.display = 'none';
+      }
     }
 
     // Render Products Grid
@@ -2679,6 +2754,8 @@
       billTax.innerText = `+$${taxAmount.toFixed(2)}`;
       billGrandTotal.innerText = `$${grandTotal.toFixed(2)}`;
       
+      updateTmaCurrencyHint();
+
       return { subtotal, grandTotal };
     }
 
@@ -2952,6 +3029,11 @@
     // Discount/Shipping adjustments listeners
     discountFixed.addEventListener('input', updateCartPricing);
     shippingFee.addEventListener('input', updateCartPricing);
+
+    const pmSelectElement = document.getElementById('payment-method');
+    if (pmSelectElement) {
+      pmSelectElement.addEventListener('change', updateTmaCurrencyHint);
+    }
 
     btnViewCart.addEventListener('click', openCartDrawer);
     btnCloseDrawer.addEventListener('click', closeCartDrawer);
