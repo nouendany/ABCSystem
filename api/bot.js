@@ -612,6 +612,13 @@ async function handleWebAppOrder(req, res, body) {
           accSnap = await getDoc(accRef);
         }
 
+        // Check if company has designated sales deposit account
+        if ((!accSnap || !accSnap.exists()) && settings.salesDepositAccountId && settings.salesDepositAccountId !== 'all' && settings.salesDepositAccountId !== 'default') {
+          targetAccId = settings.salesDepositAccountId;
+          accRef = doc(db, "accounts", targetAccId);
+          accSnap = await getDoc(accRef);
+        }
+
         // Fallback: If no account ID provided or doc doesn't exist, search for default account
         if (!accSnap || !accSnap.exists()) {
           const accsColl = collection(db, "accounts");

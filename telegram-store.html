@@ -1706,6 +1706,7 @@
     let employeeData = null;
     let staffData = null;
     let companySettings = {};
+    let rawAccountsList = [];
     let productsList = [];
     let categoriesList = [];
     let branchesList = [];
@@ -2160,14 +2161,14 @@
         // 5. Fetch Accounts for dynamic payment options
         try {
           const accSnap = await db.collection('accounts').get();
-          const accountsList = [];
+          rawAccountsList = [];
           accSnap.forEach(doc => {
             const d = doc.data();
             if (d.status !== 'inactive') {
-              accountsList.push({ id: doc.id, ...d });
+              rawAccountsList.push({ id: doc.id, ...d });
             }
           });
-          renderPaymentOptionsTMA(accountsList);
+          renderPaymentOptionsTMA();
         } catch (accErr) {
           console.error("Fetch accounts error for TMA:", accErr);
         }
@@ -2342,6 +2343,9 @@
         // Trigger header update once loaded
         updateHeaderProfile();
 
+        // Refresh payment options according to employee's assigned account & company sales settings
+        renderPaymentOptionsTMA();
+
         // Check if employee is inactive
         if (employeeData && (employeeData.status === 'Inactive' || employeeData.status === 'inactive')) {
           document.body.innerHTML = `
@@ -2428,12 +2432,12 @@
       }
     }
  
-    function renderPaymentOptionsTMA(accountsList) {
+    function renderPaymentOptionsTMA() {
       const paidGroup = document.getElementById('optgroup-paid-accounts');
       if (!paidGroup) return;
       paidGroup.innerHTML = '';
 
-      if (!accountsList || accountsList.length === 0) {
+      if (!rawAccountsList || rawAccountsList.length === 0) {
         paidGroup.innerHTML = `<option value="Paid (Default)" data-type="paid">ទូទាត់រួច (Paid)</option>`;
         return;
       }
@@ -2442,8 +2446,41 @@
       const optBg = isLight ? '#ffffff' : '#151f32';
       const optColor = isLight ? '#0f172a' : '#f8fafc';
 
+      // Determine which accounts this sales staff is allowed to see:
+      // 1. Staff personal assigned account
+      const staffAssignedAcc = employeeData?.assignedAccountId || staffData?.assignedAccountId;
+      
+      // 2. Company global sales receiving account setting
+      const salesDepositSetting = companySettings?.salesDepositAccountId;
+      const salesAllowedList = Array.isArray(companySettings?.salesAllowedAccountIds) ? companySettings.salesAllowedAccountIds : null;
+
+      let filteredAccounts = [];
+
+      if (staffAssignedAcc) {
+        // Specifically assigned to this staff member
+        filteredAccounts = rawAccountsList.filter(a => a.id === staffAssignedAcc);
+      } else if (salesDepositSetting && salesDepositSetting !== 'all' && salesDepositSetting !== 'default') {
+        // Configured to a specific single account (e.g. ACC-001 or ACC-003)
+        filteredAccounts = rawAccountsList.filter(a => a.id === salesDepositSetting);
+      } else if (salesAllowedList && salesAllowedList.length > 0) {
+        // Configured to an explicit list of allowed accounts
+        filteredAccounts = rawAccountsList.filter(a => salesAllowedList.includes(a.id));
+      } else if (salesDepositSetting === 'all') {
+        // Explicitly set to show all accounts
+        filteredAccounts = rawAccountsList;
+      } else {
+        // Default mode: Sales staff ONLY see Default Account(s) or accounts specifically allowed for sales
+        filteredAccounts = rawAccountsList.filter(a => a.isDefault || a.isSalesAllowed === true);
+      }
+
+      // If filtering produced no results, safely fallback to the default account or first active account
+      if (filteredAccounts.length === 0) {
+        const def = rawAccountsList.find(a => a.isDefault) || rawAccountsList[0];
+        if (def) filteredAccounts = [def];
+      }
+
       // Sort: default accounts first, then by name
-      const sorted = [...accountsList].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+      const sorted = [...filteredAccounts].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
 
       sorted.forEach(acc => {
         const name = acc.nameKh || acc.name;

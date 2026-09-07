@@ -596,6 +596,33 @@
 
 
   // ==================== ACCOUNTING SYSTEM FUNCTIONS ====================
+  function getSalesAllowedAccounts() {
+    const activeAccounts = state.accounts.filter(a => a.status === 'active');
+    const staffAssignedAcc = state.currentUser?.assignedAccountId;
+    const salesDepositSetting = state.companySettings?.salesDepositAccountId;
+    const salesAllowedList = Array.isArray(state.companySettings?.salesAllowedAccountIds) ? state.companySettings.salesAllowedAccountIds : null;
+
+    let filtered = [];
+    if (staffAssignedAcc) {
+      filtered = activeAccounts.filter(a => a.id === staffAssignedAcc);
+    } else if (salesDepositSetting && salesDepositSetting !== 'all' && salesDepositSetting !== 'default') {
+      filtered = activeAccounts.filter(a => a.id === salesDepositSetting);
+    } else if (salesAllowedList && salesAllowedList.length > 0) {
+      filtered = activeAccounts.filter(a => salesAllowedList.includes(a.id));
+    } else if (salesDepositSetting === 'all') {
+      filtered = activeAccounts;
+    } else {
+      // Default: only default accounts or accounts flagged isSalesAllowed
+      filtered = activeAccounts.filter(a => a.isDefault || a.isSalesAllowed === true);
+    }
+
+    if (filtered.length === 0 && activeAccounts.length > 0) {
+      const def = activeAccounts.find(a => a.isDefault) || activeAccounts[0];
+      if (def) filtered = [def];
+    }
+    return filtered;
+  }
+
   function populateAccountDropdowns() {
     const checkoutSelect = document.getElementById('checkout-deposit-account');
     const payDebtSelect = document.getElementById('pay-debt-deposit-account');
@@ -607,29 +634,42 @@
 
     const activeAccounts = state.accounts.filter(a => a.status === 'active');
 
-    const renderOptions = (el, includePlaceholder = false, placeholderText = "-- Select Account --") => {
+    const isSalesStaff = state.currentUser && (
+      state.currentUser.role === 'sales_staff' || 
+      state.currentUser.role === 'cashier' || 
+      (state.currentUser.role !== 'super_admin' && state.currentUser.role !== 'branch_admin' && state.currentUser.role !== 'accountant')
+    );
+
+    // Hide or show checkout quick account buttons for sales staff
+    const renameBtn = document.getElementById('btn-checkout-rename-acc');
+    const addBtn = document.getElementById('btn-checkout-add-acc');
+    if (renameBtn) renameBtn.style.display = isSalesStaff ? 'none' : 'inline-flex';
+    if (addBtn) addBtn.style.display = isSalesStaff ? 'none' : 'inline-flex';
+
+    const renderOptions = (el, includePlaceholder = false, placeholderText = "-- Select Account --", accountList = activeAccounts) => {
       if (!el) return;
       const prevVal = el.value;
       let html = includePlaceholder ? `<option value="">${placeholderText}</option>` : '';
-      activeAccounts.forEach(a => {
+      accountList.forEach(a => {
         const khName = a.nameKh || a.name;
         html += `<option value="${a.id}">${state.lang === 'km' ? khName : a.name} (${a.currency}) [Balance: ${a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance)}]</option>`;
       });
       el.innerHTML = html;
-      if (prevVal && activeAccounts.some(a => a.id === prevVal)) {
+      if (prevVal && accountList.some(a => a.id === prevVal)) {
         el.value = prevVal;
       } else if (!includePlaceholder) {
-        const defAcc = activeAccounts.find(a => a.isDefault) || activeAccounts[0];
+        const defAcc = accountList.find(a => a.isDefault) || accountList[0];
         if (defAcc) el.value = defAcc.id;
       }
     };
 
-    renderOptions(checkoutSelect);
-    renderOptions(payDebtSelect);
-    renderOptions(expSelect);
-    renderOptions(adjExpSelect, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យ --" : "-- Select Account --");
-    renderOptions(transferSrc, true, state.lang === 'km' ? "ប្រភពក្រៅប្រព័ន្ធ / ដាក់ប្រាក់ / សងត្រឡប់ (External Source)" : "External Source / Deposit / Refund");
-    renderOptions(transferDest, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យទទួល --" : "-- Select Destination Account --");
+    const checkoutAccounts = isSalesStaff ? getSalesAllowedAccounts() : activeAccounts;
+    renderOptions(checkoutSelect, false, "-- Select Account --", checkoutAccounts);
+    renderOptions(payDebtSelect, false, "-- Select Account --", activeAccounts);
+    renderOptions(expSelect, false, "-- Select Account --", activeAccounts);
+    renderOptions(adjExpSelect, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យ --" : "-- Select Account --", activeAccounts);
+    renderOptions(transferSrc, true, state.lang === 'km' ? "ប្រភពក្រៅប្រព័ន្ធ / ដាក់ប្រាក់ / សងត្រឡប់ (External Source)" : "External Source / Deposit / Refund", activeAccounts);
+    renderOptions(transferDest, true, state.lang === 'km' ? "-- ជ្រើសរើសគណនេយ្យទទួល --" : "-- Select Destination Account --", activeAccounts);
 
     // Populate ledger filter
     if (ledgerSelect) {
@@ -12807,6 +12847,7 @@ CREATE TABLE sale_items (
       `;
     } else if (tab === 'accounts') {
       const activeAccounts = state.accounts.filter(a => a.status === 'active');
+      const currentSalesSetting = state.companySettings?.salesDepositAccountId || 'default';
       let totalUsd = 0;
       let totalKhr = 0;
       activeAccounts.forEach(a => {
@@ -12814,11 +12855,33 @@ CREATE TABLE sale_items (
         if (a.currency === 'KHR') totalKhr += a.balance;
       });
 
+      let salesDropdownOptions = `
+        <option value="default" ${(currentSalesSetting === 'default' || !currentSalesSetting) ? 'selected' : ''}>⭐ គណនេយ្យលំនាំដើមតែមួយគត់ (Default Account Only)</option>
+        <option value="all" ${currentSalesSetting === 'all' ? 'selected' : ''}>🌐 បង្ហាញគ្រប់គណនេយ្យទាំងអស់ (Show All Accounts)</option>
+      `;
+      activeAccounts.forEach(a => {
+        const aName = state.lang === 'km' ? (a.nameKh || a.name) : a.name;
+        const isSel = currentSalesSetting === a.id ? 'selected' : '';
+        salesDropdownOptions += `<option value="${a.id}" ${isSel}>💳 ${aName} (${a.currency}) [គណនេយ្យនេះតែមួយគត់]</option>`;
+      });
+
       let rowsHtml = '';
       activeAccounts.forEach(a => {
         const typeDisplay = a.type.toUpperCase();
         const balDisplay = a.currency === 'USD' ? window.POS_HELPERS.formatUSD(a.balance) : window.POS_HELPERS.formatRawKHR(a.balance);
         const isDefaultDisplay = a.isDefault ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;">Default</span>` : `<button class="btn btn-outline btn-make-default-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto;" type="button">Set Default</button>`;
+        
+        const isAllowedForSales = (
+          currentSalesSetting === 'all' ||
+          currentSalesSetting === a.id ||
+          ((!currentSalesSetting || currentSalesSetting === 'default') && a.isDefault)
+        );
+        const salesBadge = isAllowedForSales 
+          ? `<span class="badge badge-success" style="background:#10b981; color:white; font-size:10px; padding:2px 6px; border-radius:4px;" title="បុគ្គលិកផ្នែកលក់មើលឃើញ">✅ បើកសិទ្ធិ</span>` 
+          : `<span class="badge" style="background:rgba(255,255,255,0.08); color:var(--text-muted); font-size:10px; padding:2px 6px; border-radius:4px;" title="លាក់ពីបុគ្គលិកផ្នែកលក់">❌ លាក់</span>`;
+        const setSalesBtn = `<button class="btn btn-outline btn-set-sales-acc" data-id="${a.id}" style="padding:2px 6px; font-size:10px; min-height:unset; height:auto; color:#38bdf8; border-color:rgba(56,189,248,0.4); margin-left:4px;" type="button" title="កំណត់តែគណនេយ្យនេះសម្រាប់ផ្នែកលក់">🎯 ផ្នែកលក់</button>`;
+        const salesDisplay = `<div style="display:flex; align-items:center; justify-content:center;">${salesBadge}${setSalesBtn}</div>`;
+
         const adjustBtn = `<button class="qty-btn btn-adjust-account" data-id="${a.id}" style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid rgba(16,185,129,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Deposit / Adjust Balance">💵</button>`;
         const editBtn = `<button class="qty-btn btn-edit-account" data-id="${a.id}" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px; margin-right:6px;" type="button" title="Edit / Rename Account">✏️</button>`;
         const deleteBtn = `<button class="qty-btn btn-delete-account" data-id="${a.id}" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.2); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; font-size:12px;" type="button" title="Delete Account">×</button>`;
@@ -12831,13 +12894,14 @@ CREATE TABLE sale_items (
             <td style="font-weight:600; color:var(--primary);">${a.currency}</td>
             <td style="text-align:right; font-weight:750;">${balDisplay}</td>
             <td style="text-align:center;">${isDefaultDisplay}</td>
+            <td style="text-align:center;">${salesDisplay}</td>
             <td style="display:flex; justify-content:center; align-items:center; height:100%; padding: 4px 0;">${actionDisplay}</td>
           </tr>
         `;
       });
 
       container.innerHTML = `
-        <div style="max-width: 900px; margin: 0 auto;">
+        <div style="max-width: 960px; margin: 0 auto;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <div>
               <h3 style="font-size: 18px; font-weight: 750; margin: 0;">គណនេយ្យទទួលប្រាក់ (Receiving Accounts)</h3>
@@ -12846,6 +12910,27 @@ CREATE TABLE sale_items (
             <button class="btn btn-primary" id="btn-settings-add-account" type="button" style="display: flex; align-items: center; gap: 6px;">
               ➕ បង្កើតគណនេយ្យថ្មី (Create Account)
             </button>
+          </div>
+
+          <!-- Sales Staff Receiving Account Setting Box -->
+          <div class="glass-card" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.04);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+              <h4 style="margin: 0; font-size: 15px; font-weight: 750; display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
+                <span>🔒</span> <span>ការកំណត់គណនេយ្យសម្រាប់បុគ្គលិកផ្នែកលក់ (Sales Staff Receiving Account)</span>
+              </h4>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 4px 8px; border-radius: 6px;">Sales Restriction</span>
+            </div>
+            <p style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+              កំណត់គណនេយ្យដែលបុគ្គលិកផ្នែកលក់ត្រូវបានអនុញ្ញាតឱ្យមើលឃើញ និងទូទាត់ចូល (ទាំងក្នុង Telegram Mini App និង POS Checkout)។ បុគ្គលិកផ្នែកលក់នឹងឃើញតែគណនេយ្យដែលបានកំណត់នេះប៉ុណ្ណោះ។
+            </p>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <select id="setting-sales-deposit-account" class="form-control" style="max-width: 440px; font-weight: 600; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary);">
+                ${salesDropdownOptions}
+              </select>
+              <button type="button" class="btn btn-primary" id="btn-save-sales-acc-setting" style="display: flex; align-items: center; gap: 6px; padding: 8px 18px; font-weight: 700;">
+                💾 រក្សាទុកការកំណត់ (Save)
+              </button>
+            </div>
           </div>
 
           <div class="kpi-grid finance-kpis" style="margin-bottom:20px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
@@ -12875,11 +12960,12 @@ CREATE TABLE sale_items (
                     <th>Currency</th>
                     <th style="text-align: right;">Balance (សមតុល្យ)</th>
                     <th style="text-align: center;">Default</th>
+                    <th style="text-align: center;">ផ្នែកលក់ (Sales)</th>
                     <th style="text-align: center;">Action (សកម្មភាព)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${rowsHtml || '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No accounts found</td></tr>'}
+                  ${rowsHtml || '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No accounts found</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -12895,6 +12981,49 @@ CREATE TABLE sale_items (
           document.getElementById('modal-create-account').classList.add('active-modal');
         });
       }
+
+      // Save sales account setting from dropdown
+      const btnSaveSalesAcc = container.querySelector('#btn-save-sales-acc-setting');
+      if (btnSaveSalesAcc) {
+        btnSaveSalesAcc.addEventListener('click', () => {
+          const selVal = container.querySelector('#setting-sales-deposit-account')?.value || 'default';
+          state.companySettings.salesDepositAccountId = selVal;
+          saveStateToLocalStorage();
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            try {
+              firebase.firestore().collection('company_settings').doc('global').set({
+                salesDepositAccountId: selVal
+              }, { merge: true });
+            } catch(e) { console.error("Firebase sync error:", e); }
+          }
+          renderSettings();
+          populateAccountDropdowns();
+          alert(state.lang === 'km' 
+            ? 'បានរក្សាទុកការកំណត់គណនេយ្យសម្រាប់ផ្នែកលក់ជោគជ័យ!' 
+            : 'Sales staff receiving account configuration saved successfully!');
+        });
+      }
+
+      // Quick set sales account from table
+      container.querySelectorAll('.btn-set-sales-acc').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          state.companySettings.salesDepositAccountId = id;
+          saveStateToLocalStorage();
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            try {
+              firebase.firestore().collection('company_settings').doc('global').set({
+                salesDepositAccountId: id
+              }, { merge: true });
+            } catch(e) { console.error("Firebase sync error:", e); }
+          }
+          renderSettings();
+          populateAccountDropdowns();
+          alert(state.lang === 'km' 
+            ? 'បានកំណត់គណនេយ្យនេះសម្រាប់បុគ្គលិកផ្នែកលក់ជោគជ័យ!' 
+            : 'Assigned this account for sales staff successfully!');
+        });
+      });
 
       container.querySelectorAll('.btn-make-default-acc').forEach(btn => {
         btn.addEventListener('click', () => {
