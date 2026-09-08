@@ -748,88 +748,99 @@ async function handleWebAppOrder(req, res, body) {
 
     const itemsListText = items.map(it => `- <b>${esc(it.nameKh || it.nameEn)}</b> x ${it.qty} (<b>$${it.price}</b>)`).join("\n");
 
+    // KHR Currency Calculation (accessible to both group notification and direct message)
+    const isKhrAccount = (depositAccData && depositAccData.currency === 'KHR') || 
+                         (chosenPaymentMethod && chosenPaymentMethod.includes('(KHR)')) ||
+                         (body && body.currency === 'KHR');
+    const khrAmountStr = isKhrAccount ? ` (<b>${Math.round(total * (settings.exchangeRate || 4100)).toLocaleString()} ៛</b>)` : '';
+
     // Send Telegram Group Notification
-    const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
-    if (salesGroup) {
-      let paymentStatusText = `✅ ${chosenPaymentMethod}`;
-      if (chosenPaymentMethod === "COD (Cash on Delivery)" || chosenPaymentMethod.includes("(COD)")) {
-        paymentStatusText = "⚠️ មិនទាន់ទូទាត់ (COD)";
-      } else if (chosenPaymentMethod === "On Account (Debt)" || chosenPaymentMethod.includes("(Debt)")) {
-        paymentStatusText = "⚠️ ជំពាក់ (On Account)";
-      } else if (!chosenPaymentMethod.startsWith("✅") && !chosenPaymentMethod.startsWith("ទូទាត់រួច")) {
-        paymentStatusText = `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
+    try {
+      const salesGroup = settings.salesTelegramGroupId || settings.hrTelegramGroupId;
+      if (salesGroup) {
+        let paymentStatusText = `✅ ${chosenPaymentMethod}`;
+        if (chosenPaymentMethod === "COD (Cash on Delivery)" || chosenPaymentMethod.includes("(COD)")) {
+          paymentStatusText = "⚠️ មិនទាន់ទូទាត់ (COD)";
+        } else if (chosenPaymentMethod === "On Account (Debt)" || chosenPaymentMethod.includes("(Debt)")) {
+          paymentStatusText = "⚠️ ជំពាក់ (On Account)";
+        } else if (!chosenPaymentMethod.startsWith("✅") && !chosenPaymentMethod.startsWith("ទូទាត់រួច")) {
+          paymentStatusText = `✅ ទូទាត់រួច (${chosenPaymentMethod})`;
+        }
+
+        const purchaseCountKh = toKhmerNum(purchaseCountVal);
+        const purchaseHeader = purchaseCountVal === 1 
+          ? `🛍️ <b>ការកម្មង់ថ្មី លើកទី ${purchaseCountKh} (New Order #1)</b>`
+          : `🛍️ <b>ការកម្មង់ឡើងវិញ លើកទី ${purchaseCountKh} (Repeat Order #${purchaseCountVal})</b>`;
+
+        let orderNotifyText = `${purchaseHeader}\n` +
+                              `----------------------------------------\n` +
+                              (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
+                              `🧾 វិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
+                              `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
+                              `👤 អ្នកលក់៖ <b>${escapedEmployeeName}</b> | <code>${escapedEmployeeId}</code>\n` +
+                              (escapedFacebookPage ? `📱 ផេកលក់ (FB Page)៖ <b>${escapedFacebookPage}</b>\n` : '') +
+                              `🏢 សាខា៖ <b>${escapedBranchName}</b>\n` +
+                              `----------------------------------------\n` +
+                              `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +
+                              `----------------------------------------\n` +
+                              `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + khrAmountStr + `\n`;
+        
+        if (shipping > 0 || shippingCarrier) {
+          orderNotifyText += `🚚 ដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n`;
+        }
+
+        orderNotifyText += `💳 ស្ថានភាពទូទាត់៖ <b>${paymentStatusText}</b>\n` +
+                           `----------------------------------------\n` +
+                           `👤 <b>ព័ត៌មានអតិថិជន (Customer Info)：</b>\n` +
+                           `📛 ឈ្មោះ៖ <b>${escapedCustomerName}</b>\n` +
+                           `📞 លេខទូរស័ព្ទ៖ <code>${escapedCustomerPhone}</code>\n` +
+                           `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>`;
+
+        if (req.body.customerFacebook) {
+          orderNotifyText += `\n🌐 Facebook: <b>${escapedFacebook}</b>`;
+        }
+        if (req.body.customerSource) {
+          orderNotifyText += `\n📣 ប្រភព (Source): <b>${escapedSource}</b>`;
+        }
+        if (req.body.customerNotes) {
+          orderNotifyText += `\n📝 កំណត់សម្គាល់ (Notes): <b>${escapedNotes}</b>`;
+        }
+
+        await sendTelegram(token, "sendMessage", {
+          chat_id: salesGroup,
+          text: orderNotifyText,
+          parse_mode: "HTML"
+        });
       }
-
-      const purchaseCountKh = toKhmerNum(purchaseCountVal);
-      const purchaseHeader = purchaseCountVal === 1 
-        ? `🛍️ <b>ការកម្មង់ថ្មី លើកទី ${purchaseCountKh} (New Order #1)</b>`
-        : `🛍️ <b>ការកម្មង់ឡើងវិញ លើកទី ${purchaseCountKh} (Repeat Order #${purchaseCountVal})</b>`;
-
-      const isKhrAccount = (depositAccData && depositAccData.currency === 'KHR') || 
-                           chosenPaymentMethod.includes('(KHR)') ||
-                           (body.currency === 'KHR');
-      const khrAmountStr = isKhrAccount ? ` (<b>${Math.round(total * (settings.exchangeRate || 4100)).toLocaleString()} ៛</b>)` : '';
-
-      let orderNotifyText = `${purchaseHeader}\n` +
-                            `----------------------------------------\n` +
-                            (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
-                            `🧾 វិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
-                            `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
-                            `👤 អ្នកលក់៖ <b>${escapedEmployeeName}</b> | <code>${escapedEmployeeId}</code>\n` +
-                            (escapedFacebookPage ? `📱 ផេកលក់ (FB Page)៖ <b>${escapedFacebookPage}</b>\n` : '') +
-                            `🏢 សាខា៖ <b>${escapedBranchName}</b>\n` +
-                            `----------------------------------------\n` +
-                            `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +
-                            `----------------------------------------\n` +
-                            `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + khrAmountStr + `\n`;
-      
-      if (shipping > 0 || shippingCarrier) {
-        orderNotifyText += `🚚 ដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n`;
-      }
-
-      orderNotifyText += `💳 ស្ថានភាពទូទាត់៖ <b>${paymentStatusText}</b>\n` +
-                         `----------------------------------------\n` +
-                         `👤 <b>ព័ត៌មានអតិថិជន (Customer Info)：</b>\n` +
-                         `📛 ឈ្មោះ៖ <b>${escapedCustomerName}</b>\n` +
-                         `📞 លេខទូរស័ព្ទ៖ <code>${escapedCustomerPhone}</code>\n` +
-                         `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>`;
-
-      if (req.body.customerFacebook) {
-        orderNotifyText += `\n🌐 Facebook: <b>${escapedFacebook}</b>`;
-      }
-      if (req.body.customerSource) {
-        orderNotifyText += `\n📣 ប្រភព (Source): <b>${escapedSource}</b>`;
-      }
-      if (req.body.customerNotes) {
-        orderNotifyText += `\n📝 កំណត់សម្គាល់ (Notes): <b>${escapedNotes}</b>`;
-      }
-
-      await sendTelegram(token, "sendMessage", {
-        chat_id: salesGroup,
-        text: orderNotifyText,
-        parse_mode: "HTML"
-      });
+    } catch (groupErr) {
+      console.error("Error sending group telegram order notification:", groupErr);
     }
 
     // Send direct notification to employee
-    const directText = `✅ <b>ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!</b>\n` +
-                       `----------------------------------------\n` +
-                       (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
-                       `🧾 លេខវិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
-                       `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
-                       `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>${khrAmountStr}\n` +
-                       (shipping > 0 || shippingCarrier ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n` : '') +
-                       `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' || chosenPaymentMethod.includes('(COD)') ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' || chosenPaymentMethod.includes('(Debt)') ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
-                       `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) | <code>${escapedCustomerPhone}</code>\n` +
-                       `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>\n` +
-                       `----------------------------------------\n` +
-                       `🛒 <b>ទំនិញកម្មង់៖</b>\n${itemsListText}`;
+    try {
+      if (chatId) {
+        const directText = `✅ <b>ការបញ្ជាទិញត្រូវបានបង្កើតជោគជ័យ!</b>\n` +
+                           `----------------------------------------\n` +
+                           (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
+                           `🧾 លេខវិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
+                           `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
+                           `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>${khrAmountStr}\n` +
+                           (shipping > 0 || shippingCarrier ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n` : '') +
+                           `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' || chosenPaymentMethod.includes('(COD)') ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' || chosenPaymentMethod.includes('(Debt)') ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
+                           `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) | <code>${escapedCustomerPhone}</code>\n` +
+                           `📍 ទីតាំង៖ <b>${escapedCustomerAddress}</b>\n` +
+                           `----------------------------------------\n` +
+                           `🛒 <b>ទំនិញកម្មង់៖</b>\n${itemsListText}`;
 
-    await sendTelegram(token, "sendMessage", {
-      chat_id: chatId,
-      text: directText,
-      parse_mode: "HTML"
-    });
+        await sendTelegram(token, "sendMessage", {
+          chat_id: chatId,
+          text: directText,
+          parse_mode: "HTML"
+        });
+      }
+    } catch (directErr) {
+      console.error("Error sending direct telegram order notification:", directErr);
+    }
 
     return res.status(200).json({ ok: true, invoiceNo: invoiceNo });
 
