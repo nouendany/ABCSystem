@@ -601,6 +601,7 @@ async function handleWebAppOrder(req, res, body) {
     }
 
     // Route paid amount to the selected receiving account (or default account) if transaction is paid
+    let depositAccData = null;
     if (!isDebt && total > 0) {
       try {
         let targetAccId = body.depositAccountId || null;
@@ -653,6 +654,7 @@ async function handleWebAppOrder(req, res, body) {
 
         if (accSnap && accSnap.exists()) {
           const accData = accSnap.data();
+          depositAccData = accData;
           let depositAmount = total;
           if (accData.currency === 'KHR') {
             const rate = settings.exchangeRate || 4100;
@@ -742,6 +744,7 @@ async function handleWebAppOrder(req, res, body) {
     const escapedSource = esc(req.body.customerSource);
     const escapedNotes = esc(req.body.customerNotes);
     const escapedCarrier = esc(shippingCarrier);
+    const escapedFacebookPage = esc(req.body.facebookPage || req.body.pageName || "");
 
     const itemsListText = items.map(it => `- <b>${esc(it.nameKh || it.nameEn)}</b> x ${it.qty} (<b>$${it.price}</b>)`).join("\n");
 
@@ -762,7 +765,11 @@ async function handleWebAppOrder(req, res, body) {
         ? `🛍️ <b>ការកម្មង់ថ្មី លើកទី ${purchaseCountKh} (New Order #1)</b>`
         : `🛍️ <b>ការកម្មង់ឡើងវិញ លើកទី ${purchaseCountKh} (Repeat Order #${purchaseCountVal})</b>`;
 
-      const escapedFacebookPage = esc(req.body.facebookPage || req.body.pageName || "");
+      const isKhrAccount = (depositAccData && depositAccData.currency === 'KHR') || 
+                           chosenPaymentMethod.includes('(KHR)') ||
+                           (body.currency === 'KHR');
+      const khrAmountStr = isKhrAccount ? ` (<b>${Math.round(total * (settings.exchangeRate || 4100)).toLocaleString()} ៛</b>)` : '';
+
       let orderNotifyText = `${purchaseHeader}\n` +
                             `----------------------------------------\n` +
                             (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
@@ -774,7 +781,7 @@ async function handleWebAppOrder(req, res, body) {
                             `----------------------------------------\n` +
                             `🛒 <b>ទំនិញកម្មង់ (Ordered Items)：</b>\n${itemsListText}\n` +
                             `----------------------------------------\n` +
-                            `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + ((accSnap && accSnap.exists() && accSnap.data().currency === 'KHR') ? ` (<b>${Math.round(total * (settings.exchangeRate || 4100)).toLocaleString()} ៛</b>)` : '') + `\n`;
+                            `💵 សរុប៖ <b>$${total}</b>` + (discPercent > 0 ? ` (បញ្ចុះតម្លៃ ${discPercent}%)` : '') + khrAmountStr + `\n`;
       
       if (shipping > 0 || shippingCarrier) {
         orderNotifyText += `🚚 ដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n`;
@@ -810,7 +817,7 @@ async function handleWebAppOrder(req, res, body) {
                        (escapedCompanyName ? `🏢 ក្រុមហ៊ុន៖ <b>${escapedCompanyName}</b>\n` : '') +
                        `🧾 លេខវិក្កយបត្រ៖ <code>${escapedInvoiceNo}</code>\n` +
                        `📅 ថ្ងៃលក់៖ <b>${orderDateKh}</b> (${orderDateEn})\n` +
-                       `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>\n` +
+                       `💵 ចំនួនទឹកប្រាក់៖ <b>$${total}</b>${khrAmountStr}\n` +
                        (shipping > 0 || shippingCarrier ? `🚚 សេវាដឹកជញ្ជូន (Shipping): <b>$${shipping}</b>${shippingCarrier ? ` via <i>${escapedCarrier}</i>` : ''}\n` : '') +
                        `💳 ទូទាត់៖ <b>${chosenPaymentMethod === 'COD (Cash on Delivery)' || chosenPaymentMethod.includes('(COD)') ? 'មិនទាន់ទូទាត់ (COD)' : chosenPaymentMethod === 'On Account (Debt)' || chosenPaymentMethod.includes('(Debt)') ? 'ជំពាក់ (On Account)' : chosenPaymentMethod}</b>\n` +
                        `👤 អតិថិជន៖ <b>${escapedCustomerName}</b> (ទិញលើកទី ${toKhmerNum(purchaseCountVal)}) | <code>${escapedCustomerPhone}</code>\n` +
