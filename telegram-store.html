@@ -1794,6 +1794,11 @@
 
     function hideOverlay() {
       overlay.style.display = 'none';
+      overlaySpinner.style.display = 'block';
+      overlaySuccess.style.display = 'none';
+      overlayReceipt.style.display = 'none';
+      btnOverlayClose.style.display = 'none';
+      if (btnOverlayDownload) btnOverlayDownload.style.display = 'none';
     }
 
     function downloadInvoicePNG(invoiceNo) {
@@ -3150,8 +3155,10 @@
 
     // Close Overlay
     btnOverlayClose.addEventListener('click', () => {
+      const isSuccess = overlayMsg.innerHTML.includes('Placed Successfully');
+      overlayMsg.innerHTML = '';
       hideOverlay();
-      if (overlayMsg.innerHTML.includes('Placed Successfully')) {
+      if (isSuccess) {
         if (tg) {
           tg.close();
         } else {
